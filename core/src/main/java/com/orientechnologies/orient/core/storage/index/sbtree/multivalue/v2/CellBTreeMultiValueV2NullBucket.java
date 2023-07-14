@@ -137,7 +137,10 @@ public final class CellBTreeMultiValueV2NullBucket extends ODurablePage {
         moveData(position + RID_SIZE, position, end - (position + RID_SIZE));
         setByteValue(EMBEDDED_RIDS_SIZE_OFFSET, (byte) (embeddedSize - 1));
         setIntValue(RIDS_SIZE_OFFSET, size - 1);
+<<<<<<< HEAD
 
+=======
+>>>>>>> develop
         return 1;
       }
     }

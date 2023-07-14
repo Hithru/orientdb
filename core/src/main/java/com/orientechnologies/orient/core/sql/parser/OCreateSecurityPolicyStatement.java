@@ -6,7 +6,7 @@ import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.db.ODatabaseInternal;
 import com.orientechnologies.orient.core.db.ODatabaseSession;
 import com.orientechnologies.orient.core.metadata.security.OSecurityInternal;
-import com.orientechnologies.orient.core.metadata.security.OSecurityPolicy;
+import com.orientechnologies.orient.core.metadata.security.OSecurityPolicyImpl;
 import com.orientechnologies.orient.core.sql.executor.OInternalResultSet;
 import com.orientechnologies.orient.core.sql.executor.OResultInternal;
 import com.orientechnologies.orient.core.sql.executor.OResultSet;
@@ -36,7 +36,7 @@ public class OCreateSecurityPolicyStatement extends OSimpleExecStatement {
   public OResultSet executeSimple(OCommandContext ctx) {
     ODatabaseSession db = (ODatabaseSession) ctx.getDatabase();
     OSecurityInternal security = ((ODatabaseInternal) db).getSharedContext().getSecurity();
-    OSecurityPolicy policy = security.createSecurityPolicy(db, name.getStringValue());
+    OSecurityPolicyImpl policy = security.createSecurityPolicy(db, name.getStringValue());
     policy.setActive(true);
     if (create != null) {
       policy.setCreateRule(create.toString());
@@ -137,6 +137,82 @@ public class OCreateSecurityPolicyStatement extends OSimpleExecStatement {
       }
       builder.append("EXECUTE = (");
       execute.toString(params, builder);
+      builder.append(")");
+      first = false;
+    }
+  }
+
+  @Override
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append("CREATE SECURITY POLICY ");
+    name.toGenericStatement(builder);
+
+    boolean first = true;
+    if (create != null) {
+      if (first) {
+        builder.append(" SET ");
+      } else {
+        builder.append(", ");
+      }
+      builder.append("CREATE = (");
+      create.toGenericStatement(builder);
+      builder.append(")");
+      first = false;
+    }
+
+    if (read != null) {
+      if (first) {
+        builder.append(" SET ");
+      } else {
+        builder.append(", ");
+      }
+      builder.append("READ = (");
+      read.toGenericStatement(builder);
+      builder.append(")");
+      first = false;
+    }
+    if (beforeUpdate != null) {
+      if (first) {
+        builder.append(" SET ");
+      } else {
+        builder.append(", ");
+      }
+      builder.append("BEFORE UPDATE = (");
+      beforeUpdate.toGenericStatement(builder);
+      builder.append(")");
+      first = false;
+    }
+
+    if (afterUpdate != null) {
+      if (first) {
+        builder.append(" SET ");
+      } else {
+        builder.append(", ");
+      }
+      builder.append("AFTER UPDATE = (");
+      afterUpdate.toGenericStatement(builder);
+      builder.append(")");
+      first = false;
+    }
+    if (delete != null) {
+      if (first) {
+        builder.append(" SET ");
+      } else {
+        builder.append(", ");
+      }
+      builder.append("DELETE = (");
+      delete.toGenericStatement(builder);
+      builder.append(")");
+      first = false;
+    }
+    if (execute != null) {
+      if (first) {
+        builder.append(" SET ");
+      } else {
+        builder.append(", ");
+      }
+      builder.append("EXECUTE = (");
+      execute.toGenericStatement(builder);
       builder.append(")");
       first = false;
     }

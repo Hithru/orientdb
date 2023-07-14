@@ -19,24 +19,24 @@
  */
 package com.orientechnologies.orient.server.network.protocol.http.command.patch;
 
+import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
 import com.orientechnologies.orient.core.record.ORecordInternal;
+import com.orientechnologies.orient.server.network.protocol.http.OHttpRequest;
+import com.orientechnologies.orient.server.network.protocol.http.OHttpResponse;
+import com.orientechnologies.orient.server.network.protocol.http.OHttpUtils;
+import com.orientechnologies.orient.server.network.protocol.http.command.OServerCommandDocumentAbstract;
 
-public class OServerCommandPatchDocument
-    extends com.orientechnologies.orient.server.network.protocol.http.command
-        .OServerCommandDocumentAbstract {
+public class OServerCommandPatchDocument extends OServerCommandDocumentAbstract {
   private static final String[] NAMES = {"PATCH|document/*"};
 
   @Override
-  public boolean execute(
-      final com.orientechnologies.orient.server.network.protocol.http.OHttpRequest iRequest,
-      com.orientechnologies.orient.server.network.protocol.http.OHttpResponse iResponse)
-      throws Exception {
+  public boolean execute(final OHttpRequest iRequest, OHttpResponse iResponse) throws Exception {
     final String[] urlParts =
         checkSyntax(iRequest.getUrl(), 2, "Syntax error: document/<database>[/<record-id>]");
 
     iRequest.getData().commandInfo = "Edit Document";
 
-    com.orientechnologies.orient.core.db.document.ODatabaseDocument db = null;
+    ODatabaseDocument db = null;
     com.orientechnologies.orient.core.id.ORecordId recordId;
     final com.orientechnologies.orient.core.record.impl.ODocument doc;
 
@@ -74,11 +74,9 @@ public class OServerCommandPatchDocument
 
       if (currentDocument == null) {
         iResponse.send(
-            com.orientechnologies.orient.server.network.protocol.http.OHttpUtils
-                .STATUS_NOTFOUND_CODE,
-            com.orientechnologies.orient.server.network.protocol.http.OHttpUtils
-                .STATUS_NOTFOUND_DESCRIPTION,
-            com.orientechnologies.orient.server.network.protocol.http.OHttpUtils.CONTENT_TEXT_PLAIN,
+            OHttpUtils.STATUS_NOTFOUND_CODE,
+            OHttpUtils.STATUS_NOTFOUND_DESCRIPTION,
+            OHttpUtils.CONTENT_TEXT_PLAIN,
             "Record " + recordId + " was not found.",
             null);
         return false;
@@ -91,13 +89,11 @@ public class OServerCommandPatchDocument
       currentDocument.save();
 
       iResponse.send(
-          com.orientechnologies.orient.server.network.protocol.http.OHttpUtils.STATUS_OK_CODE,
-          com.orientechnologies.orient.server.network.protocol.http.OHttpUtils
-              .STATUS_OK_DESCRIPTION,
-          com.orientechnologies.orient.server.network.protocol.http.OHttpUtils.CONTENT_TEXT_PLAIN,
+          OHttpUtils.STATUS_OK_CODE,
+          OHttpUtils.STATUS_OK_DESCRIPTION,
+          OHttpUtils.CONTENT_TEXT_PLAIN,
           currentDocument.toJSON(),
-          com.orientechnologies.orient.server.network.protocol.http.OHttpUtils.HEADER_ETAG
-              + doc.getVersion());
+          OHttpUtils.HEADER_ETAG + doc.getVersion());
 
     } finally {
       if (db != null) db.close();

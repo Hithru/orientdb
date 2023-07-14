@@ -11,19 +11,7 @@ import com.orientechnologies.orient.core.command.script.OCommandScriptException;
 import com.orientechnologies.orient.core.config.OContextConfiguration;
 import com.orientechnologies.orient.core.config.OGlobalConfiguration;
 import com.orientechnologies.orient.core.conflict.ORecordConflictStrategy;
-import com.orientechnologies.orient.core.db.ODatabase;
-import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
-import com.orientechnologies.orient.core.db.ODatabaseInternal;
-import com.orientechnologies.orient.core.db.ODatabaseListener;
-import com.orientechnologies.orient.core.db.ODatabaseRecordThreadLocal;
-import com.orientechnologies.orient.core.db.ODatabaseType;
-import com.orientechnologies.orient.core.db.OLiveQueryMonitor;
-import com.orientechnologies.orient.core.db.OLiveQueryResultListener;
-import com.orientechnologies.orient.core.db.OSharedContext;
-import com.orientechnologies.orient.core.db.OrientDB;
-import com.orientechnologies.orient.core.db.OrientDBConfig;
-import com.orientechnologies.orient.core.db.OrientDBConfigBuilder;
-import com.orientechnologies.orient.core.db.OrientDBInternal;
+import com.orientechnologies.orient.core.db.*;
 import com.orientechnologies.orient.core.db.record.OCurrentStorageComponentsFactory;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.dictionary.ODictionary;
@@ -58,7 +46,6 @@ import com.orientechnologies.orient.core.serialization.serializer.record.ORecord
 import com.orientechnologies.orient.core.shutdown.OShutdownHandler;
 import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 import com.orientechnologies.orient.core.sql.executor.OResultSet;
-import com.orientechnologies.orient.core.storage.OBasicTransaction;
 import com.orientechnologies.orient.core.storage.ORecordCallback;
 import com.orientechnologies.orient.core.storage.ORecordMetadata;
 import com.orientechnologies.orient.core.storage.OStorage;
@@ -73,20 +60,9 @@ import com.orientechnologies.orient.core.util.OURLHelper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 /** Created by tglman on 20/07/16. @Deprecated use {@link OrientDB} instead. */
@@ -114,7 +90,7 @@ public class ODatabaseDocumentTx implements ODatabaseDocumentInternal {
   protected final AtomicReference<Thread> owner = new AtomicReference<Thread>();
   private final boolean ownerProtection;
 
-  private static OShutdownHandler shutdownHandler =
+  private static final OShutdownHandler shutdownHandler =
       new OShutdownHandler() {
         @Override
         public void shutdown() throws Exception {
@@ -248,7 +224,7 @@ public class ODatabaseDocumentTx implements ODatabaseDocumentInternal {
       ORID rid, int recordVersion, String fetchPlan, boolean ignoreCache)
       throws ORecordNotFoundException {
     checkOpenness();
-    return (RET) internal.loadIfVersionIsNotLatest(rid, recordVersion, fetchPlan, ignoreCache);
+    return internal.loadIfVersionIsNotLatest(rid, recordVersion, fetchPlan, ignoreCache);
   }
 
   @Override
@@ -425,12 +401,6 @@ public class ODatabaseDocumentTx implements ODatabaseDocumentInternal {
   }
 
   @Override
-  public OBasicTransaction getMicroOrRegularTransaction() {
-    checkOpenness();
-    return internal.getMicroOrRegularTransaction();
-  }
-
-  @Override
   public void setUser(OSecurityUser user) {
     internal.setUser(user);
   }
@@ -480,6 +450,9 @@ public class ODatabaseDocumentTx implements ODatabaseDocumentInternal {
 
   @Override
   public OSharedContext getSharedContext() {
+    if (internal == null) {
+      return null;
+    }
     return internal.getSharedContext();
   }
 
@@ -918,17 +891,14 @@ public class ODatabaseDocumentTx implements ODatabaseDocumentInternal {
       if ("remote".equals(type)) {
         factory = getOrCreateRemoteFactory(baseUrl);
         OrientDBConfig config = buildConfig(null);
-        internal =
-            (ODatabaseDocumentInternal) factory.open(dbName, iUserName, iUserPassword, config);
+        internal = factory.open(dbName, iUserName, iUserPassword, config);
 
       } else {
         factory = getOrCreateEmbeddedFactory(baseUrl, null);
         OrientDBConfig config = buildConfig(null);
-        internal =
-            (ODatabaseDocumentInternal) factory.open(dbName, iUserName, iUserPassword, config);
+        internal = factory.open(dbName, iUserName, iUserPassword, config);
       }
       if (databaseOwner != null) internal.setDatabaseOwner(databaseOwner);
-      if (intent != null) internal.declareIntent(intent);
       if (conflictStrategy != null) internal.setConflictStrategy(conflictStrategy);
       if (serializer != null) internal.setSerializer(serializer);
       for (Entry<String, Object> pro : preopenProperties.entrySet())
@@ -980,7 +950,7 @@ public class ODatabaseDocumentTx implements ODatabaseDocumentInternal {
         factory.create(dbName, null, null, ODatabaseType.MEMORY, config);
         OrientDBConfig openConfig =
             OrientDBConfig.builder().fromContext(config.getConfigurations()).build();
-        internal = (ODatabaseDocumentInternal) factory.open(dbName, "admin", "admin", openConfig);
+        internal = factory.open(dbName, "admin", "admin", openConfig);
         for (Map.Entry<ATTRIBUTES, Object> attr : preopenAttributes.entrySet()) {
           internal.set(attr.getKey(), attr.getValue());
         }
@@ -994,7 +964,7 @@ public class ODatabaseDocumentTx implements ODatabaseDocumentInternal {
         factory.create(dbName, null, null, ODatabaseType.PLOCAL, config);
         OrientDBConfig openConfig =
             OrientDBConfig.builder().fromContext(config.getConfigurations()).build();
-        internal = (ODatabaseDocumentInternal) factory.open(dbName, "admin", "admin", openConfig);
+        internal = factory.open(dbName, "admin", "admin", openConfig);
         for (Map.Entry<ATTRIBUTES, Object> attr : preopenAttributes.entrySet()) {
           internal.set(attr.getKey(), attr.getValue());
         }
@@ -1004,7 +974,6 @@ public class ODatabaseDocumentTx implements ODatabaseDocumentInternal {
         }
       }
       if (databaseOwner != null) internal.setDatabaseOwner(databaseOwner);
-      if (intent != null) internal.declareIntent(intent);
       if (conflictStrategy != null) internal.setConflictStrategy(conflictStrategy);
       if (serializer != null) internal.setSerializer(serializer);
       for (Entry<String, Object> pro : preopenProperties.entrySet())
@@ -1370,7 +1339,7 @@ public class ODatabaseDocumentTx implements ODatabaseDocumentInternal {
 
   public void setSerializer(ORecordSerializer serializer) {
     if (internal != null) {
-      ((ODatabaseDocumentAbstract) internal).setSerializer(serializer);
+      internal.setSerializer(serializer);
     } else {
       this.serializer = serializer;
     }
@@ -1431,6 +1400,7 @@ public class ODatabaseDocumentTx implements ODatabaseDocumentInternal {
     for (Map.Entry<ATTRIBUTES, Object> attr : preopenAttributes.entrySet()) {
       builder.addAttribute(attr.getKey(), attr.getValue());
     }
+    builder.addConfig(OGlobalConfiguration.CREATE_DEFAULT_USERS, true);
 
     for (ODatabaseListener oDatabaseListener : preopenListener) {
       builder.addListener(oDatabaseListener);
@@ -1643,11 +1613,44 @@ public class ODatabaseDocumentTx implements ODatabaseDocumentInternal {
 
   @Override
   public boolean isRemote() {
+    if (internal == null) {
+      return "remote".equals(type);
+    }
     return internal.isRemote();
   }
 
   @Override
   public OStorageInfo getStorageInfo() {
-    return getStorage();
+    return internal.getStorageInfo();
+  }
+
+  @Override
+  public boolean dropClusterInternal(int clusterId) {
+    return internal.dropClusterInternal(clusterId);
+  }
+
+  @Override
+  public long[] getClusterDataRange(int currentClusterId) {
+    return internal.getClusterDataRange(currentClusterId);
+  }
+
+  @Override
+  public long getLastClusterPosition(int clusterId) {
+    return internal.getLastClusterPosition(clusterId);
+  }
+
+  @Override
+  public void setDefaultClusterId(int addCluster) {
+    internal.setDefaultClusterId(addCluster);
+  }
+
+  @Override
+  public String getClusterRecordConflictStrategy(int clusterId) {
+    return internal.getClusterRecordConflictStrategy(clusterId);
+  }
+
+  @Override
+  public int[] getClustersIds(Set<String> filterClusters) {
+    return internal.getClustersIds(filterClusters);
   }
 }

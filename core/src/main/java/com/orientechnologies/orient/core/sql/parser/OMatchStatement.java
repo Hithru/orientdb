@@ -11,8 +11,8 @@ import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.command.OCommandExecutor;
 import com.orientechnologies.orient.core.command.OCommandRequest;
 import com.orientechnologies.orient.core.command.OCommandRequestText;
-import com.orientechnologies.orient.core.db.ODatabase;
 import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
+import com.orientechnologies.orient.core.db.ODatabaseSession;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.exception.OCommandExecutionException;
@@ -23,6 +23,7 @@ import com.orientechnologies.orient.core.metadata.security.ORole;
 import com.orientechnologies.orient.core.metadata.security.ORule;
 import com.orientechnologies.orient.core.record.ORecord;
 import com.orientechnologies.orient.core.record.impl.ODocument;
+import com.orientechnologies.orient.core.record.impl.ODocumentInternal;
 import com.orientechnologies.orient.core.sql.OCommandExecutorSQLResultsetDelegate;
 import com.orientechnologies.orient.core.sql.OCommandExecutorSQLSelect;
 import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
@@ -58,6 +59,29 @@ public class OMatchStatement extends OStatement implements OCommandExecutor, OIt
   static final String DEFAULT_ALIAS_PREFIX = "$ORIENT_DEFAULT_ALIAS_";
 
   private OSQLAsynchQuery<ODocument> request;
+  public static final String KEYWORD_MATCH = "MATCH";
+  // parsed data
+  protected List<OMatchExpression> matchExpressions = new ArrayList<>();
+  protected List<OMatchExpression> notMatchExpressions = new ArrayList<>();
+  protected List<OExpression> returnItems = new ArrayList<>();
+  protected List<OIdentifier> returnAliases = new ArrayList<>();
+  protected List<ONestedProjection> returnNestedProjections = new ArrayList<>();
+  protected boolean returnDistinct = false;
+  protected OGroupBy groupBy;
+  protected OOrderBy orderBy;
+  protected OUnwind unwind;
+  protected OSkip skip;
+  protected OLimit limit;
+
+  // post-parsing generated data
+  protected Pattern pattern;
+
+  private Map<String, OWhereClause> aliasFilters;
+  private Map<String, String> aliasClasses;
+
+  // execution data
+  private OCommandContext context;
+  private OProgressListener progressListener;
 
   long threshold = 20;
   private int limitFromProtocol = -1;
@@ -68,6 +92,26 @@ public class OMatchStatement extends OStatement implements OCommandExecutor, OIt
 
   public void setReturnNestedProjections(List<ONestedProjection> returnNestedProjections) {
     this.returnNestedProjections = returnNestedProjections;
+  }
+
+  public void addMatchExpression(OMatchExpression exp) {
+    this.matchExpressions.add(exp);
+  }
+
+  public void addNotMatchExpression(OMatchExpression exp) {
+    this.notMatchExpressions.add(exp);
+  }
+
+  public void addReturnNestedProjection(ONestedProjection projection) {
+    this.returnNestedProjections.add(projection);
+  }
+
+  public void addReturnItem(OExpression item) {
+    this.returnItems.add(item);
+  }
+
+  public void addReturnAlias(OIdentifier alias) {
+    this.returnAliases.add(alias);
   }
 
   public class MatchContext {
@@ -114,30 +158,6 @@ public class OMatchStatement extends OStatement implements OCommandExecutor, OIt
     public String rootAlias;
   }
 
-  public static final String KEYWORD_MATCH = "MATCH";
-  // parsed data
-  protected List<OMatchExpression> matchExpressions = new ArrayList<>();
-  protected List<OMatchExpression> notMatchExpressions = new ArrayList<>();
-  protected List<OExpression> returnItems = new ArrayList<>();
-  protected List<OIdentifier> returnAliases = new ArrayList<>();
-  protected List<ONestedProjection> returnNestedProjections = new ArrayList<>();
-  protected boolean returnDistinct = false;
-  protected OGroupBy groupBy;
-  protected OOrderBy orderBy;
-  protected OUnwind unwind;
-  protected OSkip skip;
-  protected OLimit limit;
-
-  // post-parsing generated data
-  protected Pattern pattern;
-
-  private Map<String, OWhereClause> aliasFilters;
-  private Map<String, String> aliasClasses;
-
-  // execution data
-  private OCommandContext context;
-  private OProgressListener progressListener;
-
   public OMatchStatement() {
     super(-1);
   }
@@ -152,7 +172,7 @@ public class OMatchStatement extends OStatement implements OCommandExecutor, OIt
 
   @Override
   public OResultSet execute(
-      ODatabase db, Object[] args, OCommandContext parentCtx, boolean usePlanCache) {
+      ODatabaseSession db, Object[] args, OCommandContext parentCtx, boolean usePlanCache) {
     OBasicCommandContext ctx = new OBasicCommandContext();
     if (parentCtx != null) {
       ctx.setParentWithoutOverridingChild(parentCtx);
@@ -177,7 +197,7 @@ public class OMatchStatement extends OStatement implements OCommandExecutor, OIt
 
   @Override
   public OResultSet execute(
-      ODatabase db, Map params, OCommandContext parentCtx, boolean usePlanCache) {
+      ODatabaseSession db, Map params, OCommandContext parentCtx, boolean usePlanCache) {
     OBasicCommandContext ctx = new OBasicCommandContext();
     if (parentCtx != null) {
       ctx.setParentWithoutOverridingChild(parentCtx);
@@ -198,6 +218,7 @@ public class OMatchStatement extends OStatement implements OCommandExecutor, OIt
     OMatchExecutionPlanner planner = new OMatchExecutionPlanner(this);
     OInternalExecutionPlan result = planner.createExecutionPlan(ctx, enableProfiling);
     result.setStatement(originalStatement);
+    result.setGenericStatement(this.toGenericStatement());
     return result;
   }
 
@@ -236,7 +257,7 @@ public class OMatchStatement extends OStatement implements OCommandExecutor, OIt
       if (db == null) {
         osql = new OrientSql(is);
       } else {
-        osql = new OrientSql(is, db.getStorage().getConfiguration().getCharset());
+        osql = new OrientSql(is, db.getStorageInfo().getConfiguration().getCharset());
       }
     } catch (UnsupportedEncodingException e) {
       OLogManager.instance()
@@ -245,7 +266,7 @@ public class OMatchStatement extends OStatement implements OCommandExecutor, OIt
               "Invalid charset for database "
                   + getDatabase()
                   + " "
-                  + getDatabase().getStorage().getConfiguration().getCharset());
+                  + getDatabase().getStorageInfo().getConfiguration().getCharset());
       osql = new OrientSql(is);
     }
 
@@ -1024,7 +1045,7 @@ public class OMatchStatement extends OStatement implements OCommandExecutor, OIt
       return false;
     }
     if (record instanceof ODocument) {
-      OClass schemaClass = ((ODocument) record).getSchemaClass();
+      OClass schemaClass = ODocumentInternal.getImmutableSchemaClass(((ODocument) record));
       if (schemaClass == null) {
         return false;
       }
@@ -1404,7 +1425,7 @@ public class OMatchStatement extends OStatement implements OCommandExecutor, OIt
     allAliases.addAll(aliasClasses.keySet());
     allAliases.addAll(aliasFilters.keySet());
 
-    OSchema schema = getDatabase().getMetadata().getSchema();
+    OSchema schema = getDatabase().getMetadata().getImmutableSchemaSnapshot();
 
     Map<String, Long> result = new LinkedHashMap<String, Long>();
     for (String alias : allAliases) {
@@ -1642,6 +1663,62 @@ public class OMatchStatement extends OStatement implements OCommandExecutor, OIt
     if (limit != null) {
       builder.append(" ");
       limit.toString(params, builder);
+    }
+  }
+
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append(KEYWORD_MATCH);
+    builder.append(" ");
+    boolean first = true;
+    for (OMatchExpression expr : this.matchExpressions) {
+      if (!first) {
+        builder.append(", ");
+      }
+      expr.toGenericStatement(builder);
+      first = false;
+    }
+    builder.append(" RETURN ");
+    if (returnDistinct) {
+      builder.append("DISTINCT ");
+    }
+    first = true;
+    int i = 0;
+    for (OExpression expr : this.returnItems) {
+      if (!first) {
+        builder.append(", ");
+      }
+      expr.toGenericStatement(builder);
+      if (returnNestedProjections != null
+          && i < returnNestedProjections.size()
+          && returnNestedProjections.get(i) != null) {
+        returnNestedProjections.get(i).toGenericStatement(builder);
+      }
+      if (returnAliases != null && i < returnAliases.size() && returnAliases.get(i) != null) {
+        builder.append(" AS ");
+        returnAliases.get(i).toGenericStatement(builder);
+      }
+      i++;
+      first = false;
+    }
+    if (groupBy != null) {
+      builder.append(" ");
+      groupBy.toGenericStatement(builder);
+    }
+    if (orderBy != null) {
+      builder.append(" ");
+      orderBy.toGenericStatement(builder);
+    }
+    if (unwind != null) {
+      builder.append(" ");
+      unwind.toGenericStatement(builder);
+    }
+    if (skip != null) {
+      builder.append(" ");
+      skip.toGenericStatement(builder);
+    }
+    if (limit != null) {
+      builder.append(" ");
+      limit.toGenericStatement(builder);
     }
   }
 

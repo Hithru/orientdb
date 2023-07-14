@@ -28,18 +28,17 @@ import com.orientechnologies.orient.core.db.ODatabaseLifecycleListener;
 import com.orientechnologies.orient.core.exception.OConfigurationException;
 import com.orientechnologies.orient.core.index.OIndexFactory;
 import com.orientechnologies.orient.core.index.OIndexInternal;
+import com.orientechnologies.orient.core.index.OIndexMetadata;
 import com.orientechnologies.orient.core.index.engine.OBaseIndexEngine;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.storage.OStorage;
 import com.orientechnologies.orient.core.storage.impl.local.OAbstractPaginatedStorage;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 
 public class OLuceneIndexFactory implements OIndexFactory, ODatabaseLifecycleListener {
-
   public static final String LUCENE_ALGORITHM = "LUCENE";
 
   private static final Set<String> TYPES;
@@ -81,24 +80,22 @@ public class OLuceneIndexFactory implements OIndexFactory, ODatabaseLifecycleLis
   }
 
   @Override
-  public OIndexInternal createIndex(
-      String name,
-      OStorage storage,
-      String indexType,
-      String algorithm,
-      String valueContainerAlgorithm,
-      ODocument metadata,
-      int version)
+  public OIndexInternal createIndex(OStorage storage, OIndexMetadata im, int version)
       throws OConfigurationException {
+    final String name = im.getName();
+    ODocument metadata = im.getMetadata();
+    final String indexType = im.getType();
+    final String algorithm = im.getAlgorithm();
+    String valueContainerAlgorithm = im.getValueContainerAlgorithm();
 
-    OAbstractPaginatedStorage pagStorage = (OAbstractPaginatedStorage) storage.getUnderlying();
+    OAbstractPaginatedStorage pagStorage = (OAbstractPaginatedStorage) storage;
 
     if (metadata == null)
       metadata = new ODocument().field("analyzer", StandardAnalyzer.class.getName());
 
     if (FULLTEXT.toString().equalsIgnoreCase(indexType)) {
       final int binaryFormatVersion = pagStorage.getConfiguration().getBinaryFormatVersion();
-      OLuceneFullTextIndex index =
+      final OLuceneFullTextIndex index =
           new OLuceneFullTextIndex(
               name,
               indexType,
@@ -119,12 +116,9 @@ public class OLuceneIndexFactory implements OIndexFactory, ODatabaseLifecycleLis
       int indexId,
       String algorithm,
       String indexName,
-      Boolean durableInNonTxMode,
       OStorage storage,
       int version,
-      int apiVersion,
-      boolean multiValue,
-      Map<String, String> engineProperties) {
+      boolean multiValue) {
 
     return new OLuceneFullTextIndexEngine(storage, indexName, indexId);
   }

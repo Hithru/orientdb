@@ -46,6 +46,7 @@ import com.orientechnologies.orient.core.tx.OTransactionAbstract;
 import com.orientechnologies.orient.core.tx.OTransactionData;
 import com.orientechnologies.orient.core.tx.OTransactionInternal;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
@@ -269,6 +270,7 @@ public interface ODatabaseDocumentInternal extends ODatabaseSession, ODatabaseIn
     throw new UnsupportedOperationException();
   }
 
+<<<<<<< HEAD
   default boolean isCommandInterrupted() {
     return false;
   }
@@ -280,4 +282,29 @@ public interface ODatabaseDocumentInternal extends ODatabaseSession, ODatabaseIn
   }
 
   default void setCommandInterruptionDepth(int commandInterruptionDepth) {}
+=======
+  default boolean isLocalEnv() {
+    return true;
+  }
+
+  boolean dropClusterInternal(int clusterId);
+
+  default String getStorageId() {
+    return getName();
+  }
+
+  long[] getClusterDataRange(int currentClusterId);
+
+  void setDefaultClusterId(int addCluster);
+
+  long getLastClusterPosition(int clusterId);
+
+  String getClusterRecordConflictStrategy(int clusterId);
+
+  int[] getClustersIds(Set<String> filterClusters);
+
+  default void startEsclusiveMetadataChange() {}
+
+  default void endEsclusiveMetadataChange() {}
+>>>>>>> develop
 }

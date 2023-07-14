@@ -29,20 +29,26 @@ import java.util.stream.Collectors;
 
 /** Created by luigidellaquila on 06/07/16. */
 public class OResultInternal implements OResult {
-  protected Map<String, Object> content = new LinkedHashMap<>();
+  protected Map<String, Object> content;
   protected Map<String, Object> temporaryContent;
   protected Map<String, Object> metadata;
   protected OIdentifiable element;
 
-  public OResultInternal() {}
+  public OResultInternal() {
+    content = new LinkedHashMap<>();
+  }
 
   public OResultInternal(OIdentifiable ident) {
-    this.element = ident;
+    setElement(ident);
   }
 
   public void setProperty(String name, Object value) {
+    assert element == null;
     if (value instanceof Optional) {
       value = ((Optional) value).orElse(null);
+    }
+    if (content == null) {
+      throw new IllegalStateException("Impossible to mutate result set");
     }
     checkType(value);
     if (value instanceof OResult && ((OResult) value).isElement()) {
@@ -101,12 +107,14 @@ public class OResultInternal implements OResult {
   }
 
   public void removeProperty(String name) {
-    content.remove(name);
+    if (content != null) {
+      content.remove(name);
+    }
   }
 
   public <T> T getProperty(String name) {
     T result = null;
-    if (content.containsKey(name)) {
+    if (content != null && content.containsKey(name)) {
       result = (T) wrap(content.get(name));
     } else if (element != null) {
       result = (T) wrap(((ODocument) element.getRecord()).getProperty(name));
@@ -120,7 +128,7 @@ public class OResultInternal implements OResult {
   @Override
   public OElement getElementProperty(String name) {
     Object result = null;
-    if (content.containsKey(name)) {
+    if (content != null && content.containsKey(name)) {
       result = content.get(name);
     } else if (element != null) {
       result = ((ODocument) element.getRecord()).getProperty(name);
@@ -140,7 +148,7 @@ public class OResultInternal implements OResult {
   @Override
   public OVertex getVertexProperty(String name) {
     Object result = null;
-    if (content.containsKey(name)) {
+    if (content != null && content.containsKey(name)) {
       result = content.get(name);
     } else if (element != null) {
       result = ((ODocument) element.getRecord()).getProperty(name);
@@ -160,7 +168,7 @@ public class OResultInternal implements OResult {
   @Override
   public OEdge getEdgeProperty(String name) {
     Object result = null;
-    if (content.containsKey(name)) {
+    if (content != null && content.containsKey(name)) {
       result = content.get(name);
     } else if (element != null) {
       result = ((ODocument) element.getRecord()).getProperty(name);
@@ -180,7 +188,7 @@ public class OResultInternal implements OResult {
   @Override
   public OBlob getBlobProperty(String name) {
     Object result = null;
-    if (content.containsKey(name)) {
+    if (content != null && content.containsKey(name)) {
       result = content.get(name);
     } else if (element != null) {
       result = ((ODocument) element.getRecord()).getProperty(name);
@@ -233,19 +241,23 @@ public class OResultInternal implements OResult {
   }
 
   public Set<String> getPropertyNames() {
-    Set<String> result = new LinkedHashSet<>();
     if (element != null && !(element instanceof ORecordBytes)) {
-      result.addAll(((ODocument) element.getRecord()).getPropertyNames());
+      return ((ODocument) element.getRecord()).getPropertyNames();
+    } else if (content != null) {
+      return new LinkedHashSet<>(content.keySet());
+    } else {
+      return Collections.emptySet();
     }
-    result.addAll(content.keySet());
-    return result;
   }
 
   public boolean hasProperty(String propName) {
     if (element != null && ((ODocument) element.getRecord()).containsField(propName)) {
       return true;
     }
-    return content.containsKey(propName);
+    if (content != null) {
+      return content.containsKey(propName);
+    }
+    return false;
   }
 
   @Override
@@ -412,14 +424,13 @@ public class OResultInternal implements OResult {
   public void setElement(OIdentifiable element) {
     if (element instanceof OElement) {
       this.element = element;
-    } else if (element instanceof OIdentifiable) {
-      this.element = element.getRecord();
     } else {
-      this.element = element;
+      this.element = element.getRecord();
     }
     if (element instanceof OContextualRecordId) {
       this.addMetadata(((OContextualRecordId) element).getContext());
     }
+    this.content = null;
   }
 
   @Override
@@ -452,7 +463,11 @@ public class OResultInternal implements OResult {
       if (resultObj.getElement().isPresent()) {
         return false;
       }
-      return this.content.equals(resultObj.content);
+      if (content != null) {
+        return this.content.equals(resultObj.content);
+      } else {
+        return resultObj.content == null;
+      }
     }
   }
 
@@ -461,7 +476,11 @@ public class OResultInternal implements OResult {
     if (element != null) {
       return element.hashCode();
     }
-    return content.hashCode();
+    if (content != null) {
+      return content.hashCode();
+    } else {
+      return super.hashCode();
+    }
   }
 
   public void bindToCache(ODatabaseDocumentInternal db) {

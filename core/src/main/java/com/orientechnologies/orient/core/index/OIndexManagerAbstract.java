@@ -21,82 +21,39 @@ package com.orientechnologies.orient.core.index;
 
 import com.orientechnologies.common.concur.resource.OCloseable;
 import com.orientechnologies.common.listener.OProgressListener;
-import com.orientechnologies.common.log.OLogManager;
-import com.orientechnologies.common.util.OMultiKey;
-import com.orientechnologies.orient.core.config.OStorageConfiguration;
 import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
-import com.orientechnologies.orient.core.db.ODatabaseRecordThreadLocal;
-import com.orientechnologies.orient.core.db.OMetadataUpdateListener;
-import com.orientechnologies.orient.core.db.OScenarioThreadLocal;
-import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
 import com.orientechnologies.orient.core.dictionary.ODictionary;
-import com.orientechnologies.orient.core.exception.OConcurrentModificationException;
-import com.orientechnologies.orient.core.id.ORecordId;
-import com.orientechnologies.orient.core.metadata.OMetadata;
-import com.orientechnologies.orient.core.metadata.OMetadataDefault;
-import com.orientechnologies.orient.core.metadata.OMetadataInternal;
-import com.orientechnologies.orient.core.metadata.schema.OClass;
-import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.ORecord;
 import com.orientechnologies.orient.core.record.impl.ODocument;
+<<<<<<< HEAD
 import com.orientechnologies.orient.core.storage.OStorage;
 import com.orientechnologies.orient.core.type.ODocumentWrapper;
 import com.orientechnologies.orient.core.type.ODocumentWrapperNoClass;
 import java.util.ArrayList;
 import java.util.Arrays;
+=======
+>>>>>>> develop
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Abstract class to manage indexes.
  *
  * @author Luca Garulli (l.garulli--(at)--orientdb.com)
  */
-@SuppressWarnings({"unchecked"})
-public abstract class OIndexManagerAbstract extends ODocumentWrapperNoClass implements OCloseable {
+public interface OIndexManagerAbstract extends OCloseable {
   public static final String CONFIG_INDEXES = "indexes";
   public static final String DICTIONARY_NAME = "dictionary";
 
-  // values of this Map should be IMMUTABLE !! for thread safety reasons.
-  protected final Map<String, Map<OMultiKey, Set<OIndex>>> classPropertyIndex =
-      new ConcurrentHashMap<>();
-  protected Map<String, OIndex> indexes = new ConcurrentHashMap<>();
-  protected String defaultClusterName = OMetadataDefault.CLUSTER_INDEX_NAME;
-  protected String manualClusterName = OMetadataDefault.CLUSTER_MANUAL_INDEX_NAME;
-  private AtomicInteger writeLockNesting = new AtomicInteger();
-  private ReadWriteLock lock = new ReentrantReadWriteLock();
+  void recreateIndexes(ODatabaseDocumentInternal database);
 
-  @SuppressWarnings("WeakerAccess")
-  public OIndexManagerAbstract() {
-    super(new ODocument().setTrackingChanges(false));
-  }
-
-  public abstract void recreateIndexes(ODatabaseDocumentInternal database);
-
-  @Override
-  public void load() {
+  default void create() {
     throw new UnsupportedOperationException();
   }
 
-  public OIndexManagerAbstract load(ODatabaseDocumentInternal database) {
-    if (!autoRecreateIndexesAfterCrash(database)) {
-      acquireExclusiveLock();
-      try {
-        if (database.getStorage().getConfiguration().getIndexMgrRecordId() == null)
-          // @COMPATIBILITY: CREATE THE INDEX MGR
-          create(database);
+  boolean autoRecreateIndexesAfterCrash(ODatabaseDocumentInternal database);
 
+<<<<<<< HEAD
         // RELOAD IT
         ((ORecordId) document.getIdentity())
             .fromString(database.getStorage().getConfiguration().getIndexMgrRecordId());
@@ -562,6 +519,9 @@ public abstract class OIndexManagerAbstract extends ODocumentWrapperNoClass impl
   }
 
   public abstract OIndex createIndex(
+=======
+  OIndex createIndex(
+>>>>>>> develop
       ODatabaseDocumentInternal database,
       final String iName,
       final String iType,
@@ -570,7 +530,7 @@ public abstract class OIndexManagerAbstract extends ODocumentWrapperNoClass impl
       final OProgressListener progressListener,
       ODocument metadata);
 
-  public abstract OIndex createIndex(
+  OIndex createIndex(
       ODatabaseDocumentInternal database,
       final String iName,
       final String iType,
@@ -580,9 +540,66 @@ public abstract class OIndexManagerAbstract extends ODocumentWrapperNoClass impl
       ODocument metadata,
       String algorithm);
 
-  public abstract void waitTillIndexRestore();
+  void waitTillIndexRestore();
 
-  public abstract void removeClassPropertyIndex(OIndex idx);
+  void removeClassPropertyIndex(OIndex idx);
 
-  public abstract void dropIndex(ODatabaseDocumentInternal database, String iIndexName);
+  void dropIndex(ODatabaseDocumentInternal database, String iIndexName);
+
+  void reload();
+
+  void addClusterToIndex(String clusterName, String indexName);
+
+  void load(ODatabaseDocumentInternal database);
+
+  void removeClusterFromIndex(String clusterName, String indexName);
+
+  void save();
+
+  void getClassRawIndexes(String name, Collection<OIndex> indexes2);
+
+  ODocument getConfiguration();
+
+  String getDefaultClusterName();
+
+  void setDefaultClusterName(ODatabaseDocumentInternal database, String defaultClusterName2);
+
+  ODictionary<ORecord> getDictionary(ODatabaseDocumentInternal database);
+
+  Set<OIndex> getClassInvolvedIndexes(
+      ODatabaseDocumentInternal database, String className, Collection<String> fields);
+
+  Set<OIndex> getClassInvolvedIndexes(
+      ODatabaseDocumentInternal database, String className, String... fields);
+
+  boolean areIndexed(String className, String... fields);
+
+  boolean areIndexed(final String className, final Collection<String> fields);
+
+  void getClassIndexes(
+      ODatabaseDocumentInternal database, String className, Collection<OIndex> indexes2);
+
+  Set<OIndex> getClassIndexes(ODatabaseDocumentInternal database, String className);
+
+  OIndex getClassIndex(ODatabaseDocumentInternal database, String className, String indexName);
+
+  OIndexUnique getClassUniqueIndex(String className);
+
+  OIndex getClassAutoShardingIndex(ODatabaseDocumentInternal database, String className);
+
+  void create(ODatabaseDocumentInternal database);
+
+  Collection<? extends OIndex> getIndexes(ODatabaseDocumentInternal database);
+
+  OIndex getIndex(ODatabaseDocumentInternal database, String iName);
+
+  boolean existsIndex(String iName);
+
+  ODocument getDocument();
+
+  ODocument toStream();
+
+  OIndex getRawIndex(String indexName);
+
+  OIndex preProcessBeforeReturn(ODatabaseDocumentInternal database, OIndex index);
 }

@@ -15,9 +15,8 @@
  */
 package com.orientechnologies.orient.server.distributed;
 
-import com.orientechnologies.orient.core.db.ODatabaseType;
-import com.orientechnologies.orient.core.db.OrientDBConfig;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
+import com.orientechnologies.orient.setup.ServerRun;
 import org.junit.Test;
 
 /** Distributed test on drop + recreate database with a different name. */
@@ -25,6 +24,7 @@ public class DistributedDbDropAndReCreateAnotherIT extends AbstractServerCluster
   static final int SERVERS = 3;
   private int lastServerNum = 0;
 
+  // TODO: is distributed
   @Test
   public void test() throws Exception {
     count = 10;
@@ -58,7 +58,10 @@ public class DistributedDbDropAndReCreateAnotherIT extends AbstractServerCluster
 
       server
           .getServerInstance()
-          .createDatabase(getDatabaseName(), ODatabaseType.PLOCAL, OrientDBConfig.defaultConfig());
+          .getContext()
+          .execute(
+              "create database ? plocal users(admin identified by 'admin' role admin)",
+              getDatabaseName());
 
       waitForDatabaseIsOnline(0, "europe-0", getDatabaseName(), 15000);
       waitForDatabaseIsOnline(0, "europe-1", getDatabaseName(), 15000);
@@ -76,8 +79,6 @@ public class DistributedDbDropAndReCreateAnotherIT extends AbstractServerCluster
     } while (lastServerNum < serverInstance.size());
 
     banner("EXECUTING FINAL TESTS");
-
-    dumpDistributedDatabaseCfgOfAllTheServers();
 
     Thread.sleep(10000);
 

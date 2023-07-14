@@ -27,6 +27,7 @@ import com.orientechnologies.orient.core.exception.OConfigurationException;
 import com.orientechnologies.orient.core.index.OIndex;
 import com.orientechnologies.orient.core.index.OIndexFactory;
 import com.orientechnologies.orient.core.index.OIndexInternal;
+import com.orientechnologies.orient.core.index.OIndexMetadata;
 import com.orientechnologies.orient.core.index.engine.OBaseIndexEngine;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OType;
@@ -38,7 +39,6 @@ import com.orientechnologies.spatial.index.OLuceneSpatialIndex;
 import com.orientechnologies.spatial.shape.OShapeFactory;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 
@@ -87,17 +87,15 @@ public class OLuceneSpatialIndexFactory implements OIndexFactory, ODatabaseLifec
   }
 
   @Override
-  public OIndexInternal createIndex(
-      String name,
-      OStorage storage,
-      String indexType,
-      String algorithm,
-      String valueContainerAlgorithm,
-      ODocument metadata,
-      int version)
+  public OIndexInternal createIndex(OStorage storage, OIndexMetadata im, int version)
       throws OConfigurationException {
+    final String name = im.getName();
+    ODocument metadata = im.getMetadata();
+    final String indexType = im.getType();
+    final String algorithm = im.getAlgorithm();
+    String valueContainerAlgorithm = im.getValueContainerAlgorithm();
 
-    OAbstractPaginatedStorage pagStorage = (OAbstractPaginatedStorage) storage.getUnderlying();
+    OAbstractPaginatedStorage pagStorage = (OAbstractPaginatedStorage) storage;
 
     OBinarySerializer<?> objectSerializer =
         storage
@@ -135,15 +133,11 @@ public class OLuceneSpatialIndexFactory implements OIndexFactory, ODatabaseLifec
       int indexId,
       String algorithm,
       String name,
-      Boolean durableInNonTxMode,
       OStorage storage,
       int version,
-      int apiVersion,
-      boolean multiValue,
-      Map<String, String> engineProperties) {
+      boolean multiValue) {
 
-    return new OLuceneSpatialIndexEngineDelegator(
-        indexId, name, durableInNonTxMode, storage, version);
+    return new OLuceneSpatialIndexEngineDelegator(indexId, name, storage, version);
   }
 
   @Override
@@ -173,7 +167,7 @@ public class OLuceneSpatialIndexFactory implements OIndexFactory, ODatabaseLifec
 
         if (idx.getInternal() instanceof OLuceneSpatialIndex) {
           OLogManager.instance().debug(this, "- index '%s'", idx.getName());
-          idx.delete();
+          internalDb.getMetadata().getIndexManager().dropIndex(idx.getName());
         }
       }
     } catch (Exception e) {

@@ -51,7 +51,7 @@ public class ODropPropertyStatement extends ODDLStatement {
     if (!indexes.isEmpty()) {
       if (force) {
         for (final OIndex index : indexes) {
-          index.delete();
+          database.getMetadata().getIndexManager().dropIndex(index.getName());
           OResultInternal result = new OResultInternal();
           result.setProperty("operation", "cascade drop index");
           result.setProperty("indexName", index.getName());
@@ -112,6 +112,20 @@ public class ODropPropertyStatement extends ODDLStatement {
     className.toString(params, builder);
     builder.append(".");
     propertyName.toString(params, builder);
+    if (ifExists) {
+      builder.append(" IF EXISTS");
+    }
+    if (force) {
+      builder.append(" FORCE");
+    }
+  }
+
+  @Override
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append("DROP PROPERTY ");
+    className.toGenericStatement(builder);
+    builder.append(".");
+    propertyName.toGenericStatement(builder);
     if (ifExists) {
       builder.append(" IF EXISTS");
     }

@@ -2,7 +2,8 @@ package com.orientechnologies.orient.core.metadata.security;
 
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.id.ORID;
-import com.orientechnologies.orient.core.record.impl.ODocument;
+import com.orientechnologies.orient.core.id.ORecordId;
+import com.orientechnologies.orient.core.metadata.security.ORule.ResourceGeneric;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -21,18 +22,42 @@ public class OImmutableRole implements OSecurityRole {
       new HashMap<ORule.ResourceGeneric, ORule>();
   private final String name;
   private final ORID rid;
-  private final ORole role;
+  private final Map<String, OSecurityPolicy> policies;
 
-  public OImmutableRole(ORole role) {
+  public OImmutableRole(OSecurityRole role) {
     if (role.getParentRole() == null) this.parentRole = null;
     else this.parentRole = new OImmutableRole(role.getParentRole());
 
     this.mode = role.getMode();
     this.name = role.getName();
     this.rid = role.getIdentity().getIdentity();
-    this.role = role;
 
     for (ORule rule : role.getRuleSet()) rules.put(rule.getResourceGeneric(), rule);
+    Map<String, OSecurityPolicy> policies = role.getPolicies();
+    if (policies != null) {
+      Map<String, OSecurityPolicy> result = new HashMap<String, OSecurityPolicy>();
+      policies
+          .entrySet()
+          .forEach(x -> result.put(x.getKey(), new OImmutableSecurityPolicy(x.getValue())));
+      this.policies = result;
+    } else {
+      this.policies = null;
+    }
+  }
+
+  public OImmutableRole(
+      OImmutableRole parent,
+      String name,
+      Map<ResourceGeneric, ORule> rules,
+      Map<String, OImmutableSecurityPolicy> policies) {
+    this.parentRole = parent;
+
+    this.mode = ALLOW_MODES.DENY_ALL_BUT;
+    this.name = name;
+    this.rid = new ORecordId(-1, -1);
+    this.rules.putAll(rules);
+    ;
+    this.policies = (Map<String, OSecurityPolicy>) (Map) policies;
   }
 
   public boolean allow(
@@ -157,7 +182,15 @@ public class OImmutableRole implements OSecurityRole {
   }
 
   @Override
-  public ODocument getDocument() {
-    return role.getDocument();
+  public Map<String, OSecurityPolicy> getPolicies() {
+    return policies;
+  }
+
+  @Override
+  public OSecurityPolicy getPolicy(String resource) {
+    if (policies == null) {
+      return null;
+    }
+    return policies.get(resource);
   }
 }

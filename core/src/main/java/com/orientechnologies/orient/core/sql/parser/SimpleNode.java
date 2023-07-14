@@ -6,8 +6,8 @@ import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
 import com.orientechnologies.orient.core.db.ODatabaseRecordThreadLocal;
 import java.util.Map;
 
-public class SimpleNode implements Node {
-
+public abstract class SimpleNode implements Node {
+  public static final String PARAMETER_PLACEHOLDER = "?";
   protected Node parent;
   protected Node[] children;
   protected int id;
@@ -84,21 +84,6 @@ public class SimpleNode implements Node {
     this.lastToken = token;
   }
 
-  /** Accept the visitor. */
-  public Object jjtAccept(OrientSqlVisitor visitor, Object data) {
-    return visitor.visit(this, data);
-  }
-
-  /** Accept the visitor. */
-  public Object childrenAccept(OrientSqlVisitor visitor, Object data) {
-    if (children != null) {
-      for (int i = 0; i < children.length; ++i) {
-        children[i].jjtAccept(visitor, data);
-      }
-    }
-    return data;
-  }
-
   /*
    * You can override these two methods in subclasses of SimpleNode to customize the way the node appears when the tree is dumped.
    * If your output uses more than one line you should override toString(String), otherwise overriding toString() is probably all
@@ -134,8 +119,14 @@ public class SimpleNode implements Node {
     return ODatabaseRecordThreadLocal.instance().get();
   }
 
-  public void toString(Map<Object, Object> params, StringBuilder builder) {
-    throw new UnsupportedOperationException("not implemented in " + getClass().getSimpleName());
+  public abstract void toString(Map<Object, Object> params, StringBuilder builder);
+
+  public abstract void toGenericStatement(StringBuilder builder);
+
+  public String toGenericStatement() {
+    StringBuilder builder = new StringBuilder();
+    toGenericStatement(builder);
+    return builder.toString();
   }
 
   public Object getValue() {

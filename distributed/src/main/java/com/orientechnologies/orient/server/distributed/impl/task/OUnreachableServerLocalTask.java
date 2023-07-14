@@ -47,12 +47,6 @@ public class OUnreachableServerLocalTask extends OAbstractRemoteTask {
     this.unreachableServer = unreachableServer;
   }
 
-  /** Execute the task with no concurrency. */
-  @Override
-  public int[] getPartitionKey() {
-    return ANY;
-  }
-
   @Override
   public Object execute(
       final ODistributedRequestId msgId,
@@ -68,8 +62,7 @@ public class OUnreachableServerLocalTask extends OAbstractRemoteTask {
         "Freeing all the resources owned by the unreachable server '%s'...",
         unreachableServer);
 
-    final ODistributedDatabase dDatabase =
-        iManager.getMessageService().getDatabase(database.getName());
+    final ODistributedDatabase dDatabase = iManager.getDatabase(database.getName());
 
     dDatabase.unlockResourcesOfServer(database, unreachableServer);
 

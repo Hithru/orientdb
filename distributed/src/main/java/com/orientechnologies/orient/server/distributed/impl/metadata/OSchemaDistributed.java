@@ -1,18 +1,13 @@
 package com.orientechnologies.orient.server.distributed.impl.metadata;
 
-import static com.orientechnologies.orient.core.config.OGlobalConfiguration.DISTRIBUTED_REPLICATION_PROTOCOL_VERSION;
-
-import com.orientechnologies.common.util.OPair;
 import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
-import com.orientechnologies.orient.core.db.OScenarioThreadLocal;
 import com.orientechnologies.orient.core.db.OSharedContext;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OClassImpl;
 import com.orientechnologies.orient.core.metadata.schema.OSchemaEmbedded;
-import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.metadata.schema.OViewConfig;
+import com.orientechnologies.orient.core.metadata.schema.OViewConfig.OViewIndexConfig.OIndexConfigProperty;
 import com.orientechnologies.orient.core.record.impl.ODocument;
-import com.orientechnologies.orient.core.storage.OAutoshardedStorage;
 import com.orientechnologies.orient.server.distributed.impl.ODatabaseDocumentDistributed;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -34,25 +29,22 @@ public class OSchemaDistributed extends OSchemaEmbedded {
   }
 
   public void acquireSchemaWriteLock(ODatabaseDocumentInternal database) {
-    if (isRunLocal(database)) {
-      return;
-    }
     if (executeThroughDistributedStorage(database)) {
-      ((OAutoshardedStorage) database.getStorage()).acquireDistributedExclusiveLock(0);
+      ((ODatabaseDocumentDistributed) database).acquireDistributedExclusiveLock(0);
+    } else {
+      super.acquireSchemaWriteLock(database);
     }
-    super.acquireSchemaWriteLock(database);
   }
 
   @Override
   public void releaseSchemaWriteLock(ODatabaseDocumentInternal database, final boolean iSave) {
-    if (isRunLocal(database)) {
-      return;
-    }
     try {
-      super.releaseSchemaWriteLock(database, iSave);
+      if (!executeThroughDistributedStorage(database)) {
+        super.releaseSchemaWriteLock(database, iSave);
+      }
     } finally {
       if (executeThroughDistributedStorage(database)) {
-        ((OAutoshardedStorage) database.getStorage()).releaseDistributedExclusiveLock();
+        ((ODatabaseDocumentDistributed) database).releaseDistributedExclusiveLock();
       }
     }
   }
@@ -65,13 +57,6 @@ public class OSchemaDistributed extends OSchemaEmbedded {
       cmd.append(" unsafe");
 
       sendCommand(database, cmd.toString());
-      if (!isRunLocal(database)) {
-        OScenarioThreadLocal.executeAsDistributed(
-            () -> {
-              dropClassInternal(database, className);
-              return null;
-            });
-      }
     } else dropClassInternal(database, className);
   }
 
@@ -100,7 +85,7 @@ public class OSchemaDistributed extends OSchemaEmbedded {
       cmd.append(" from (");
       cmd.append(config.getQuery());
       cmd.append(") METADATA {");
-      cmd.append(", updateIntervalSeconds: " + config.getUpdateIntervalSeconds());
+      cmd.append(" updateIntervalSeconds: " + config.getUpdateIntervalSeconds());
       if (config.getWatchClasses() != null && config.getWatchClasses().size() > 0) {
         cmd.append(", watchClasses: [\"");
         cmd.append(config.getWatchClasses().stream().collect(Collectors.joining("\",\"")));
@@ -125,15 +110,23 @@ public class OSchemaDistributed extends OSchemaEmbedded {
           }
           cmd.append(", properties:{");
           boolean firstProp = true;
-          for (OPair<String, OType> property : index.getProperties()) {
+          for (OIndexConfigProperty property : index.getProperties()) {
             if (!firstProp) {
               cmd.append(", ");
             }
             cmd.append("\"");
-            cmd.append(property.key);
-            cmd.append("\":\"");
-            cmd.append(property.value);
-            cmd.append("\"");
+            cmd.append(property.getName());
+            cmd.append("\":{\"type\":\"");
+            cmd.append(property.getType());
+            cmd.append("\", \"linkedType\":\"");
+            cmd.append(property.getLinkedType());
+            cmd.append("\", \"indexBy\":\"");
+            cmd.append(property.getIndexBy());
+            if (property.getCollate() != null) {
+              cmd.append("\", \"collate\":\"");
+              cmd.append(property.getName());
+            }
+            cmd.append("\"}");
             firstProp = false;
           }
           cmd.append("  }");
@@ -157,9 +150,6 @@ public class OSchemaDistributed extends OSchemaEmbedded {
       }
 
       cmd.append("}");
-      if (!isRunLocal(database)) {
-        createViewInternal(database, config, clusterIds);
-      }
 
       sendCommand(database, cmd.toString());
 
@@ -200,9 +190,6 @@ public class OSchemaDistributed extends OSchemaEmbedded {
           }
         }
       }
-      if (!isRunLocal(database)) {
-        createClassInternal(database, className, clusterIds, superClassesList);
-      }
       sendCommand(database, cmd.toString());
 
     } else {
@@ -210,17 +197,8 @@ public class OSchemaDistributed extends OSchemaEmbedded {
     }
   }
 
-  private boolean isDistributeVersionTwo(ODatabaseDocumentInternal database) {
-    return database.getConfiguration().getValueAsInteger(DISTRIBUTED_REPLICATION_PROTOCOL_VERSION)
-        == 2;
-  }
-
-  protected boolean isRunLocal(ODatabaseDocumentInternal database) {
-    return isDistributeVersionTwo(database) && executeThroughDistributedStorage(database);
-  }
-
   @Override
   public void sendCommand(ODatabaseDocumentInternal database, String command) {
-    ((ODatabaseDocumentDistributed) database).sendDDLCommand(command, true);
+    ((ODatabaseDocumentDistributed) database).sendDDLCommand(command, false);
   }
 }

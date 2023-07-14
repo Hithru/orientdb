@@ -29,7 +29,7 @@ import com.orientechnologies.orient.core.sql.executor.OResult;
 import com.orientechnologies.orient.core.sql.executor.OResultSet;
 import com.orientechnologies.orient.server.OServer;
 import com.orientechnologies.orient.server.distributed.task.ODistributedRecordLockedException;
-import com.orientechnologies.orient.server.hazelcast.OHazelcastPlugin;
+import com.orientechnologies.orient.setup.ServerRun;
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.Date;
@@ -108,13 +108,13 @@ public class HALocalGraphIT extends AbstractServerClusterTxTest {
 
                           if (serverInstance
                                   .get(SERVERS - 1)
-                                  .server
-                                  .getPluginByClass(OHazelcastPlugin.class)
+                                  .getServerInstance()
+                                  .getDistributedManager()
                               != null)
                             serverInstance
                                 .get(SERVERS - 1)
-                                .server
-                                .getPluginByClass(OHazelcastPlugin.class)
+                                .getServerInstance()
+                                .getDistributedManager()
                                 .waitUntilNodeOnline();
 
                           sleep = 0;
@@ -306,7 +306,7 @@ public class HALocalGraphIT extends AbstractServerClusterTxTest {
                         // RETRY
                       }
 
-                    while (vtxs.hasNext()) {
+                    while (vtxs != null && vtxs.hasNext()) {
                       OResult vtx = vtxs.next();
                       if (retry) {
                         retry = true;

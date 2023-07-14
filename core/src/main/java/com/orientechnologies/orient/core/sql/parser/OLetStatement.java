@@ -66,6 +66,18 @@ public class OLetStatement extends OSimpleExecStatement {
   }
 
   @Override
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append("LET ");
+    name.toGenericStatement(builder);
+    builder.append(" = ");
+    if (statement != null) {
+      statement.toGenericStatement(builder);
+    } else {
+      expression.toGenericStatement(builder);
+    }
+  }
+
+  @Override
   public OLetStatement copy() {
     OLetStatement result = new OLetStatement(-1);
     result.name = name == null ? null : name.copy();

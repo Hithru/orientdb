@@ -73,6 +73,11 @@ public class OIsNullCondition extends OBooleanExpression {
     builder.append(" is null");
   }
 
+  public void toGenericStatement(StringBuilder builder) {
+    expression.toGenericStatement(builder);
+    builder.append(" is null");
+  }
+
   @Override
   public boolean supportsBasicCalculation() {
     return expression.supportsBasicCalculation();

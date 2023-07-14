@@ -19,9 +19,10 @@
  */
 package com.orientechnologies.orient.client.remote;
 
+import com.orientechnologies.orient.core.db.OrientDBInternal;
 import com.orientechnologies.orient.core.engine.OEngineAbstract;
 import com.orientechnologies.orient.core.exception.OStorageException;
-import java.util.Map;
+import com.orientechnologies.orient.core.storage.OStorage;
 
 /**
  * Remote engine implementation.
@@ -34,12 +35,12 @@ public class OEngineRemote extends OEngineAbstract {
 
   public OEngineRemote() {}
 
-  public OStorageRemote createStorage(
+  public OStorage createStorage(
       final String iURL,
-      final Map<String, String> iConfiguration,
       long maxWalSegSize,
       long doubleWriteLogMaxSegSize,
-      int storageId) {
+      int storageId,
+      OrientDBInternal context) {
     throw new OStorageException("deprecated");
   }
 

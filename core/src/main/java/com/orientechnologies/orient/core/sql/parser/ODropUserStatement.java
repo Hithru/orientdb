@@ -41,6 +41,12 @@ public class ODropUserStatement extends OSimpleExecStatement {
   }
 
   @Override
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append("DROP USER ");
+    name.toGenericStatement(builder);
+  }
+
+  @Override
   public ODropUserStatement copy() {
     ODropUserStatement result = new ODropUserStatement(-1);
     result.name = name == null ? null : name.copy();

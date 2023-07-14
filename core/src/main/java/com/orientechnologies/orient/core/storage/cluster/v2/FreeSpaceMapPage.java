@@ -77,6 +77,11 @@ public final class FreeSpaceMapPage extends ODurablePage {
     int nodeIndex = pageIndex;
     int nodeValue = freeSpace;
 
+<<<<<<< HEAD
+=======
+    final int oldFreeSpace = 0xFF & getByteValue(nodeOffset);
+
+>>>>>>> develop
     for (int level = LEVELS; level > 0; level--) {
       final int prevValue = 0xFF & getByteValue(nodeOffset);
       if (prevValue == nodeValue) {

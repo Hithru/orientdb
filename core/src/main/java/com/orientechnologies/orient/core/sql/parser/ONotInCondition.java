@@ -82,6 +82,23 @@ public class ONotInCondition extends OBooleanExpression {
     }
   }
 
+  public void toGenericStatement(StringBuilder builder) {
+
+    left.toGenericStatement(builder);
+    builder.append(" NOT IN ");
+    if (rightStatement != null) {
+      builder.append("(");
+      rightStatement.toGenericStatement(builder);
+      builder.append(")");
+    } else if (right != null) {
+      builder.append(PARAMETER_PLACEHOLDER);
+    } else if (rightParam != null) {
+      rightParam.toGenericStatement(builder);
+    } else if (rightMathExpression != null) {
+      rightMathExpression.toGenericStatement(builder);
+    }
+  }
+
   private String convertToString(Object o) {
     if (o instanceof String) {
       return "\"" + ((String) o).replaceAll("\"", "\\\"") + "\"";

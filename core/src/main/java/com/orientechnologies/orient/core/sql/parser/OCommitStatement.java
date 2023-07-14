@@ -24,6 +24,13 @@ public class OCommitStatement extends OSimpleExecStatement {
     super(p, id);
   }
 
+  public void addElse(OStatement statement) {
+    if (elseStatements == null) {
+      elseStatements = new ArrayList<>();
+    }
+    this.elseStatements.add(statement);
+  }
+
   @Override
   public OResultSet executeSimple(OCommandContext ctx) {
     ctx.getDatabase()
@@ -48,6 +55,36 @@ public class OCommitStatement extends OSimpleExecStatement {
         builder.append("{\n");
         for (OStatement stm : elseStatements) {
           stm.toString(params, builder);
+          builder.append(";\n");
+        }
+        builder.append("}");
+      }
+      if (elseFail != null) {
+        if (elseStatements != null) {
+          builder.append(" AND");
+        }
+        if (elseFail) {
+          builder.append(" FAIL");
+        } else {
+          builder.append(" CONTINUE");
+        }
+      }
+    }
+  }
+
+  @Override
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append("COMMIT");
+    if (retry != null) {
+      builder.append(" RETRY ");
+      retry.toGenericStatement(builder);
+      if (elseFail != null || elseStatements != null) {
+        builder.append(" ELSE ");
+      }
+      if (elseStatements != null) {
+        builder.append("{\n");
+        for (OStatement stm : elseStatements) {
+          stm.toGenericStatement(builder);
           builder.append(";\n");
         }
         builder.append("}");

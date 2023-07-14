@@ -63,7 +63,6 @@ public class OSelectStatementTest {
     OSelectStatement select = (OSelectStatement) stm;
     assertTrue(select.getProjection() == null);
     assertTrue(select.getTarget() != null);
-    assertTrue(!Boolean.TRUE.equals(select.getLockRecord()));
     assertTrue(select.getWhereClause() == null);
   }
 
@@ -76,7 +75,6 @@ public class OSelectStatementTest {
     assertTrue(select.getProjection().getItems() != null);
     assertEquals(select.getProjection().getItems().size(), 1);
     assertTrue(select.getTarget() != null);
-    assertTrue(!Boolean.TRUE.equals(select.getLockRecord()));
     assertTrue(select.getWhereClause() == null);
   }
 
@@ -792,6 +790,26 @@ public class OSelectStatementTest {
     checkRightSyntax("select from index:foo WHERE key > 10");
     checkRightSyntax("select from index:foo WHERE key CONTAINS 'foo'");
     checkRightSyntax("select from index:foo WHERE key BETWEEN 'bar' AND 'foo'");
+  }
+
+  protected void checkGenericStatement(String query, String expectedGeneric) {
+    SimpleNode result = checkSyntax(query, true);
+    Assert.assertEquals(expectedGeneric, result.toGenericStatement());
+  }
+
+  @Test
+  public void testGenericStatementGeneration() {
+    checkGenericStatement(
+        "select from index:foo WHERE key = 'foo'", "SELECT FROM INDEX:foo WHERE key = ?");
+    checkGenericStatement(
+        "select from Clazz WHERE key = ['foo', 'bar']", "SELECT FROM Clazz WHERE key = [?, ?]");
+    checkGenericStatement("select from test WHERE key > 10", "SELECT FROM test WHERE key > ?");
+    checkGenericStatement("select from test WHERE key > ? ", "SELECT FROM test WHERE key > ?");
+    checkGenericStatement(
+        "select from test WHERE key > :name ", "SELECT FROM test WHERE key > :name");
+    checkGenericStatement(
+        "select from test WHERE key CONTAINS 'foo'", "SELECT FROM test WHERE key CONTAINS ?");
+    checkGenericStatement("select funct(#10:20) ", "SELECT funct(?)");
   }
 
   protected OrientSql getParserFor(String string) {

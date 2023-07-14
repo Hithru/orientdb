@@ -156,4 +156,16 @@ public class OCommandManager {
           e);
     }
   }
+
+  public void close(String iDatabaseName) {
+    for (OScriptExecutor executor : scriptExecutors.values()) {
+      executor.close(iDatabaseName);
+    }
+  }
+
+  public void closeAll() {
+    for (OScriptExecutor executor : scriptExecutors.values()) {
+      executor.closeAll();
+    }
+  }
 }

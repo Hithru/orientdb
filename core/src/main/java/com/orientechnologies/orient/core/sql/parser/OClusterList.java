@@ -35,6 +35,19 @@ public class OClusterList extends SimpleNode {
     builder.append("]");
   }
 
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append("cluster:[");
+    boolean first = true;
+    for (OIdentifier id : clusters) {
+      if (!first) {
+        builder.append(",");
+      }
+      id.toGenericStatement(builder);
+      first = false;
+    }
+    builder.append("]");
+  }
+
   public List<OCluster> toListOfClusters() {
     List<OCluster> result = new ArrayList<>();
     for (OIdentifier id : clusters) {
@@ -86,6 +99,10 @@ public class OClusterList extends SimpleNode {
         clusters.add(id);
       }
     }
+  }
+
+  public void addCluster(OIdentifier cluster) {
+    this.clusters.add(cluster);
   }
 }
 /* JavaCC - OriginalChecksum=bd90ffa0b9d17f204b3cf2d47eedb409 (do not edit this line) */

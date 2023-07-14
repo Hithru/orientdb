@@ -7,7 +7,6 @@ import com.orientechnologies.common.serialization.types.OUTF8Serializer;
 import com.orientechnologies.common.util.ORawPair;
 import com.orientechnologies.orient.core.db.ODatabaseInternal;
 import com.orientechnologies.orient.core.db.ODatabaseSession;
-import com.orientechnologies.orient.core.db.ODatabaseType;
 import com.orientechnologies.orient.core.db.OrientDB;
 import com.orientechnologies.orient.core.db.OrientDBConfig;
 import com.orientechnologies.orient.core.id.ORID;
@@ -48,7 +47,8 @@ public class CellBTreeSingleValueV1TestIT {
 
     OrientDBConfig config = OrientDBConfig.builder().build();
     orientDB = new OrientDB("plocal:" + buildDirectory, config);
-    orientDB.create(dbName, ODatabaseType.PLOCAL);
+    orientDB.execute(
+        "create database " + dbName + " plocal users ( admin identified by 'admin' role admin)");
 
     OAbstractPaginatedStorage storage;
     try (ODatabaseSession databaseDocumentTx = orientDB.open(dbName, "admin", "admin")) {

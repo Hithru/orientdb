@@ -25,12 +25,16 @@ import com.orientechnologies.orient.core.Orient;
 import com.orientechnologies.orient.core.command.OCommandOutputListener;
 import com.orientechnologies.orient.core.command.script.OScriptManager;
 import com.orientechnologies.orient.core.exception.ODatabaseException;
+import com.orientechnologies.orient.core.metadata.security.auth.OAuthenticationInfo;
+import com.orientechnologies.orient.core.security.OSecuritySystem;
+import com.orientechnologies.orient.core.sql.executor.OResultSet;
 import com.orientechnologies.orient.core.storage.OStorage;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
@@ -62,6 +66,12 @@ public interface OrientDBInternal extends AutoCloseable, OSchedulerInternal {
     return new OrientDB(this);
   }
 
+  default OrientDB newOrientDBNoClose() {
+    return new OrientDB(this) {
+      @Override
+      public void close() {}
+    };
+  }
   /**
    * Create a new remote factory
    *
@@ -74,7 +84,7 @@ public interface OrientDBInternal extends AutoCloseable, OSchedulerInternal {
     OrientDBInternal factory;
 
     try {
-      String className = "com.orientechnologies.orient.core.db.OrientDBRemote";
+      String className = "com.orientechnologies.orient.client.remote.OrientDBRemote";
       ClassLoader loader;
       if (configuration != null) {
         loader = configuration.getClassLoader();
@@ -122,7 +132,7 @@ public interface OrientDBInternal extends AutoCloseable, OSchedulerInternal {
       }
       Class<?> kass;
       try {
-        String className = "com.orientechnologies.orient.core.db.OrientDBDistributed";
+        String className = "com.orientechnologies.orient.distributed.db.OrientDBDistributed";
         kass = loader.loadClass(className);
       } catch (ClassNotFoundException e) {
         String className = "com.orientechnologies.orient.distributed.OrientDBDistributed";
@@ -168,6 +178,17 @@ public interface OrientDBInternal extends AutoCloseable, OSchedulerInternal {
    * @return the opened database
    */
   ODatabaseDocumentInternal open(String name, String user, String password, OrientDBConfig config);
+
+  /**
+   * Open a database specified by name using the authentication info provided, with specific
+   * configuration
+   *
+   * @param authenticationInfo authentication informations provided for the authentication.
+   * @param config database specific configuration that override the factory global settings where
+   *     needed.
+   * @return the opened database
+   */
+  ODatabaseDocumentInternal open(OAuthenticationInfo authenticationInfo, OrientDBConfig config);
 
   /**
    * Create a new database
@@ -284,8 +305,16 @@ public interface OrientDBInternal extends AutoCloseable, OSchedulerInternal {
 
   boolean isEmbedded();
 
+  default boolean isMemoryOnly() {
+    return false;
+  }
+
   static OrientDBInternal extract(OrientDB orientDB) {
     return orientDB.internal;
+  }
+
+  static String extractUser(OrientDB orientDB) {
+    return orientDB.serverUser;
   }
 
   ODatabaseDocumentInternal openNoAuthenticate(String iDbUrl, String user);
@@ -302,11 +331,19 @@ public interface OrientDBInternal extends AutoCloseable, OSchedulerInternal {
 
   void forceDatabaseClose(String databaseName);
 
+  Future<?> execute(Runnable task);
+
+  <X> Future<X> execute(Callable<X> task);
+
   <X> Future<X> execute(String database, String user, ODatabaseTask<X> task);
 
   <X> Future<X> executeNoAuthorization(String database, ODatabaseTask<X> task);
 
   default OStorage fullSync(String dbName, InputStream backupStream, OrientDBConfig config) {
+    throw new UnsupportedOperationException();
+  }
+
+  default void deltaSync(String dbName, InputStream backupStream, OrientDBConfig config) {
     throw new UnsupportedOperationException();
   }
 
@@ -318,7 +355,51 @@ public interface OrientDBInternal extends AutoCloseable, OSchedulerInternal {
     throw new UnsupportedOperationException();
   }
 
+<<<<<<< HEAD
   default Set<String> listLodadedDatabases() {
     throw new UnsupportedOperationException();
   }
+=======
+  default OResultSet executeServerStatement(
+      String script, String user, String pw, Map<String, Object> params) {
+    throw new UnsupportedOperationException();
+  }
+
+  default OResultSet executeServerStatement(
+      String script, String user, String pw, Object... params) {
+    throw new UnsupportedOperationException();
+  }
+
+  default OSystemDatabase getSystemDatabase() {
+    throw new UnsupportedOperationException();
+  }
+
+  default String getBasePath() {
+    throw new UnsupportedOperationException();
+  }
+
+  void internalDrop(String database);
+
+  void create(
+      String name,
+      String user,
+      String password,
+      ODatabaseType type,
+      OrientDBConfig config,
+      ODatabaseTask<Void> createOps);
+
+  OrientDBConfig getConfigurations();
+
+  OSecuritySystem getSecuritySystem();
+
+  default Set<String> listLodadedDatabases() {
+    throw new UnsupportedOperationException();
+  }
+
+  String getConnectionUrl();
+
+  public default void startCommand(Optional<Long> timeout) {}
+
+  public default void endCommand() {}
+>>>>>>> develop
 }

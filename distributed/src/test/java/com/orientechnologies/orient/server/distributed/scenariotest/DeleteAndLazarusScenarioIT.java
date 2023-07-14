@@ -27,8 +27,8 @@ import com.orientechnologies.orient.core.id.ORecordId;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.OCommandSQL;
 import com.orientechnologies.orient.server.distributed.ODistributedConfiguration;
-import com.orientechnologies.orient.server.distributed.ServerRun;
-import com.orientechnologies.orient.server.hazelcast.OHazelcastPlugin;
+import com.orientechnologies.orient.server.distributed.impl.ODistributedPlugin;
+import com.orientechnologies.orient.setup.ServerRun;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -76,8 +76,8 @@ public class DeleteAndLazarusScenarioIT extends AbstractScenarioTest {
 
     ODocument cfg = null;
     ServerRun server = serverInstance.get(2);
-    OHazelcastPlugin manager =
-        (OHazelcastPlugin) server.getServerInstance().getDistributedManager();
+    ODistributedPlugin manager =
+        (ODistributedPlugin) server.getServerInstance().getDistributedManager();
     ODistributedConfiguration databaseConfiguration =
         manager.getDatabaseConfiguration(getDatabaseName());
     cfg = databaseConfiguration.getDocument();

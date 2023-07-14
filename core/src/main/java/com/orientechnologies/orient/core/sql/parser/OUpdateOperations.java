@@ -100,6 +100,70 @@ public class OUpdateOperations extends SimpleNode {
     }
   }
 
+  public void toGenericStatement(StringBuilder builder) {
+    boolean first = true;
+    switch (type) {
+      case TYPE_SET:
+        builder.append("SET ");
+        for (OUpdateItem item : this.updateItems) {
+          if (!first) {
+            builder.append(", ");
+          }
+          item.toGenericStatement(builder);
+          first = false;
+        }
+        break;
+      case TYPE_PUT:
+        builder.append("PUT ");
+        for (OUpdatePutItem item : this.updatePutItems) {
+          if (!first) {
+            builder.append(", ");
+          }
+          item.toGenericStatement(builder);
+          first = false;
+        }
+        break;
+      case TYPE_MERGE:
+        builder.append("MERGE ");
+        json.toGenericStatement(builder);
+        break;
+      case TYPE_CONTENT:
+        builder.append("CONTENT ");
+        json.toGenericStatement(builder);
+        break;
+      case TYPE_INCREMENT:
+        builder.append("INCREMENT ");
+        for (OUpdateIncrementItem item : this.updateIncrementItems) {
+          if (!first) {
+            builder.append(", ");
+          }
+          item.toGenericStatement(builder);
+          first = false;
+        }
+        break;
+      case TYPE_ADD:
+        builder.append("ADD ");
+        for (OUpdateIncrementItem item : this.updateIncrementItems) {
+          if (!first) {
+            builder.append(", ");
+          }
+          item.toGenericStatement(builder);
+          first = false;
+        }
+        break;
+      case TYPE_REMOVE:
+        builder.append("REMOVE ");
+        for (OUpdateRemoveItem item : this.updateRemoveItems) {
+          if (!first) {
+            builder.append(", ");
+          }
+          item.toGenericStatement(builder);
+          first = false;
+        }
+        break;
+    }
+  }
+
   public OUpdateOperations copy() {
 
     OUpdateOperations result = new OUpdateOperations(-1);
@@ -167,8 +231,16 @@ public class OUpdateOperations extends SimpleNode {
     return updateItems;
   }
 
+  public void addUpdateItem(OUpdateItem item) {
+    this.updateItems.add(item);
+  }
+
   public List<OUpdatePutItem> getUpdatePutItems() {
     return updatePutItems;
+  }
+
+  public void addUpdatePutItem(OUpdatePutItem item) {
+    this.updatePutItems.add(item);
   }
 
   public OJson getJson() {
@@ -179,8 +251,16 @@ public class OUpdateOperations extends SimpleNode {
     return updateIncrementItems;
   }
 
+  public void addUpdateIncrementItem(OUpdateIncrementItem item) {
+    this.updateIncrementItems.add(item);
+  }
+
   public List<OUpdateRemoveItem> getUpdateRemoveItems() {
     return updateRemoveItems;
+  }
+
+  public void addUpdateRemoveItem(OUpdateRemoveItem item) {
+    this.updateRemoveItems.add(item);
   }
 }
 /* JavaCC - OriginalChecksum=0eca3b3e4e3d96c42db57b7cd89cf755 (do not edit this line) */

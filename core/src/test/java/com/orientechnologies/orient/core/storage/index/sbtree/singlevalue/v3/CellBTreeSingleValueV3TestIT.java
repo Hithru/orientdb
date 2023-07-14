@@ -7,7 +7,6 @@ import com.orientechnologies.common.serialization.types.OUTF8Serializer;
 import com.orientechnologies.common.util.ORawPair;
 import com.orientechnologies.orient.core.db.ODatabaseInternal;
 import com.orientechnologies.orient.core.db.ODatabaseSession;
-import com.orientechnologies.orient.core.db.ODatabaseType;
 import com.orientechnologies.orient.core.db.OrientDB;
 import com.orientechnologies.orient.core.db.OrientDBConfig;
 import com.orientechnologies.orient.core.id.ORID;
@@ -48,7 +47,8 @@ public class CellBTreeSingleValueV3TestIT {
 
     final OrientDBConfig config = OrientDBConfig.builder().build();
     orientDB = new OrientDB("plocal:" + buildDirectory, config);
-    orientDB.create(dbName, ODatabaseType.PLOCAL);
+    orientDB.execute(
+        "create database " + dbName + " plocal users ( admin identified by 'admin' role admin)");
 
     OAbstractPaginatedStorage storage;
     try (ODatabaseSession databaseDocumentTx = orientDB.open(dbName, "admin", "admin")) {
@@ -492,7 +492,11 @@ public class CellBTreeSingleValueV3TestIT {
         Assert.assertNull(singleValueTree.get(Integer.toString(i)));
       }
 
+<<<<<<< HEAD
       singleValueTree.assertFreePages();
+=======
+      singleValueTree.assertFreePages(atomicOperationsManager.getCurrentOperation());
+>>>>>>> develop
     }
   }
 
@@ -532,11 +536,18 @@ public class CellBTreeSingleValueV3TestIT {
         final int key = i + offset;
         atomicOperationsManager.executeInsideAtomicOperation(
             null,
+<<<<<<< HEAD
             atomicOperation -> {
               Assert.assertEquals(
                   singleValueTree.remove(atomicOperation, Integer.toString(key)),
                   new ORecordId(key % 32000, key));
             });
+=======
+            atomicOperation ->
+                Assert.assertEquals(
+                    singleValueTree.remove(atomicOperation, Integer.toString(key)),
+                    new ORecordId(key % 32000, key)));
+>>>>>>> develop
       }
 
       final int start = (iterations + 1) * (keysCount / 2);
@@ -549,7 +560,11 @@ public class CellBTreeSingleValueV3TestIT {
         }
       }
 
+<<<<<<< HEAD
       singleValueTree.assertFreePages();
+=======
+      singleValueTree.assertFreePages(atomicOperationsManager.getCurrentOperation());
+>>>>>>> develop
     }
   }
 

@@ -2,7 +2,6 @@ package com.orientechnologies.orient.core.storage.cluster.v2;
 
 import com.orientechnologies.common.io.OFileUtils;
 import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
-import com.orientechnologies.orient.core.db.ODatabaseType;
 import com.orientechnologies.orient.core.db.OrientDB;
 import com.orientechnologies.orient.core.db.OrientDBConfig;
 import com.orientechnologies.orient.core.storage.cluster.LocalPaginatedClusterAbstract;
@@ -22,9 +21,14 @@ public class LocalPaginatedClusterV2TestIT extends LocalPaginatedClusterAbstract
 
     dbName = "clusterTest";
 
+<<<<<<< HEAD
     final OrientDBConfig config = OrientDBConfig.builder().build();
+=======
+    final OrientDBConfig config = OrientDBConfig.defaultConfig();
+>>>>>>> develop
     orientDB = new OrientDB("plocal:" + buildDirectory, config);
-    orientDB.create(dbName, ODatabaseType.PLOCAL);
+    orientDB.execute(
+        "create database " + dbName + " plocal users ( admin identified by 'admin' role admin)");
 
     databaseDocumentTx = (ODatabaseDocumentInternal) orientDB.open(dbName, "admin", "admin");
 

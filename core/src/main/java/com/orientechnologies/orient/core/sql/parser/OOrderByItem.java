@@ -92,6 +92,10 @@ public class OOrderByItem {
       aVal = a.getProperty(alias);
       bVal = b.getProperty(alias);
     }
+    if (aVal == null && bVal == null) {
+      aVal = a.getMetadata(alias);
+      bVal = b.getMetadata(alias);
+    }
     if (modifier != null) {
       aVal = modifier.execute(a, aVal, ctx);
       bVal = modifier.execute(b, bVal, ctx);
@@ -248,5 +252,26 @@ public class OOrderByItem {
 
   public OExpression getCollate() {
     return collate;
+  }
+
+  public void toGenericStatement(StringBuilder builder) {
+
+    if (alias != null) {
+      builder.append(alias);
+      if (modifier != null) {
+        modifier.toGenericStatement(builder);
+      }
+    } else if (recordAttr != null) {
+      builder.append(recordAttr);
+    } else if (rid != null) {
+      rid.toGenericStatement(builder);
+    }
+    if (type != null) {
+      builder.append(" " + type);
+    }
+    if (collate != null) {
+      builder.append(" COLLATE ");
+      collate.toGenericStatement(builder);
+    }
   }
 }

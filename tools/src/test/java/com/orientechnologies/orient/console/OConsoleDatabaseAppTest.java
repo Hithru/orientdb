@@ -34,7 +34,12 @@ public class OConsoleDatabaseAppTest {
           }
         };
     try {
-      app.createDatabase("memory:test", null, null, "memory", null, null);
+
+      app.executeServerCommand("connect env embedded:./target/ root root");
+      app.executeServerCommand(
+          "create database test memory users (admin identified by 'admin' role admin)");
+      app.open("test", "admin", "admin");
+
       ODatabaseDocument db = app.getCurrentDatabase();
       db.addBlobCluster("blobTest");
       ORecord record = db.save(new ORecordBytes("blobContent".getBytes()), "blobTest");
@@ -48,10 +53,13 @@ public class OConsoleDatabaseAppTest {
 
   @Test
   public void testWrongCommand() {
-
-    String dbUrl = "memory:OConsoleDatabaseAppTest2";
     StringBuilder builder = new StringBuilder();
-    builder.append("create database " + dbUrl + ";\n");
+
+    builder.append("connect env embedded:./target/ root root;\n");
+    builder.append(
+        "create database OConsoleDatabaseAppTest2 memory users (admin identified by 'admin' role admin);\n");
+    builder.append("open OConsoleDatabaseAppTest2 admin admin;\n");
+
     builder.append("create class foo;\n");
     builder.append("insert into foo set name = 'foo';\n");
     builder.append("insert into foo set name = 'bla';\n");
@@ -79,12 +87,44 @@ public class OConsoleDatabaseAppTest {
   }
 
   @Test
+  public void testOldCreateDatabase() {
+    StringBuilder builder = new StringBuilder();
+
+    builder.append(
+        "create database memory:./target/OConsoleDatabaseAppTest2 admin adminpwd memory\n");
+
+    builder.append("create class foo;\n");
+    builder.append("insert into foo set name = 'foo';\n");
+    builder.append("insert into foo set name = 'bla';\n");
+    ConsoleTest c = new ConsoleTest(new String[] {builder.toString()});
+    OConsoleDatabaseApp console = c.console();
+
+    try {
+      console.run();
+
+      ODatabaseDocument db = console.getCurrentDatabase();
+      try {
+        long size = db.query("select from foo where name = 'foo'").stream().count();
+        Assert.assertEquals(1, size);
+      } finally {
+        db.close();
+      }
+    } finally {
+      console.close();
+    }
+  }
+
+  @Test
   public void testDumpRecordDetails() {
     ConsoleTest c = new ConsoleTest();
     try {
+
+      c.console().executeServerCommand("connect env embedded:./target/ root root");
       c.console()
-          .createDatabase(
-              "memory:OConsoleDatabaseAppTestDumpRecordDetails", null, null, null, null, null);
+          .executeServerCommand(
+              "create database OConsoleDatabaseAppTestDumpRecordDetails memory users (admin identified by 'admin' role admin)");
+      c.console().open("OConsoleDatabaseAppTestDumpRecordDetails", "admin", "admin");
+
       c.console().createClass("class foo");
       c.console().insert("into foo set name = 'barbar'");
       c.console().select("from foo limit -1");
@@ -146,9 +186,13 @@ public class OConsoleDatabaseAppTest {
   public void testDeclareIntent() {
     ConsoleTest c = new ConsoleTest();
     try {
+
+      c.console().executeServerCommand("connect env embedded:./target/ root root");
       c.console()
-          .createDatabase(
-              "memory:OConsoleDatabaseAppTestDeclareIntent", null, null, null, null, null);
+          .executeServerCommand(
+              "create database OConsoleDatabaseAppTestDeclareIntent memory users (admin identified by 'admin' role admin)");
+      c.console().open("OConsoleDatabaseAppTestDeclareIntent", "admin", "admin");
+
       c.resetOutput();
       try {
         c.console().declareIntent("foobar");
@@ -178,9 +222,14 @@ public class OConsoleDatabaseAppTest {
 
   @Test
   public void testSimple() {
-    String dbUrl = "memory:" + testName.getMethodName();
     StringBuilder builder = new StringBuilder();
-    builder.append("create database " + dbUrl + ";\n");
+
+    builder.append("connect env embedded:./target/ root root;\n");
+    builder.append(
+        "create database "
+            + testName.getMethodName()
+            + " memory users (admin identified by 'admin' role admin);\n");
+    builder.append("open " + testName.getMethodName() + " admin admin;\n");
     builder.append("profile storage on;\n");
     builder.append("create class foo;\n");
     builder.append("config;\n");

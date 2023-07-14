@@ -20,8 +20,10 @@
 package com.orientechnologies.orient.core.db;
 
 import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
+import com.orientechnologies.orient.core.sql.executor.OResultSet;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * OrientDB management environment, it allow to connect to an environment and manipulate databases
@@ -93,7 +95,7 @@ public class OrientDB implements AutoCloseable {
   // time when it is requested
 
   protected OrientDBInternal internal;
-  private String serverUser;
+  protected String serverUser;
   private String serverPassword;
 
   /**
@@ -352,6 +354,14 @@ public class OrientDB implements AutoCloseable {
       cachedPools.forEach((internalPool, pool) -> pool.close());
       cachedPools.clear();
     }
+  }
+
+  public OResultSet execute(String script, Map<String, Object> params) {
+    return internal.executeServerStatement(script, serverUser, serverPassword, params);
+  }
+
+  public OResultSet execute(String script, Object... params) {
+    return internal.executeServerStatement(script, serverUser, serverPassword, params);
   }
 
   OrientDBInternal getInternal() {

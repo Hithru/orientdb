@@ -2,6 +2,7 @@ package com.orientechnologies.orient.core.metadata.security;
 
 import com.orientechnologies.orient.core.command.OBasicCommandContext;
 import com.orientechnologies.orient.core.config.OGlobalConfiguration;
+import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
 import com.orientechnologies.orient.core.db.ODatabaseInternal;
 import com.orientechnologies.orient.core.db.ODatabaseSession;
 import com.orientechnologies.orient.core.exception.OSecurityException;
@@ -104,9 +105,17 @@ public class OSecurityEngine {
       OSecurityShared security,
       OSecurityResourceProperty resource,
       OSecurityPolicy.Scope scope) {
-    OClass clazz = session.getClass(resource.getClassName());
+    OClass clazz =
+        ((ODatabaseDocumentInternal) session)
+            .getMetadata()
+            .getImmutableSchemaSnapshot()
+            .getClass(resource.getClassName());
     if (clazz == null) {
-      clazz = session.getMetadata().getSchema().getView(resource.getClassName());
+      clazz =
+          ((ODatabaseDocumentInternal) session)
+              .getMetadata()
+              .getImmutableSchemaSnapshot()
+              .getView(resource.getClassName());
     }
     String propertyName = resource.getPropertyName();
     Set<? extends OSecurityRole> roles = session.getUser().getRoles();
@@ -137,7 +146,11 @@ public class OSecurityEngine {
       OSecurityShared security,
       OSecurityResourceClass resource,
       OSecurityPolicy.Scope scope) {
-    OClass clazz = session.getClass(resource.getClassName());
+    OClass clazz =
+        ((ODatabaseDocumentInternal) session)
+            .getMetadata()
+            .getImmutableSchemaSnapshot()
+            .getClass(resource.getClassName());
     if (clazz == null) {
       return OBooleanExpression.TRUE;
     }
@@ -402,7 +415,9 @@ public class OSecurityEngine {
       return true; // TODO check!
     }
     try {
-      final ODocument user = session.getUser().getDocument();
+      // Create a new instance of ODocument with a user record id, this will lazy load the user data
+      // at the first access with the same execution permission of the policy
+      final ODocument user = new ODocument(session.getUser().getIdentity().getIdentity());
       return ((ODatabaseInternal) session)
           .getSharedContext()
           .getOrientDB()
@@ -411,7 +426,11 @@ public class OSecurityEngine {
               (db -> {
                 OBasicCommandContext ctx = new OBasicCommandContext();
                 ctx.setDatabase(db);
-                ctx.setVariable("$currentUser", user);
+                ctx.setDynamicVariable(
+                    "$currentUser",
+                    (inContext) -> {
+                      return user;
+                    });
                 return predicate.evaluate(record, ctx);
               }))
           .get();
@@ -430,7 +449,9 @@ public class OSecurityEngine {
       return false;
     }
     try {
-      final ODocument user = session.getUser().getDocument();
+      // Create a new instance of ODocument with a user record id, this will lazy load the user data
+      // at the first access with the same execution permission of the policy
+      final ODocument user = new ODocument(session.getUser().getIdentity().getIdentity());
       return ((ODatabaseInternal) session)
           .getSharedContext()
           .getOrientDB()
@@ -439,7 +460,11 @@ public class OSecurityEngine {
               (db -> {
                 OBasicCommandContext ctx = new OBasicCommandContext();
                 ctx.setDatabase(db);
-                ctx.setVariable("$currentUser", user);
+                ctx.setDynamicVariable(
+                    "$currentUser",
+                    (inContext) -> {
+                      return user;
+                    });
                 return predicate.evaluate(record, ctx);
               }))
           .get();

@@ -10,13 +10,16 @@ import com.orientechnologies.orient.core.db.OSharedContext;
 import com.orientechnologies.orient.core.db.OSharedContextEmbedded;
 import com.orientechnologies.orient.core.db.viewmanager.ViewCreationListener;
 import com.orientechnologies.orient.core.db.viewmanager.ViewManager;
+import com.orientechnologies.orient.core.exception.ODatabaseException;
 import com.orientechnologies.orient.core.exception.OSchemaException;
 import com.orientechnologies.orient.core.index.OIndex;
 import com.orientechnologies.orient.core.index.OIndexManagerAbstract;
+import com.orientechnologies.orient.core.index.OPropertyMapIndexDefinition.INDEX_BY;
 import com.orientechnologies.orient.core.iterator.ORecordIteratorCluster;
 import com.orientechnologies.orient.core.metadata.security.ORole;
 import com.orientechnologies.orient.core.metadata.security.ORule;
 import com.orientechnologies.orient.core.record.impl.ODocument;
+import com.orientechnologies.orient.core.sql.OSQLEngine;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -241,14 +244,44 @@ public class OSchemaEmbedded extends OSchemaShared {
             OViewConfig.OViewIndexConfig idxConfig =
                 cfg.addIndex(
                     (String) ((Map) index).get("type"), (String) ((Map) index).get("engine"));
-            for (Map.Entry<String, String> entry :
-                ((Map<String, String>) ((Map) index).get("properties")).entrySet()) {
-              OType val = OType.valueOf(entry.getValue().toUpperCase(Locale.ENGLISH));
+            for (Map.Entry<String, Object> entry :
+                ((Map<String, Object>) ((Map) index).get("properties")).entrySet()) {
+              OType val = null;
+              OType linkedType = null;
+              String collate = null;
+              INDEX_BY indexBy = null;
+              if (entry.getValue() == null || entry.getKey() == null) {
+                throw new ODatabaseException(
+                    "Invalid properties " + ((Map) index).get("properties"));
+              }
+              if (entry.getValue() instanceof Map) {
+                Map<String, Object> listVal = (Map<String, Object>) entry.getValue();
+                if (listVal.get("type") != null) {
+                  val = OType.valueOf(listVal.get("type").toString().toUpperCase(Locale.ENGLISH));
+                }
+                if (listVal.get("type") != null) {
+                  linkedType =
+                      OType.valueOf(
+                          listVal.get("linkedType").toString().toUpperCase(Locale.ENGLISH));
+                }
+                if (listVal.get("collate") != null) {
+                  collate = listVal.get("collate").toString();
+                }
+                if (listVal.get("indexBy") != null) {
+                  indexBy =
+                      INDEX_BY.valueOf(
+                          listVal.get("indexBy").toString().toUpperCase(Locale.ENGLISH));
+                }
+
+              } else {
+                val = OType.valueOf(entry.getValue().toString().toUpperCase(Locale.ENGLISH));
+              }
               if (val == null) {
                 throw new IllegalArgumentException(
                     "Invalid value for index key type: " + entry.getValue());
               }
-              idxConfig.addProperty(entry.getKey(), val);
+              idxConfig.addProperty(
+                  entry.getKey(), val, linkedType, OSQLEngine.getCollate(collate), indexBy);
             }
           }
         }
@@ -456,7 +489,9 @@ public class OSchemaEmbedded extends OSchemaShared {
       if (clusterIds == null || clusterIds.length == 0) {
         clusterIds =
             createClusters(
-                database, className, database.getStorage().getConfiguration().getMinimumClusters());
+                database,
+                className,
+                database.getStorageInfo().getConfiguration().getMinimumClusters());
       }
       List<OClass> superClassesList = new ArrayList<OClass>();
       if (superClasses != null && superClasses.length > 0) {
@@ -487,7 +522,7 @@ public class OSchemaEmbedded extends OSchemaShared {
 
   private int[] createClusters(ODatabaseDocumentInternal database, final String iClassName) {
     return createClusters(
-        database, iClassName, database.getStorage().getConfiguration().getMinimumClusters());
+        database, iClassName, database.getStorageInfo().getConfiguration().getMinimumClusters());
   }
 
   protected int[] createClusters(
@@ -753,7 +788,7 @@ public class OSchemaEmbedded extends OSchemaShared {
           document.delete();
         }
 
-        db.getStorage().dropCluster(clusterId);
+        db.dropClusterInternal(clusterId);
       }
     }
 

@@ -48,6 +48,7 @@ public class OUnsafeByteArrayComparator implements Comparator<byte[]> {
 
   static {
     unsafe =
+<<<<<<< HEAD
             (Unsafe)
                     AccessController.doPrivileged(
                             (PrivilegedAction<Object>)
@@ -60,6 +61,20 @@ public class OUnsafeByteArrayComparator implements Comparator<byte[]> {
                                         throw new Error(e);
                                       }
                                     });
+=======
+        (Unsafe)
+            AccessController.doPrivileged(
+                (PrivilegedAction<Object>)
+                    () -> {
+                      try {
+                        Field f = Unsafe.class.getDeclaredField("theUnsafe");
+                        f.setAccessible(true);
+                        return f.get(null);
+                      } catch (NoSuchFieldException | IllegalAccessException e) {
+                        throw new Error(e);
+                      }
+                    });
+>>>>>>> develop
 
     BYTE_ARRAY_OFFSET = unsafe.arrayBaseOffset(byte[].class);
 

@@ -64,6 +64,10 @@ public class OFunctionCall extends SimpleNode {
     this.params = params;
   }
 
+  public void addParam(OExpression param) {
+    this.params.add(param);
+  }
+
   public void toString(Map<Object, Object> params, StringBuilder builder) {
     name.toString(params, builder);
     builder.append("(");
@@ -73,6 +77,20 @@ public class OFunctionCall extends SimpleNode {
         builder.append(", ");
       }
       expr.toString(params, builder);
+      first = false;
+    }
+    builder.append(")");
+  }
+
+  public void toGenericStatement(StringBuilder builder) {
+    name.toGenericStatement(builder);
+    builder.append("(");
+    boolean first = true;
+    for (OExpression expr : this.params) {
+      if (!first) {
+        builder.append(", ");
+      }
+      expr.toGenericStatement(builder);
       first = false;
     }
     builder.append(")");
@@ -122,8 +140,11 @@ public class OFunctionCall extends SimpleNode {
       }
     }
     OSQLFunction function = OSQLEngine.getInstance().getFunction(name);
-    function.config(this.params.toArray());
     if (function != null) {
+<<<<<<< HEAD
+=======
+      function.config(this.params.toArray());
+>>>>>>> develop
 
       validateFunctionParams(function, paramValues);
 

@@ -34,6 +34,18 @@ public class OLimit extends SimpleNode {
     }
   }
 
+  public void toGenericStatement(StringBuilder builder) {
+    if (num == null && inputParam == null) {
+      return;
+    }
+    builder.append(" LIMIT ");
+    if (num != null) {
+      num.toGenericStatement(builder);
+    } else {
+      inputParam.toGenericStatement(builder);
+    }
+  }
+
   public int getValue(OCommandContext ctx) {
     if (num != null) {
       return num.getValue().intValue();

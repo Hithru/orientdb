@@ -25,6 +25,7 @@ import com.orientechnologies.orient.core.index.OIndexDictionary;
 import com.orientechnologies.orient.core.index.OIndexException;
 import com.orientechnologies.orient.core.index.OIndexFactory;
 import com.orientechnologies.orient.core.index.OIndexInternal;
+import com.orientechnologies.orient.core.index.OIndexMetadata;
 import com.orientechnologies.orient.core.index.OIndexNotUnique;
 import com.orientechnologies.orient.core.index.OIndexUnique;
 import com.orientechnologies.orient.core.index.engine.OBaseIndexEngine;
@@ -37,7 +38,6 @@ import com.orientechnologies.orient.core.storage.index.engine.OHashTableIndexEng
 import com.orientechnologies.orient.core.storage.index.engine.ORemoteIndexEngine;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 /** @author Artem Orobets (enisher-at-gmail.com) */
@@ -81,14 +81,12 @@ public final class OHashIndexFactory implements OIndexFactory {
   }
 
   public final OIndexInternal createIndex(
-      final String name,
-      final OStorage storage,
-      final String indexType,
-      final String algorithm,
-      String valueContainerAlgorithm,
-      final ODocument metadata,
-      int version)
-      throws OConfigurationException {
+      final OStorage storage, final OIndexMetadata im, int version) throws OConfigurationException {
+    final String name = im.getName();
+    final ODocument metadata = im.getMetadata();
+    final String indexType = im.getType();
+    final String algorithm = im.getAlgorithm();
+    String valueContainerAlgorithm = im.getValueContainerAlgorithm();
 
     if (version < 0) {
       version = getLastVersion(algorithm);
@@ -99,36 +97,37 @@ public final class OHashIndexFactory implements OIndexFactory {
 
     final int binaryFormatVersion = storage.getConfiguration().getBinaryFormatVersion();
 
-    if (OClass.INDEX_TYPE.UNIQUE_HASH_INDEX.toString().equals(indexType))
+    if (OClass.INDEX_TYPE.UNIQUE_HASH_INDEX.toString().equals(indexType)) {
       return new OIndexUnique(
           name,
           indexType,
           algorithm,
           version,
-          (OAbstractPaginatedStorage) storage.getUnderlying(),
+          (OAbstractPaginatedStorage) storage,
           valueContainerAlgorithm,
           metadata,
           binaryFormatVersion);
-    else if (OClass.INDEX_TYPE.NOTUNIQUE_HASH_INDEX.toString().equals(indexType))
+    } else if (OClass.INDEX_TYPE.NOTUNIQUE_HASH_INDEX.toString().equals(indexType)) {
       return new OIndexNotUnique(
           name,
           indexType,
           algorithm,
           version,
-          (OAbstractPaginatedStorage) storage.getUnderlying(),
+          (OAbstractPaginatedStorage) storage,
           valueContainerAlgorithm,
           metadata,
           binaryFormatVersion);
-    else if (OClass.INDEX_TYPE.DICTIONARY_HASH_INDEX.toString().equals(indexType))
+    } else if (OClass.INDEX_TYPE.DICTIONARY_HASH_INDEX.toString().equals(indexType)) {
       return new OIndexDictionary(
           name,
           indexType,
           algorithm,
           version,
-          (OAbstractPaginatedStorage) storage.getUnderlying(),
+          (OAbstractPaginatedStorage) storage,
           valueContainerAlgorithm,
           metadata,
           binaryFormatVersion);
+    }
 
     throw new OConfigurationException("Unsupported type: " + indexType);
   }
@@ -143,12 +142,9 @@ public final class OHashIndexFactory implements OIndexFactory {
       final int indexId,
       final String algorithm,
       final String name,
-      final Boolean durableInNonTxMode,
       final OStorage storage,
       final int version,
-      final int apiVersion,
-      final boolean multiValue,
-      final Map<String, String> engineProperties) {
+      final boolean multiValue) {
     final OIndexEngine indexEngine;
 
     final String storageType = storage.getType();
@@ -161,8 +157,7 @@ public final class OHashIndexFactory implements OIndexFactory {
       case "distributed":
         // DISTRIBUTED CASE: HANDLE IT AS FOR LOCAL
         indexEngine =
-            new OHashTableIndexEngine(
-                name, indexId, (OAbstractPaginatedStorage) storage.getUnderlying(), version);
+            new OHashTableIndexEngine(name, indexId, (OAbstractPaginatedStorage) storage, version);
         break;
       case "remote":
         indexEngine = new ORemoteIndexEngine(indexId, name);

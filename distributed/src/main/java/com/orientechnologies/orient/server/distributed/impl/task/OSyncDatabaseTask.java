@@ -24,13 +24,11 @@ import com.orientechnologies.common.io.OFileUtils;
 import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.common.util.OUncaughtExceptionHandler;
 import com.orientechnologies.orient.core.Orient;
+import com.orientechnologies.orient.core.command.OCommandDistributedReplicateRequest;
 import com.orientechnologies.orient.core.config.OGlobalConfiguration;
 import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
-import com.orientechnologies.orient.core.storage.impl.local.OAbstractPaginatedStorage;
 import com.orientechnologies.orient.core.storage.impl.local.OSyncSource;
-import com.orientechnologies.orient.core.storage.impl.local.paginated.wal.OLogSequenceNumber;
 import com.orientechnologies.orient.server.OServer;
-import com.orientechnologies.orient.server.distributed.ODistributedDatabase;
 import com.orientechnologies.orient.server.distributed.ODistributedException;
 import com.orientechnologies.orient.server.distributed.ODistributedRequestId;
 import com.orientechnologies.orient.server.distributed.ODistributedServerLog;
@@ -38,11 +36,14 @@ import com.orientechnologies.orient.server.distributed.ODistributedServerLog.DIR
 import com.orientechnologies.orient.server.distributed.ODistributedServerManager;
 import com.orientechnologies.orient.server.distributed.ORemoteTaskFactory;
 import com.orientechnologies.orient.server.distributed.impl.ODistributedDatabaseChunk;
-import com.orientechnologies.orient.server.distributed.impl.ODistributedStorage;
+import com.orientechnologies.orient.server.distributed.impl.ODistributedDatabaseImpl;
+import com.orientechnologies.orient.server.distributed.task.OAbstractRemoteTask;
+import com.orientechnologies.orient.server.distributed.task.ORemoteTask.RESULT_STRATEGY;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.File;
 import java.io.IOException;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -50,14 +51,14 @@ import java.util.concurrent.TimeUnit;
  *
  * @author Luca Garulli (l.garulli--at--orientdb.com)
  */
-public class OSyncDatabaseTask extends OAbstractSyncDatabaseTask {
+public class OSyncDatabaseTask extends OAbstractRemoteTask {
   public static final int FACTORYID = 14;
+  protected long random;
+  public static final String DEPLOYDB = "deploydb.";
+  public static final int CHUNK_MAX_SIZE = 8388608; // 8MB
 
-  public OSyncDatabaseTask() {}
-
-  public OSyncDatabaseTask(final OLogSequenceNumber lastLSN, final long lastOperationTimestamp) {
-    super(lastOperationTimestamp);
-    this.lastLSN = lastLSN;
+  public OSyncDatabaseTask() {
+    random = UUID.randomUUID().getLeastSignificantBits();
   }
 
   @Override
@@ -72,26 +73,10 @@ public class OSyncDatabaseTask extends OAbstractSyncDatabaseTask {
       if (database == null) throw new ODistributedException("Database instance is null");
 
       final String databaseName = database.getName();
-
-      final ODistributedDatabase dDatabase =
-          checkIfCurrentDatabaseIsNotOlder(iManager, databaseName, database);
+      final ODistributedDatabaseImpl dDatabase =
+          (ODistributedDatabaseImpl) iManager.getDatabase(databaseName);
 
       try {
-        final Long lastDeployment =
-            (Long) iManager.getConfigurationMap().get(DEPLOYDB + databaseName);
-        if (lastDeployment != null && lastDeployment.longValue() == random) {
-          // SKIP IT
-          ODistributedServerLog.debug(
-              this,
-              iManager.getLocalNodeName(),
-              getNodeSource(),
-              DIRECTION.NONE,
-              "Skip deploying database '%s' because already executed",
-              databaseName);
-          return Boolean.FALSE;
-        }
-
-        iManager.getConfigurationMap().put(DEPLOYDB + databaseName, random);
 
         iManager.setDatabaseStatus(
             getNodeSource(), databaseName, ODistributedServerManager.DB_STATUS.SYNCHRONIZING);
@@ -105,7 +90,7 @@ public class OSyncDatabaseTask extends OAbstractSyncDatabaseTask {
             databaseName);
 
         OBackgroundBackup backup = null;
-        OSyncSource last = ((ODistributedStorage) database.getStorage()).getLastValidBackup();
+        OSyncSource last = dDatabase.getLastValidBackup();
         if (last instanceof OBackgroundBackup) {
           backup = (OBackgroundBackup) last;
         }
@@ -144,22 +129,14 @@ public class OSyncDatabaseTask extends OAbstractSyncDatabaseTask {
 
           backup =
               new OBackgroundBackup(
-                  this,
-                  iManager,
-                  database,
-                  resultedBackupFile,
-                  backupPath,
-                  null,
-                  dDatabase,
-                  requestId,
-                  completedFile);
+                  this, iManager, database, resultedBackupFile, backupPath, requestId);
           Thread t = new Thread(backup);
           t.setUncaughtExceptionHandler(new OUncaughtExceptionHandler());
           t.start();
 
           // RECORD LAST BACKUP TO BE REUSED IN CASE ANOTHER NODE ASK FOR THE SAME IN SHORT TIME
           // WHILE THE DB IS NOT UPDATED
-          ((ODistributedStorage) database.getStorage()).setLastValidBackup(backup);
+          dDatabase.setLastValidBackup(backup);
         } else {
           backup.makeStreamFromFile();
           ODistributedServerLog.info(
@@ -181,7 +158,7 @@ public class OSyncDatabaseTask extends OAbstractSyncDatabaseTask {
         }
 
         final ODistributedDatabaseChunk chunk =
-            new ODistributedDatabaseChunk(backup, CHUNK_MAX_SIZE);
+            new ODistributedDatabaseChunk(backup, OSyncDatabaseTask.CHUNK_MAX_SIZE);
 
         ODistributedServerLog.info(
             this,
@@ -230,33 +207,6 @@ public class OSyncDatabaseTask extends OAbstractSyncDatabaseTask {
     return Boolean.FALSE;
   }
 
-  protected ODistributedDatabase checkIfCurrentDatabaseIsNotOlder(
-      final ODistributedServerManager iManager,
-      final String databaseName,
-      ODatabaseDocumentInternal database) {
-    final ODistributedDatabase dDatabase = iManager.getMessageService().getDatabase(databaseName);
-
-    if (lastLSN != null) {
-      final OLogSequenceNumber currentLSN =
-          ((OAbstractPaginatedStorage) database.getStorage().getUnderlying()).getLSN();
-      if (currentLSN != null) {
-        // LOCAL AND REMOTE LSN PRESENT
-        if (lastLSN.compareTo(currentLSN) <= 0)
-          // REQUESTED LSN IS <= LOCAL LSN
-          return dDatabase;
-      }
-    }
-    if (lastOperationTimestamp > -1) {
-      if (lastOperationTimestamp <= dDatabase.getSyncConfiguration().getLastOperationTimestamp())
-        // NO LSN, BUT LOCAL DATABASE HAS BEEN WRITTEN AFTER THE REQUESTER, STILL OK
-        return dDatabase;
-    } else
-      // NO LSN, NO TIMESTAMP, C'MON, CAN'T BE NEWER THAN THIS
-      return dDatabase;
-
-    return databaseIsOld(iManager, databaseName, dDatabase);
-  }
-
   @Override
   public String getName() {
     return "deploy_db";
@@ -264,20 +214,43 @@ public class OSyncDatabaseTask extends OAbstractSyncDatabaseTask {
 
   @Override
   public void toStream(final DataOutput out) throws IOException {
-    writeOptionalLSN(out);
     out.writeLong(random);
-    out.writeLong(lastOperationTimestamp);
   }
 
   @Override
   public void fromStream(final DataInput in, final ORemoteTaskFactory factory) throws IOException {
-    readOptionalLSN(in);
     random = in.readLong();
-    lastOperationTimestamp = in.readLong();
   }
 
   @Override
   public int getFactoryId() {
     return FACTORYID;
+  }
+
+  @Override
+  public RESULT_STRATEGY getResultStrategy() {
+    return RESULT_STRATEGY.UNION;
+  }
+
+  @Override
+  public OCommandDistributedReplicateRequest.QUORUM_TYPE getQuorumType() {
+    return OCommandDistributedReplicateRequest.QUORUM_TYPE.ALL;
+  }
+
+  @Override
+  public long getDistributedTimeout() {
+    return OGlobalConfiguration.DISTRIBUTED_DEPLOYDB_TASK_SYNCH_TIMEOUT.getValueAsLong();
+  }
+
+  public void onMessage(String iText) {
+    if (iText.startsWith("\r\n")) iText = iText.substring(2);
+    if (iText.startsWith("\n")) iText = iText.substring(1);
+
+    OLogManager.instance().info(this, iText);
+  }
+
+  @Override
+  public boolean isNodeOnlineRequired() {
+    return false;
   }
 }

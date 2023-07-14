@@ -40,6 +40,18 @@ public class OArraySingleValuesSelector extends SimpleNode {
     }
   }
 
+  @Override
+  public void toGenericStatement(StringBuilder builder) {
+    boolean first = true;
+    for (OArraySelector item : items) {
+      if (!first) {
+        builder.append(",");
+      }
+      item.toGenericStatement(builder);
+      first = false;
+    }
+  }
+
   public Object execute(OIdentifiable iCurrentRecord, Object iResult, OCommandContext ctx) {
     List<Object> result = new ArrayList<Object>();
     for (OArraySelector item : items) {
@@ -263,6 +275,10 @@ public class OArraySingleValuesSelector extends SimpleNode {
         items.add(exp);
       }
     }
+  }
+
+  public void addItem(OArraySelector item) {
+    this.items.add(item);
   }
 }
 /* JavaCC - OriginalChecksum=991998c77a4831184b6dca572513fd8d (do not edit this line) */

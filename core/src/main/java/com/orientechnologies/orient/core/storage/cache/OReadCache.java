@@ -49,18 +49,13 @@ public interface OReadCache {
   OCacheEntry loadForWrite(
       long fileId,
       long pageIndex,
-      boolean checkPinnedPages,
       OWriteCache writeCache,
       boolean verifyChecksums,
       OLogSequenceNumber startLSN)
       throws IOException;
 
   OCacheEntry loadForRead(
-      long fileId,
-      long pageIndex,
-      boolean checkPinnedPages,
-      OWriteCache writeCache,
-      boolean verifyChecksums)
+      long fileId, long pageIndex, OWriteCache writeCache, boolean verifyChecksums)
       throws IOException;
 
   OCacheEntry silentLoadForRead(
@@ -69,7 +64,11 @@ public interface OReadCache {
       final OWriteCache writeCache,
       final boolean verifyChecksums);
 
+<<<<<<< HEAD
   void releaseFromRead(OCacheEntry cacheEntry, OWriteCache writeCache);
+=======
+  void releaseFromRead(OCacheEntry cacheEntry);
+>>>>>>> develop
 
   void releaseFromWrite(OCacheEntry cacheEntry, OWriteCache writeCache, boolean changed);
 

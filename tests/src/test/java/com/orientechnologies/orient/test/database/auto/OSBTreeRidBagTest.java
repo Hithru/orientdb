@@ -25,7 +25,6 @@ import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.db.record.ridbag.ORidBag;
 import com.orientechnologies.orient.core.engine.memory.OEngineMemory;
 import com.orientechnologies.orient.core.record.impl.ODocument;
-import com.orientechnologies.orient.core.storage.OStorageProxy;
 import com.orientechnologies.orient.core.storage.cache.local.OWOWCache;
 import com.orientechnologies.orient.core.storage.disk.OLocalPaginatedStorage;
 import com.orientechnologies.orient.core.storage.ridbag.sbtree.OSBTreeCollectionManagerShared;
@@ -69,7 +68,7 @@ public class OSBTreeRidBagTest extends ORidBagTest {
     bottomThreshold =
         OGlobalConfiguration.RID_BAG_SBTREEBONSAI_TO_EMBEDDED_THRESHOLD.getValueAsInteger();
 
-    if (database.getStorage() instanceof OStorageProxy) {
+    if (database.isRemote()) {
       OServerAdmin server =
           new OServerAdmin(database.getURL())
               .connect("root", ODatabaseHelper.getServerRootPassword());
@@ -89,7 +88,7 @@ public class OSBTreeRidBagTest extends ORidBagTest {
     OGlobalConfiguration.RID_BAG_EMBEDDED_TO_SBTREEBONSAI_THRESHOLD.setValue(topThreshold);
     OGlobalConfiguration.RID_BAG_SBTREEBONSAI_TO_EMBEDDED_THRESHOLD.setValue(bottomThreshold);
 
-    if (database.getStorage() instanceof OStorageProxy) {
+    if (database.isRemote()) {
       OServerAdmin server =
           new OServerAdmin(database.getURL())
               .connect("root", ODatabaseHelper.getServerRootPassword());
@@ -117,14 +116,14 @@ public class OSBTreeRidBagTest extends ORidBagTest {
     final OWOWCache wowCache =
         (OWOWCache) ((OLocalPaginatedStorage) (database.getStorage())).getWriteCache();
 
-    final File ridBagOneFile =
-        new File(
-            directory,
-            wowCache.nativeFileNameById(
-                wowCache.fileIdByName(
-                    OSBTreeCollectionManagerShared.FILE_NAME_PREFIX
-                        + clusterIdOne
-                        + OSBTreeCollectionManagerShared.DEFAULT_EXTENSION)));
+    final long fileId =
+        wowCache.fileIdByName(
+            OSBTreeCollectionManagerShared.FILE_NAME_PREFIX
+                + clusterIdOne
+                + OSBTreeCollectionManagerShared.FILE_EXTENSION);
+    final String fileName = wowCache.nativeFileNameById(fileId);
+    assert fileName != null;
+    final File ridBagOneFile = new File(directory, fileName);
     Assert.assertTrue(ridBagOneFile.exists());
   }
 
@@ -259,7 +258,7 @@ public class OSBTreeRidBagTest extends ORidBagTest {
             directory,
             OSBTreeCollectionManagerShared.FILE_NAME_PREFIX
                 + clusterId
-                + OSBTreeCollectionManagerShared.DEFAULT_EXTENSION);
+                + OSBTreeCollectionManagerShared.FILE_EXTENSION);
     long testRidBagSize = testRidBagFile.length();
 
     for (int i = 0; i < 100; i++) {
@@ -278,7 +277,7 @@ public class OSBTreeRidBagTest extends ORidBagTest {
             directory,
             OSBTreeCollectionManagerShared.FILE_NAME_PREFIX
                 + clusterId
-                + OSBTreeCollectionManagerShared.DEFAULT_EXTENSION);
+                + OSBTreeCollectionManagerShared.FILE_EXTENSION);
 
     Assert.assertEquals(testRidBagFile.length(), testRidBagSize);
 

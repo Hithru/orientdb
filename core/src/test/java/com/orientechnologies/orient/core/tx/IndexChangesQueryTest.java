@@ -1,12 +1,10 @@
 package com.orientechnologies.orient.core.tx;
 
+import com.orientechnologies.orient.core.OCreateDatabaseUtil;
 import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
-import com.orientechnologies.orient.core.db.ODatabaseType;
 import com.orientechnologies.orient.core.db.OrientDB;
-import com.orientechnologies.orient.core.db.OrientDBConfig;
 import com.orientechnologies.orient.core.id.ORID;
 import com.orientechnologies.orient.core.index.OIndex;
-import com.orientechnologies.orient.core.index.OIndexTxAwareMultiValue;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OSchema;
 import com.orientechnologies.orient.core.metadata.schema.OType;
@@ -21,7 +19,6 @@ import org.junit.Test;
 
 /** Created by tglman on 28/05/17. */
 public class IndexChangesQueryTest {
-
   public static final String CLASS_NAME = "idxTxAwareMultiValueGetEntriesTest";
   private static final String FIELD_NAME = "value";
   private static final String INDEX_NAME = "idxTxAwareMultiValueGetEntriesTestIndex";
@@ -30,9 +27,11 @@ public class IndexChangesQueryTest {
 
   @Before
   public void before() {
-    orientDB = new OrientDB("embedded:", OrientDBConfig.defaultConfig());
-    orientDB.create("test", ODatabaseType.MEMORY);
-    database = (ODatabaseDocumentInternal) orientDB.open("test", "admin", "admin");
+    orientDB =
+        OCreateDatabaseUtil.createDatabase("test", "embedded:", OCreateDatabaseUtil.TYPE_MEMORY);
+    database =
+        (ODatabaseDocumentInternal)
+            orientDB.open("test", "admin", OCreateDatabaseUtil.NEW_ADMIN_PASSWORD);
 
     final OSchema schema = database.getMetadata().getSchema();
     final OClass cls = schema.createClass(CLASS_NAME);
@@ -52,7 +51,6 @@ public class IndexChangesQueryTest {
 
     final OIndex index =
         database.getMetadata().getIndexManagerInternal().getIndex(database, INDEX_NAME);
-    Assert.assertTrue(index instanceof OIndexTxAwareMultiValue);
 
     ODocument doc = new ODocument(CLASS_NAME);
     doc.field(FIELD_NAME, 1);
@@ -97,7 +95,6 @@ public class IndexChangesQueryTest {
 
     final OIndex index =
         database.getMetadata().getIndexManagerInternal().getIndex(database, INDEX_NAME);
-    Assert.assertTrue(index instanceof OIndexTxAwareMultiValue);
 
     database.commit();
 

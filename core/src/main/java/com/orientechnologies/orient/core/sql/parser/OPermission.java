@@ -21,6 +21,11 @@ public class OPermission extends SimpleNode {
   }
 
   @Override
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append(PARAMETER_PLACEHOLDER);
+  }
+
+  @Override
   public OPermission copy() {
     OPermission result = new OPermission(-1);
     result.permission = permission;

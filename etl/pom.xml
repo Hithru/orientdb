@@ -16,14 +16,17 @@
   ~ limitations under the License.
   -->
 
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <groupId>com.orientechnologies</groupId>
         <artifactId>orientdb-parent</artifactId>
+<<<<<<< HEAD
         <version>3.1.14-SNAPSHOT</version>
+=======
+        <version>3.2.20-SNAPSHOT</version>
+>>>>>>> develop
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -34,23 +37,6 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <argLine>-ea -Xmx${heapSize} -Dstorage.diskCache.bufferSize=4096
-            -Dindex.flushAfterCreate=false
-            -Dstorage.makeFullCheckpointAfterCreate=false
-            -Dstorage.makeFullCheckpointAfterOpen=false
-            -Dstorage.makeFullCheckpointAfterClusterCreate=false
-            -Dmemory.directMemory.trackMode=true
-            -Dstorage.wal.syncOnPageFlush=false
-            -Dstorage.configuration.syncOnUpdate=false
-            -Ddb.makeFullCheckpointOnIndexChange=false
-            -Ddb.makeFullCheckpointOnSchemaChange=false
-            -Dsecurity.userPasswordSaltIterations=10
-            -Djava.util.logging.manager=com.orientechnologies.common.log.ShutdownLogManager
-            -Dstorage.diskCache.checksumMode=storeAndThrow
-            -Dindex.allowManualIndexes=false
-            -Dsecurity.warningDefaultUsers=false
-        </argLine>
-        <project.rootdir>${project.basedir}/../</project.rootdir>
     </properties>
 
     <build>
@@ -70,9 +56,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>2.4.1</version>
+                <version>3.3.0</version>
                 <configuration>
-                    <dependencyReducedPomLocation>${basedir}/target/dependency-reduced-pom.xml</dependencyReducedPomLocation>
+                    <dependencyReducedPomLocation>${basedir}/target/dependency-reduced-pom.xml
+                    </dependencyReducedPomLocation>
                 </configuration>
                 <executions>
                     <execution>
@@ -101,8 +88,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
                 </configuration>
             </plugin>
         </plugins>
@@ -128,6 +115,12 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.11.0</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
             <groupId>com.orientechnologies</groupId>
             <artifactId>orientdb-lucene</artifactId>
             <version>${project.version}</version>
@@ -141,12 +134,67 @@
         </dependency>
         <dependency>
             <groupId>com.orientechnologies</groupId>
+            <artifactId>orientdb-server</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.orientechnologies</groupId>
             <artifactId>orientdb-tools</artifactId>
             <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>
     <profiles>
+        <profile>
+            <id>java8</id>
+            <activation>
+                <jdk>1.8</jdk>
+            </activation>
+            <properties>
+                <argLine>-ea -Xmx${heapSize} -Dstorage.diskCache.bufferSize=4096
+                    -Dindex.flushAfterCreate=false
+                    -Dstorage.makeFullCheckpointAfterCreate=false
+                    -Dstorage.makeFullCheckpointAfterOpen=false
+                    -Dstorage.makeFullCheckpointAfterClusterCreate=false
+                    -Dmemory.directMemory.trackMode=true
+                    -Dstorage.wal.syncOnPageFlush=false
+                    -Dstorage.configuration.syncOnUpdate=false
+                    -Ddb.makeFullCheckpointOnIndexChange=false
+                    -Ddb.makeFullCheckpointOnSchemaChange=false
+                    -Dsecurity.userPasswordSaltIterations=10
+                    -Djava.util.logging.manager=com.orientechnologies.common.log.ShutdownLogManager
+                    -Dstorage.diskCache.checksumMode=storeAndThrow
+                    -Dsecurity.warningDefaultUsers=false
+                </argLine>
+            </properties>
+        </profile>
+        <profile>
+            <id>java11</id>
+            <activation>
+                <jdk>[11,)</jdk>
+            </activation>
+            <properties>
+                <argLine>-ea -Xmx${heapSize} -Dstorage.diskCache.bufferSize=4096
+                    -Dindex.flushAfterCreate=false
+                    -Dstorage.makeFullCheckpointAfterCreate=false
+                    -Dstorage.makeFullCheckpointAfterOpen=false
+                    -Dstorage.makeFullCheckpointAfterClusterCreate=false
+                    -Dmemory.directMemory.trackMode=true
+                    -Dstorage.wal.syncOnPageFlush=false
+                    -Dstorage.configuration.syncOnUpdate=false
+                    -Ddb.makeFullCheckpointOnIndexChange=false
+                    -Ddb.makeFullCheckpointOnSchemaChange=false
+                    -Dsecurity.userPasswordSaltIterations=10
+                    -Djava.util.logging.manager=com.orientechnologies.common.log.ShutdownLogManager
+                    -Dstorage.diskCache.checksumMode=storeAndThrow
+                    -Dsecurity.warningDefaultUsers=false
+                    --add-opens jdk.unsupported/sun.misc=ALL-UNNAMED
+                    --add-opens java.base/sun.security.x509=ALL-UNNAMED
+                </argLine>
+            </properties>
+        </profile>
+
         <profile>
             <id>crash-tests</id>
             <build>
@@ -157,6 +205,23 @@
                         <version>${surefire.version}</version>
                         <configuration>
                             <skipTests>true</skipTests>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>secondary-tests</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>${surefire.version}</version>
+                        <configuration>
+                            <includes>
+                                <include>**/*ST.java</include>
+                            </includes>
                         </configuration>
                     </plugin>
                 </plugins>

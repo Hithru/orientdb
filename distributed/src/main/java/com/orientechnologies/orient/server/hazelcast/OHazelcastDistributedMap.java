@@ -28,7 +28,14 @@ import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
 import com.hazelcast.map.listener.MapClearedListener;
+import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.server.distributed.ODistributedServerLog;
+import com.orientechnologies.orient.server.distributed.ODistributedServerManager;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -42,13 +49,14 @@ public class OHazelcastDistributedMap extends ConcurrentHashMap<String, Object>
         EntryRemovedListener<String, Object>,
         MapClearedListener,
         EntryUpdatedListener<String, Object> {
-  private final OHazelcastPlugin dManager;
+  private final OHazelcastClusterMetadataManager dManager;
   private final IMap<String, Object> hzMap;
   private final String membershipListenerRegistration;
 
   public static final String ORIENTDB_MAP = "orientdb";
 
-  public OHazelcastDistributedMap(final OHazelcastPlugin manager, final HazelcastInstance hz) {
+  public OHazelcastDistributedMap(
+      final OHazelcastClusterMetadataManager manager, final HazelcastInstance hz) {
     dManager = manager;
     hzMap = hz.getMap(ORIENTDB_MAP);
     membershipListenerRegistration = hzMap.addEntryListener(this, true);
@@ -148,7 +156,7 @@ public class OHazelcastDistributedMap extends ConcurrentHashMap<String, Object>
               + "="
               + event.getValue()
               + " from server "
-              + dManager.getNodeName(event.getMember()));
+              + dManager.getNodeName(event.getMember(), true));
     super.put(event.getKey(), event.getValue());
   }
 
@@ -165,7 +173,7 @@ public class OHazelcastDistributedMap extends ConcurrentHashMap<String, Object>
               + "="
               + event.getValue()
               + " from server "
-              + dManager.getNodeName(event.getMember()));
+              + dManager.getNodeName(event.getMember(), true));
 
     super.put(event.getKey(), event.getValue());
   }
@@ -183,7 +191,7 @@ public class OHazelcastDistributedMap extends ConcurrentHashMap<String, Object>
               + "="
               + event.getValue()
               + " from "
-              + dManager.getNodeName(event.getMember()));
+              + dManager.getNodeName(event.getMember(), true));
     super.remove(event.getKey());
   }
 
@@ -195,7 +203,7 @@ public class OHazelcastDistributedMap extends ConcurrentHashMap<String, Object>
           dManager.getLocalNodeName(),
           null,
           ODistributedServerLog.DIRECTION.NONE,
-          "Map cleared from server " + dManager.getNodeName(event.getMember()));
+          "Map cleared from server " + dManager.getNodeName(event.getMember(), true));
     super.clear();
   }
 
@@ -206,5 +214,145 @@ public class OHazelcastDistributedMap extends ConcurrentHashMap<String, Object>
 
   public void clearLocalCache() {
     super.clear();
+  }
+
+  public boolean existsNode(String nodeUuid) {
+    return this.containsKey(OHazelcastClusterMetadataManager.CONFIG_NODE_PREFIX + nodeUuid);
+  }
+
+  public ODocument getNodeConfig(String nodeUuid) {
+    return (ODocument) get(OHazelcastClusterMetadataManager.CONFIG_NODE_PREFIX + nodeUuid);
+  }
+
+  public void removeNode(String nodeUuid) {
+    this.remove(OHazelcastClusterMetadataManager.CONFIG_NODE_PREFIX + nodeUuid);
+  }
+
+  public ODocument getLocalCachedNodeConfig(String nodeUuid) {
+    return (ODocument)
+        getLocalCachedValue(OHazelcastClusterMetadataManager.CONFIG_NODE_PREFIX + nodeUuid);
+  }
+
+  public List<String> getNodes() {
+    final List<String> nodes = new ArrayList<String>();
+
+    for (Map.Entry entry : this.entrySet()) {
+      if (entry.getKey().toString().startsWith(OHazelcastClusterMetadataManager.CONFIG_NODE_PREFIX))
+        nodes.add(
+            entry
+                .getKey()
+                .toString()
+                .substring(OHazelcastClusterMetadataManager.CONFIG_NODE_PREFIX.length()));
+    }
+    return nodes;
+  }
+
+  public void putNodeConfig(String nodeUuid, ODocument cfg) {
+    put(OHazelcastClusterMetadataManager.CONFIG_NODE_PREFIX + nodeUuid, cfg);
+  }
+
+  public Set<String> getNodeUuidByName(String name) {
+    Set<String> uuids = new HashSet<String>();
+    for (Iterator<Map.Entry<String, Object>> it = this.localEntrySet().iterator(); it.hasNext(); ) {
+      final Map.Entry<String, Object> entry = it.next();
+      if (entry.getKey().startsWith(OHazelcastClusterMetadataManager.CONFIG_NODE_PREFIX)) {
+        final ODocument nodeCfg = (ODocument) entry.getValue();
+        if (name.equals(nodeCfg.field("name"))) {
+          // FOUND: USE THIS
+          final String uuid =
+              entry
+                  .getKey()
+                  .substring(OHazelcastClusterMetadataManager.CONFIG_NODE_PREFIX.length());
+          uuids.add(uuid);
+        }
+      }
+    }
+    return uuids;
+  }
+
+  public static boolean isNodeConfigKey(String key) {
+    return key.startsWith(OHazelcastClusterMetadataManager.CONFIG_NODE_PREFIX);
+  }
+
+  public ODocument getRegisteredNodes() {
+    final ODocument registeredNodes = new ODocument();
+    String jsonData = (String) this.get(OHazelcastClusterMetadataManager.CONFIG_REGISTEREDNODES);
+    if (jsonData != null) {
+      registeredNodes.fromJSON(jsonData);
+    }
+    return registeredNodes;
+  }
+
+  public void putRegisteredNodes(ODocument registeredNodes) {
+    this.put(OHazelcastClusterMetadataManager.CONFIG_REGISTEREDNODES, registeredNodes.toJSON());
+  }
+
+  public static boolean isRegisteredNodes(String key) {
+    return key.startsWith(OHazelcastClusterMetadataManager.CONFIG_REGISTEREDNODES);
+  }
+
+  public boolean existsDatabaseConfiguration(String databaseName) {
+    return this.containsKey(OHazelcastClusterMetadataManager.CONFIG_DATABASE_PREFIX + databaseName);
+  }
+
+  public void setDatabaseConfiguration(String databaseName, ODocument document) {
+    this.put(OHazelcastClusterMetadataManager.CONFIG_DATABASE_PREFIX + databaseName, document);
+  }
+
+  public ODocument getDatabaseConfiguration(String databaseName) {
+    return (ODocument)
+        this.get(OHazelcastClusterMetadataManager.CONFIG_DATABASE_PREFIX + databaseName);
+  }
+
+  // Returns name of distributed databases in the cluster.
+  public Set<String> getDatabases() {
+    final Set<String> dbs = new HashSet<>();
+    for (String key : keySet()) {
+      if (key.startsWith(OHazelcastClusterMetadataManager.CONFIG_DATABASE_PREFIX)) {
+        final String databaseName =
+            key.substring(OHazelcastClusterMetadataManager.CONFIG_DATABASE_PREFIX.length());
+        dbs.add(databaseName);
+      }
+    }
+    return dbs;
+  }
+
+  public void removeDatabaseConfiguration(String databaseName) {
+    this.remove(OHazelcastClusterMetadataManager.CONFIG_DATABASE_PREFIX + databaseName);
+  }
+
+  public static boolean isDatabaseConfiguration(String key) {
+    return key.startsWith(OHazelcastClusterMetadataManager.CONFIG_DATABASE_PREFIX);
+  }
+
+  public void setDatabaseStatus(
+      String node, String databaseName, ODistributedServerManager.DB_STATUS status) {
+    put(
+        OHazelcastClusterMetadataManager.CONFIG_DBSTATUS_PREFIX + node + "." + databaseName,
+        status);
+  }
+
+  public void removeDatabaseStatus(String node, String databaseName) {
+    remove(OHazelcastClusterMetadataManager.CONFIG_DBSTATUS_PREFIX + node + "." + databaseName);
+  }
+
+  public ODistributedServerManager.DB_STATUS getDatabaseStatus(String node, String databaseName) {
+    return (ODistributedServerManager.DB_STATUS)
+        get(OHazelcastClusterMetadataManager.CONFIG_DBSTATUS_PREFIX + node + "." + databaseName);
+  }
+
+  public ODistributedServerManager.DB_STATUS getCachedDatabaseStatus(
+      String node, String databaseName) {
+    return (ODistributedServerManager.DB_STATUS)
+        getLocalCachedValue(
+            OHazelcastClusterMetadataManager.CONFIG_DBSTATUS_PREFIX + node + "." + databaseName);
+  }
+
+  public static boolean isDatabaseStatus(String key) {
+    return key.startsWith(OHazelcastClusterMetadataManager.CONFIG_DBSTATUS_PREFIX);
+  }
+
+  public static String getDatabaseStatusKeyValues(String key) {
+    return key.substring(OHazelcastClusterMetadataManager.CONFIG_DBSTATUS_PREFIX.length());
   }
 }

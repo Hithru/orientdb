@@ -99,6 +99,78 @@ public class OMatchFilterItem extends SimpleNode {
     }
   }
 
+  public void toGenericStatement(StringBuilder builder) {
+    if (className != null) {
+      builder.append("class: ");
+      className.toGenericStatement(builder);
+      return;
+    }
+    if (classNames != null) {
+      builder.append("classes: ");
+      classNames.toGenericStatement(builder);
+      return;
+    }
+    if (clusterName != null) {
+      builder.append("cluster: ");
+      clusterName.toGenericStatement(builder);
+      return;
+    }
+    if (clusterId != null) {
+      builder.append("cluster: ");
+      clusterId.toGenericStatement(builder);
+      return;
+    }
+    if (rid != null) {
+      builder.append("rid: ");
+      rid.toGenericStatement(builder);
+      return;
+    }
+
+    if (alias != null) {
+      builder.append("as: ");
+      alias.toGenericStatement(builder);
+      return;
+    }
+
+    if (maxDepth != null) {
+      builder.append("maxdepth: ");
+      maxDepth.toGenericStatement(builder);
+      return;
+    }
+
+    if (filter != null) {
+      builder.append("where: (");
+      filter.toGenericStatement(builder);
+      builder.append(")");
+      return;
+    }
+
+    if (whileCondition != null) {
+      builder.append("while: (");
+      whileCondition.toGenericStatement(builder);
+      builder.append(")");
+      return;
+    }
+
+    if (optional != null) {
+      builder.append("optional: ");
+      builder.append(PARAMETER_PLACEHOLDER);
+      return;
+    }
+
+    if (depthAlias != null) {
+      builder.append("depthAlias: ");
+      depthAlias.toGenericStatement(builder);
+      return;
+    }
+
+    if (pathAlias != null) {
+      builder.append("pathAlias: ");
+      pathAlias.toGenericStatement(builder);
+      return;
+    }
+  }
+
   @Override
   public OMatchFilterItem copy() {
     OMatchFilterItem result = new OMatchFilterItem(-1);

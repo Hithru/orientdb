@@ -29,7 +29,6 @@ import com.orientechnologies.orient.core.storage.index.engine.ORemoteIndexEngine
 import com.orientechnologies.orient.core.storage.index.engine.OSBTreeIndexEngine;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -100,15 +99,14 @@ public class ODefaultIndexFactory implements OIndexFactory {
     return ALGORITHMS;
   }
 
-  public OIndexInternal createIndex(
-      String name,
-      OStorage storage,
-      String indexType,
-      String algorithm,
-      String valueContainerAlgorithm,
-      ODocument metadata,
-      int version)
+  public OIndexInternal createIndex(OStorage storage, OIndexMetadata im, int version)
       throws OConfigurationException {
+    final String name = im.getName();
+    final ODocument metadata = im.getMetadata();
+    final String indexType = im.getType();
+    final String algorithm = im.getAlgorithm();
+    String valueContainerAlgorithm = im.getValueContainerAlgorithm();
+
     if (valueContainerAlgorithm == null) {
       valueContainerAlgorithm = NONE_VALUE_CONTAINER;
     }
@@ -122,7 +120,7 @@ public class ODefaultIndexFactory implements OIndexFactory {
         indexType,
         valueContainerAlgorithm,
         metadata,
-        (OAbstractPaginatedStorage) storage.getUnderlying(),
+        (OAbstractPaginatedStorage) storage,
         version,
         algorithm);
   }
@@ -205,12 +203,9 @@ public class ODefaultIndexFactory implements OIndexFactory {
       int indexId,
       String algorithm,
       String name,
-      Boolean durableInNonTxMode,
       OStorage storage,
       int version,
-      int apiVersion,
-      @SuppressWarnings("SpellCheckingInspection") boolean multiValue,
-      Map<String, String> engineProperties) {
+      @SuppressWarnings("SpellCheckingInspection") boolean multiValue) {
 
     if (algorithm == null) {
       throw new OIndexException("Name of algorithm is not specified");
@@ -219,7 +214,6 @@ public class ODefaultIndexFactory implements OIndexFactory {
     String storageType = storage.getType();
 
     if (storageType.equals("distributed")) {
-      storage = storage.getUnderlying();
       storageType = storage.getType();
     }
 

@@ -48,6 +48,14 @@ public class OCreateIndexStatement extends ODDLStatement {
     super(p, id);
   }
 
+  public void addProperty(Property property) {
+    this.propertyList.add(property);
+  }
+
+  public void addKeyType(OIdentifier identifier) {
+    this.keyTypes.add(identifier);
+  }
+
   @Override
   public OResultSet executeDDL(OCommandContext ctx) {
     Object execResult = execute(ctx);
@@ -330,6 +338,60 @@ public class OCreateIndexStatement extends ODDLStatement {
     if (metadata != null) {
       builder.append(" METADATA ");
       metadata.toString(params, builder);
+    }
+  }
+
+  @Override
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append("CREATE INDEX ");
+    name.toGenericStatement(builder);
+    if (className != null) {
+      builder.append(" ON ");
+      className.toGenericStatement(builder);
+      builder.append(" (");
+      boolean first = true;
+      for (Property prop : propertyList) {
+        if (!first) {
+          builder.append(", ");
+        }
+        if (prop.name != null) {
+          prop.name.toGenericStatement(builder);
+        } else {
+          prop.recordAttribute.toGenericStatement(builder);
+        }
+        if (prop.byKey) {
+          builder.append(" BY KEY");
+        } else if (prop.byValue) {
+          builder.append(" BY VALUE");
+        }
+        if (prop.collate != null) {
+          builder.append(" COLLATE ");
+          prop.collate.toGenericStatement(builder);
+        }
+        first = false;
+      }
+      builder.append(")");
+    }
+    builder.append(" ");
+    type.toGenericStatement(builder);
+    if (engine != null) {
+      builder.append(" ENGINE ");
+      engine.toGenericStatement(builder);
+    }
+    if (keyTypes != null && keyTypes.size() > 0) {
+      boolean first = true;
+      builder.append(" ");
+      for (OIdentifier keyType : keyTypes) {
+        if (!first) {
+          builder.append(",");
+        }
+        keyType.toGenericStatement(builder);
+        first = false;
+      }
+    }
+    if (metadata != null) {
+      builder.append(" METADATA ");
+      metadata.toGenericStatement(builder);
     }
   }
 

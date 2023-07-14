@@ -225,6 +225,7 @@ public class OrientGraphFactory extends OrientConfigurableGraph {
   /** Drops current database if such one exists. */
   public void drop() {
     getDatabase(false, true).drop();
+    pool = null;
   }
 
   /**
@@ -393,8 +394,6 @@ public class OrientGraphFactory extends OrientConfigurableGraph {
         db.getTransaction().setUsingLog(settings.isUseLog());
       }
     }
-
-    if (intent != null) g.declareIntent(intent.copy());
   }
 
   /**

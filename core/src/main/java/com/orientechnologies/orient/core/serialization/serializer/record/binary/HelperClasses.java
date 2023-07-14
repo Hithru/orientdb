@@ -16,12 +16,13 @@
 package com.orientechnologies.orient.core.serialization.serializer.record.binary;
 
 import com.orientechnologies.common.exception.OException;
-import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.common.serialization.types.OByteSerializer;
 import com.orientechnologies.common.serialization.types.OIntegerSerializer;
 import com.orientechnologies.common.serialization.types.OLongSerializer;
 import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
 import com.orientechnologies.orient.core.db.ODatabaseRecordThreadLocal;
+import com.orientechnologies.orient.core.db.OSharedContext;
+import com.orientechnologies.orient.core.db.OStringCache;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.db.record.ORecordElement;
 import com.orientechnologies.orient.core.db.record.ORecordLazyMap;
@@ -42,10 +43,9 @@ import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.ORecord;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.record.impl.ODocumentInternal;
-import com.orientechnologies.orient.core.storage.OStorageProxy;
+import com.orientechnologies.orient.core.storage.impl.local.OAbstractPaginatedStorage;
 import com.orientechnologies.orient.core.storage.impl.local.paginated.ORecordSerializationContext;
 import com.orientechnologies.orient.core.storage.impl.local.paginated.atomicoperations.OAtomicOperation;
-import com.orientechnologies.orient.core.storage.impl.local.paginated.atomicoperations.OAtomicOperationsManager;
 import com.orientechnologies.orient.core.storage.index.sbtreebonsai.local.OBonsaiBucketPointer;
 import com.orientechnologies.orient.core.storage.ridbag.sbtree.Change;
 import com.orientechnologies.orient.core.storage.ridbag.sbtree.ChangeSerializationHelper;
@@ -63,7 +63,7 @@ import java.util.UUID;
 
 /** @author mdjurovi */
 public class HelperClasses {
-  protected static final String CHARSET_UTF_8 = "UTF-8";
+  public static final String CHARSET_UTF_8 = "UTF-8";
   protected static final ORecordId NULL_RECORD_ID = new ORecordId(-2, ORID.CLUSTER_POS_INVALID);
   public static final long MILLISEC_PER_DAY = 86400000;
 
@@ -168,6 +168,24 @@ public class HelperClasses {
   public static String stringFromBytes(final byte[] bytes, final int offset, final int len) {
     try {
       return new String(bytes, offset, len, CHARSET_UTF_8);
+    } catch (UnsupportedEncodingException e) {
+      throw OException.wrapException(new OSerializationException("Error on string decoding"), e);
+    }
+  }
+
+  public static String stringFromBytesIntern(final byte[] bytes, final int offset, final int len) {
+    try {
+      ODatabaseDocumentInternal db = ODatabaseRecordThreadLocal.instance().getIfDefined();
+      if (db != null) {
+        OSharedContext context = db.getSharedContext();
+        if (context != null) {
+          OStringCache cache = context.getStringCache();
+          if (cache != null) {
+            return cache.getString(bytes, offset, len);
+          }
+        }
+      }
+      return new String(bytes, offset, len, CHARSET_UTF_8).intern();
     } catch (UnsupportedEncodingException e) {
       throw OException.wrapException(new OSerializationException("Error on string decoding"), e);
     }
@@ -359,14 +377,13 @@ public class HelperClasses {
   }
 
   protected static void writeEmbeddedRidbag(BytesContainer bytes, ORidBag ridbag) {
-    OVarIntSerializer.write(bytes, ridbag.size());
-    Object[] entries = ((OEmbeddedRidBag) ridbag.getDelegate()).getEntries();
     ODatabaseDocumentInternal db = ODatabaseRecordThreadLocal.instance().getIfDefined();
+    int size = ridbag.size();
+    Object[] entries = ((OEmbeddedRidBag) ridbag.getDelegate()).getEntries();
     for (int i = 0; i < entries.length; i++) {
       Object entry = entries[i];
       if (entry instanceof OIdentifiable) {
         OIdentifiable itemValue = (OIdentifiable) entry;
-        final ORID rid = itemValue.getIdentity();
         if (db != null
             && !db.isClosed()
             && db.getTransaction().isActive()
@@ -374,15 +391,21 @@ public class HelperClasses {
           itemValue = db.getTransaction().getRecord(itemValue.getIdentity());
         }
         if (itemValue == null) {
-          // should never happen
-          String errorMessage = "Found null entry in ridbag with rid=" + rid;
-          OSerializationException exc = new OSerializationException(errorMessage);
-          OLogManager.instance().error(ORecordSerializerBinaryV1.class, errorMessage, null);
-          throw exc;
+          entries[i] = null;
+          // Decrease size, nulls are ignored
+          size--;
         } else {
           entries[i] = itemValue.getIdentity();
-          writeLinkOptimized(bytes, itemValue);
         }
+      }
+    }
+
+    OVarIntSerializer.write(bytes, size);
+    for (int i = 0; i < entries.length; i++) {
+      Object entry = entries[i];
+      // Obviously this exclude nulls as well
+      if (entry instanceof OIdentifiable) {
+        writeLinkOptimized(bytes, ((OIdentifiable) entry).getIdentity());
       }
     }
   }
@@ -393,8 +416,7 @@ public class HelperClasses {
     OBonsaiCollectionPointer pointer = ridbag.getPointer();
 
     final ORecordSerializationContext context;
-    boolean remoteMode =
-        ODatabaseRecordThreadLocal.instance().get().getStorage() instanceof OStorageProxy;
+    boolean remoteMode = ODatabaseRecordThreadLocal.instance().get().isRemote();
     if (remoteMode) {
       context = null;
     } else context = ORecordSerializationContext.getContext();
@@ -403,7 +425,11 @@ public class HelperClasses {
       final int clusterId = getHighLevelDocClusterId(ridbag);
       assert clusterId > -1;
       try {
-        final OAtomicOperation atomicOperation = OAtomicOperationsManager.getCurrentOperation();
+        final OAbstractPaginatedStorage storage =
+            (OAbstractPaginatedStorage) ODatabaseRecordThreadLocal.instance().get().getStorage();
+        final OAtomicOperation atomicOperation =
+            storage.getAtomicOperationsManager().getCurrentOperation();
+
         assert atomicOperation != null;
         pointer =
             ODatabaseRecordThreadLocal.instance()
@@ -421,7 +447,7 @@ public class HelperClasses {
     OVarIntSerializer.write(bytes, pointer.getFileId());
     OVarIntSerializer.write(bytes, pointer.getRootPointer().getPageIndex());
     OVarIntSerializer.write(bytes, pointer.getRootPointer().getPageOffset());
-    OVarIntSerializer.write(bytes, ridbag.size());
+    OVarIntSerializer.write(bytes, 0);
 
     if (context != null) {
       ((OSBTreeRidBag) ridbag.getDelegate()).handleContextSBTree(context, pointer);

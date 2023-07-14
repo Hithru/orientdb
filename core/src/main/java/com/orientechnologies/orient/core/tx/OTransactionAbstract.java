@@ -26,10 +26,11 @@ import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.db.record.ORecordOperation;
 import com.orientechnologies.orient.core.id.ORID;
+import com.orientechnologies.orient.core.record.ORecord;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.record.impl.ODocumentInternal;
+import com.orientechnologies.orient.core.record.impl.ORecordBytes;
 import com.orientechnologies.orient.core.storage.OStorage;
-import com.orientechnologies.orient.core.storage.OStorageProxy;
 import com.orientechnologies.orient.core.storage.impl.local.OAbstractPaginatedStorage;
 import java.util.HashMap;
 import java.util.Map;
@@ -40,6 +41,12 @@ public abstract class OTransactionAbstract implements OTransaction {
   protected TXSTATUS status = TXSTATUS.INVALID;
   protected ISOLATION_LEVEL isolationLevel = ISOLATION_LEVEL.READ_COMMITTED;
   protected Map<ORID, LockedRecordMetadata> locks = new HashMap<ORID, LockedRecordMetadata>();
+  /**
+   * Indicates the record deleted in a transaction.
+   *
+   * @see #getRecord(ORID)
+   */
+  public static final ORecord DELETED_RECORD = new ORecordBytes();
 
   public static final class LockedRecordMetadata {
     private final OStorage.LOCKING_STRATEGY strategy;
@@ -69,7 +76,7 @@ public abstract class OTransactionAbstract implements OTransaction {
         dbCache.deleteRecord(txEntry.getRecord().getIdentity());
       } else if (txEntry.type == ORecordOperation.UPDATED
           || txEntry.type == ORecordOperation.CREATED) {
-        // UDPATE OR CREATE
+        // UPDATE OR CREATE
         dbCache.updateRecord(txEntry.getRecord());
       }
       if (txEntry.getRecord() instanceof ODocument) {
@@ -85,8 +92,7 @@ public abstract class OTransactionAbstract implements OTransaction {
 
   @Override
   public OTransaction setIsolationLevel(final ISOLATION_LEVEL isolationLevel) {
-    if (isolationLevel == ISOLATION_LEVEL.REPEATABLE_READ
-        && getDatabase().getStorage() instanceof OStorageProxy)
+    if (isolationLevel == ISOLATION_LEVEL.REPEATABLE_READ && getDatabase().isRemote())
       throw new IllegalArgumentException(
           "Remote storage does not support isolation level '" + isolationLevel + "'");
 
@@ -116,11 +122,9 @@ public abstract class OTransactionAbstract implements OTransaction {
         final LockedRecordMetadata lockedRecordMetadata = lock.getValue();
 
         if (lockedRecordMetadata.strategy.equals(OStorage.LOCKING_STRATEGY.EXCLUSIVE_LOCK)) {
-          ((OAbstractPaginatedStorage) getDatabase().getStorage().getUnderlying())
-              .releaseWriteLock(lock.getKey());
+          ((OAbstractPaginatedStorage) getDatabase().getStorage()).releaseWriteLock(lock.getKey());
         } else if (lockedRecordMetadata.strategy.equals(OStorage.LOCKING_STRATEGY.SHARED_LOCK)) {
-          ((OAbstractPaginatedStorage) getDatabase().getStorage().getUnderlying())
-              .releaseReadLock(lock.getKey());
+          ((OAbstractPaginatedStorage) getDatabase().getStorage()).releaseReadLock(lock.getKey());
         }
       } catch (Exception e) {
         OLogManager.instance()
@@ -142,8 +146,7 @@ public abstract class OTransactionAbstract implements OTransaction {
     final ORID rid = iRecord.getIdentity();
     final LockedRecordMetadata lockedRecordMetadata = locks.get(rid);
 
-    if (lockedRecordMetadata == null || lockedRecordMetadata.locksCount == 0) return false;
-    else return true;
+    return lockedRecordMetadata != null && lockedRecordMetadata.locksCount != 0;
   }
 
   @Override

@@ -102,6 +102,18 @@ public class OMatchesCondition extends OBooleanExpression {
     }
   }
 
+  public void toGenericStatement(StringBuilder builder) {
+    expression.toGenericStatement(builder);
+    builder.append(" MATCHES ");
+    if (right != null) {
+      builder.append(PARAMETER_PLACEHOLDER);
+    } else if (rightExpression != null) {
+      rightExpression.toGenericStatement(builder);
+    } else {
+      rightParam.toGenericStatement(builder);
+    }
+  }
+
   @Override
   public boolean supportsBasicCalculation() {
     if (!expression.supportsBasicCalculation()) {

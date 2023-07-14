@@ -28,7 +28,6 @@ import com.orientechnologies.orient.core.command.OCommandDistributedReplicateReq
 import com.orientechnologies.orient.core.compression.impl.OZIPCompressionUtil;
 import com.orientechnologies.orient.core.config.OGlobalConfiguration;
 import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
-import com.orientechnologies.orient.core.storage.OStorage;
 import com.orientechnologies.orient.core.storage.cache.OWriteCache;
 import com.orientechnologies.orient.core.storage.impl.local.OAbstractPaginatedStorage;
 import com.orientechnologies.orient.server.OServer;
@@ -39,7 +38,8 @@ import com.orientechnologies.orient.server.distributed.ODistributedServerLog.DIR
 import com.orientechnologies.orient.server.distributed.ODistributedServerManager;
 import com.orientechnologies.orient.server.distributed.ORemoteTaskFactory;
 import com.orientechnologies.orient.server.distributed.impl.ODistributedDatabaseChunk;
-import com.orientechnologies.orient.server.distributed.task.OAbstractReplicatedTask;
+import com.orientechnologies.orient.server.distributed.task.OAbstractRemoteTask;
+import com.orientechnologies.orient.server.distributed.task.ORemoteTask.RESULT_STRATEGY;
 import java.io.BufferedOutputStream;
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -56,7 +56,7 @@ import java.util.UUID;
  *
  * @author Luca Garulli (l.garulli--at--orientdb.com)
  */
-public class OSyncClusterTask extends OAbstractReplicatedTask {
+public class OSyncClusterTask extends OAbstractRemoteTask {
   public static final int CHUNK_MAX_SIZE = 4194304; // 4MB
   public static final String DEPLOYCLUSTER = "deploycluster.";
   public static final int FACTORYID = 12;
@@ -92,27 +92,6 @@ public class OSyncClusterTask extends OAbstractReplicatedTask {
 
       try {
 
-        final Long lastDeployment =
-            (Long)
-                iManager
-                    .getConfigurationMap()
-                    .get(DEPLOYCLUSTER + databaseName + "." + clusterName);
-        if (lastDeployment != null && lastDeployment.longValue() == random) {
-          // SKIP IT
-          ODistributedServerLog.debug(
-              this,
-              iManager.getLocalNodeName(),
-              getNodeSource(),
-              DIRECTION.NONE,
-              "Skip deploying cluster '%s' because already executed",
-              clusterName);
-          return Boolean.FALSE;
-        }
-
-        iManager
-            .getConfigurationMap()
-            .put(DEPLOYCLUSTER + databaseName + "." + clusterName, random);
-
         ODistributedServerLog.info(
             this,
             iManager.getLocalNodeName(),
@@ -136,7 +115,6 @@ public class OSyncClusterTask extends OAbstractReplicatedTask {
             databaseName,
             backupFile.getAbsolutePath());
 
-        final OStorage storage = database.getStorage();
         switch (mode) {
           case MERGE:
             throw new IllegalArgumentException("Merge mode not supported");
@@ -171,7 +149,7 @@ public class OSyncClusterTask extends OAbstractReplicatedTask {
                             final Map<String, String> fileNames = new LinkedHashMap<>();
 
                             final OAbstractPaginatedStorage paginatedStorage =
-                                (OAbstractPaginatedStorage) database.getStorage().getUnderlying();
+                                (OAbstractPaginatedStorage) database.getStorage();
                             final OWriteCache writeCache = paginatedStorage.getWriteCache();
 
                             final OutputStream outputStream =

@@ -19,6 +19,8 @@
  */
 package com.orientechnologies.orient.core.index;
 
+import com.orientechnologies.orient.core.metadata.schema.OClass;
+import com.orientechnologies.orient.core.record.impl.ODocument;
 import java.util.Set;
 
 /**
@@ -33,6 +35,7 @@ public class OIndexMetadata {
   private final String type;
   private final String algorithm;
   private final String valueContainerAlgorithm;
+  private final ODocument metadata;
 
   public OIndexMetadata(
       String name,
@@ -40,13 +43,15 @@ public class OIndexMetadata {
       Set<String> clustersToIndex,
       String type,
       String algorithm,
-      String valueContainerAlgorithm) {
+      String valueContainerAlgorithm,
+      ODocument metadata) {
     this.name = name;
     this.indexDefinition = indexDefinition;
     this.clustersToIndex = clustersToIndex;
     this.type = type;
     this.algorithm = algorithm;
     this.valueContainerAlgorithm = valueContainerAlgorithm;
+    this.metadata = metadata;
   }
 
   public String getName() {
@@ -98,7 +103,22 @@ public class OIndexMetadata {
     return result;
   }
 
-  String getValueContainerAlgorithm() {
+  public String getValueContainerAlgorithm() {
     return valueContainerAlgorithm;
+  }
+
+  public boolean isMultivalue() {
+    String t = type.toUpperCase();
+    if (OClass.INDEX_TYPE.NOTUNIQUE_HASH_INDEX.toString().equals(t)
+        || OClass.INDEX_TYPE.NOTUNIQUE.toString().equals(t)
+        || OClass.INDEX_TYPE.FULLTEXT.toString().equals(t)) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  public ODocument getMetadata() {
+    return metadata;
   }
 }

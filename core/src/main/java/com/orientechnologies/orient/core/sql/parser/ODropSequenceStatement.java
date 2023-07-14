@@ -4,7 +4,7 @@ package com.orientechnologies.orient.core.sql.parser;
 
 import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.db.ODatabase;
+import com.orientechnologies.orient.core.db.ODatabaseSession;
 import com.orientechnologies.orient.core.exception.OCommandExecutionException;
 import com.orientechnologies.orient.core.exception.ODatabaseException;
 import com.orientechnologies.orient.core.metadata.sequence.OSequence;
@@ -28,7 +28,7 @@ public class ODropSequenceStatement extends ODDLStatement {
 
   @Override
   public OResultSet executeDDL(OCommandContext ctx) {
-    final ODatabase database = ctx.getDatabase();
+    final ODatabaseSession database = ctx.getDatabase();
     OSequence sequence =
         database.getMetadata().getSequenceLibrary().getSequence(this.name.getStringValue());
     if (sequence == null) {
@@ -59,6 +59,15 @@ public class ODropSequenceStatement extends ODDLStatement {
   public void toString(Map<Object, Object> params, StringBuilder builder) {
     builder.append("DROP SEQUENCE ");
     name.toString(params, builder);
+    if (ifExists) {
+      builder.append(" IF EXISTS");
+    }
+  }
+
+  @Override
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append("DROP SEQUENCE ");
+    name.toGenericStatement(builder);
     if (ifExists) {
       builder.append(" IF EXISTS");
     }

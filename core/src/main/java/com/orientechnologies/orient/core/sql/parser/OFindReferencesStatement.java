@@ -4,7 +4,7 @@ package com.orientechnologies.orient.core.sql.parser;
 
 import com.orientechnologies.orient.core.command.OBasicCommandContext;
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.db.ODatabase;
+import com.orientechnologies.orient.core.db.ODatabaseSession;
 import com.orientechnologies.orient.core.sql.executor.OFindReferencesExecutionPlanner;
 import com.orientechnologies.orient.core.sql.executor.OInternalExecutionPlan;
 import com.orientechnologies.orient.core.sql.executor.OResultSet;
@@ -33,9 +33,13 @@ public class OFindReferencesStatement extends OStatement {
     return true;
   }
 
+  public void addTarget(SimpleNode node) {
+    this.targets.add(node);
+  }
+
   @Override
   public OResultSet execute(
-      ODatabase db, Object[] args, OCommandContext parentCtx, boolean usePlanCache) {
+      ODatabaseSession db, Object[] args, OCommandContext parentCtx, boolean usePlanCache) {
     OBasicCommandContext ctx = new OBasicCommandContext();
     if (parentCtx != null) {
       ctx.setParentWithoutOverridingChild(parentCtx);
@@ -60,7 +64,7 @@ public class OFindReferencesStatement extends OStatement {
 
   @Override
   public OResultSet execute(
-      ODatabase db, Map params, OCommandContext parentCtx, boolean usePlanCache) {
+      ODatabaseSession db, Map params, OCommandContext parentCtx, boolean usePlanCache) {
     OBasicCommandContext ctx = new OBasicCommandContext();
     if (parentCtx != null) {
       ctx.setParentWithoutOverridingChild(parentCtx);
@@ -100,6 +104,30 @@ public class OFindReferencesStatement extends OStatement {
           builder.append(",");
         }
         node.toString(params, builder);
+        first = false;
+      }
+      builder.append("]");
+    }
+  }
+
+  @Override
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append("FIND REFERENCES ");
+    if (rid != null) {
+      rid.toGenericStatement(builder);
+    } else {
+      builder.append(" ( ");
+      subQuery.toGenericStatement(builder);
+      builder.append(" )");
+    }
+    if (targets != null) {
+      builder.append(" [");
+      boolean first = true;
+      for (SimpleNode node : targets) {
+        if (!first) {
+          builder.append(",");
+        }
+        node.toGenericStatement(builder);
         first = false;
       }
       builder.append("]");

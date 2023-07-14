@@ -6,6 +6,8 @@ public interface OBinaryCompareOperator {
 
   boolean supportsBasicCalculation();
 
+  void toGenericStatement(StringBuilder builder);
+
   OBinaryCompareOperator copy();
 
   default boolean isRangeOperator() {

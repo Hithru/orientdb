@@ -4,6 +4,7 @@ package com.orientechnologies.orient.core.sql.parser;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
+import com.orientechnologies.orient.core.sql.executor.OIndexSearchInfo;
 import com.orientechnologies.orient.core.sql.executor.OResult;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -134,6 +135,19 @@ public class OContainsValueCondition extends OBooleanExpression {
       builder.append(")");
     } else {
       expression.toString(params, builder);
+    }
+  }
+
+  @Override
+  public void toGenericStatement(StringBuilder builder) {
+    left.toGenericStatement(builder);
+    builder.append(" CONTAINSVALUE ");
+    if (condition != null) {
+      builder.append("(");
+      condition.toGenericStatement(builder);
+      builder.append(")");
+    } else {
+      expression.toGenericStatement(builder);
     }
   }
 
@@ -276,6 +290,34 @@ public class OContainsValueCondition extends OBooleanExpression {
 
   public OExpression getLeft() {
     return left;
+  }
+
+  public OContainsValueOperator getOperator() {
+    return operator;
+  }
+
+  public boolean isIndexAware(OIndexSearchInfo info) {
+    if (left.isBaseIdentifier()) {
+      if (info.getField().equals(left.getDefaultAlias().getStringValue())) {
+        if (expression != null
+            && expression.isEarlyCalculated(info.getCtx())
+            && info.isMap()
+            && info.isIndexByValue()) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  @Override
+  public OExpression resolveKeyFrom(OBinaryCondition additional) {
+    return getExpression();
+  }
+
+  @Override
+  public OExpression resolveKeyTo(OBinaryCondition additional) {
+    return getExpression();
   }
 }
 /* JavaCC - OriginalChecksum=6fda752f10c8d8731f43efa706e39459 (do not edit this line) */

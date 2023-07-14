@@ -73,8 +73,8 @@ public abstract class OAbstractPageWALRecord extends OOperationUnitBodyRecord {
 
     OAbstractPageWALRecord that = (OAbstractPageWALRecord) o;
 
-    if (fileId != that.fileId) return false;
     if (pageIndex != that.pageIndex) return false;
+<<<<<<< HEAD
 
     if (operationIdLSN == null) {
       if (that.operationIdLSN != null) {
@@ -85,11 +85,15 @@ public abstract class OAbstractPageWALRecord extends OOperationUnitBodyRecord {
     }
 
     return Objects.equals(operationIdLSN.lsn, that.operationIdLSN.lsn);
+=======
+    return fileId == that.fileId;
+>>>>>>> develop
   }
 
   @Override
   public int hashCode() {
     int result = super.hashCode();
+<<<<<<< HEAD
 
     result =
         31 * result
@@ -97,6 +101,8 @@ public abstract class OAbstractPageWALRecord extends OOperationUnitBodyRecord {
                 ? operationIdLSN.lsn.hashCode()
                 : 0);
 
+=======
+>>>>>>> develop
     result = 31 * result + (int) (pageIndex ^ (pageIndex >>> 32));
     result = 31 * result + (int) (fileId ^ (fileId >>> 32));
 

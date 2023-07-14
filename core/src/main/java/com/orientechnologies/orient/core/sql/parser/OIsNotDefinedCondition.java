@@ -85,6 +85,11 @@ public class OIsNotDefinedCondition extends OBooleanExpression {
     builder.append(" is not defined");
   }
 
+  public void toGenericStatement(StringBuilder builder) {
+    expression.toGenericStatement(builder);
+    builder.append(" is not defined");
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;

@@ -5,10 +5,14 @@ import com.orientechnologies.orient.core.id.ORID;
 import com.orientechnologies.orient.core.metadata.security.OToken;
 import com.orientechnologies.orient.core.metadata.security.OUser;
 import com.orientechnologies.orient.core.metadata.security.jwt.OJsonWebToken;
-import com.orientechnologies.orient.core.metadata.security.jwt.OJwtHeader;
 import com.orientechnologies.orient.core.metadata.security.jwt.OJwtPayload;
+<<<<<<< HEAD
+=======
+import com.orientechnologies.orient.core.metadata.security.jwt.OTokenHeader;
+>>>>>>> develop
 import com.orientechnologies.orient.core.metadata.security.jwt.OrientJwtHeader;
 import com.orientechnologies.orient.core.record.impl.ODocument;
+import com.orientechnologies.orient.core.record.impl.ODocumentInternal;
 
 /**
  * Created by emrul on 28/09/2014.
@@ -17,7 +21,7 @@ import com.orientechnologies.orient.core.record.impl.ODocument;
  */
 public class JsonWebToken implements OJsonWebToken, OToken {
 
-  public final OJwtHeader header;
+  public final OTokenHeader header;
   public final OJwtPayload payload;
   private boolean isVerified;
   private boolean isValid;
@@ -26,7 +30,7 @@ public class JsonWebToken implements OJsonWebToken, OToken {
     this(new OrientJwtHeader(), new OrientJwtPayload());
   }
 
-  public JsonWebToken(OJwtHeader header, OJwtPayload payload) {
+  public JsonWebToken(OTokenHeader header, OJwtPayload payload) {
     isVerified = false;
     isValid = false;
     this.header = header;
@@ -34,7 +38,7 @@ public class JsonWebToken implements OJsonWebToken, OToken {
   }
 
   @Override
-  public OJwtHeader getHeader() {
+  public OTokenHeader getHeader() {
     return header;
   }
 
@@ -80,7 +84,7 @@ public class JsonWebToken implements OJsonWebToken, OToken {
 
   @Override
   public ORID getUserId() {
-    return ((OrientJwtPayload) payload).getUserRid();
+    return payload.getUserRid();
   }
 
   @Override
@@ -90,10 +94,10 @@ public class JsonWebToken implements OJsonWebToken, OToken {
 
   @Override
   public OUser getUser(ODatabaseDocumentInternal db) {
-    ORID userRid = ((OrientJwtPayload) payload).getUserRid();
+    ORID userRid = payload.getUserRid();
     ODocument result;
     result = db.load(userRid, "roles:1");
-    if (!result.getSchemaClass().isSubClassOf(OUser.CLASS_NAME)) {
+    if (!ODocumentInternal.getImmutableSchemaClass(result).isOuser()) {
       result = null;
     }
     return new OUser(result);

@@ -46,7 +46,7 @@ import java.util.Map.Entry;
 @SuppressWarnings("unchecked")
 public class OJSONWriter {
   private static final String DEF_FORMAT =
-      "rid,type,version,class,attribSameRow,indent:2,dateAsLong";
+      "rid,type,version,class,attribSameRow,indent:2,dateAsLong"; // TODO: added
   private final String format;
   private Writer out;
   private boolean prettyPrint = false;
@@ -520,7 +520,6 @@ public class OJSONWriter {
         }
       }
     }
-
     return this;
   }
 }

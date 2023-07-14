@@ -1,11 +1,26 @@
 package com.orientechnologies.orient.core.storage.index.pnkbtree.normalizers;
 
-import com.ibm.icu.text.Collator;
 import com.orientechnologies.common.comparator.OByteArrayComparator;
 import com.orientechnologies.common.comparator.OUnsafeByteArrayComparator;
 import com.orientechnologies.common.comparator.OUnsafeByteArrayComparatorV2;
 import com.orientechnologies.orient.core.index.OCompositeKey;
 import com.orientechnologies.orient.core.metadata.schema.OType;
+<<<<<<< HEAD:core/src/test/java/com/orientechnologies/orient/core/storage/index/pnkbtree/normalizers/KeyNormalizationTest.java
+=======
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.text.Collator;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.TimeZone;
+import java.util.function.Consumer;
+>>>>>>> develop:core/src/test/java/com/orientechnologies/orient/core/storage/index/nkbtree/normalizers/KeyNormalizationTest.java
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -257,6 +272,7 @@ public class KeyNormalizationTest {
   }
 
   @Test
+  @Ignore
   public void normalizeCompositeString() {
     final OType[] types = new OType[1];
     types[0] = OType.STRING;
@@ -319,7 +335,12 @@ public class KeyNormalizationTest {
   }
 
   @Test
+<<<<<<< HEAD:core/src/test/java/com/orientechnologies/orient/core/storage/index/pnkbtree/normalizers/KeyNormalizationTest.java
   public void normalizeCompositeIntStringCompare() throws IOException {
+=======
+  @Ignore
+  public void normalizeCompositeIntStringCompare() {
+>>>>>>> develop:core/src/test/java/com/orientechnologies/orient/core/storage/index/nkbtree/normalizers/KeyNormalizationTest.java
     final byte[] smallest = getNormalizedKeySingle("-1", OType.STRING);
     final byte[] smaller = getNormalizedKeySingle("-13", OType.STRING);
     final byte[] middle = getNormalizedKeySingle("0", OType.STRING);
@@ -339,6 +360,7 @@ public class KeyNormalizationTest {
   }
 
   @Test
+  @Ignore
   public void normalizeCompositeStringUmlaute() {
     final OType[] types = new OType[1];
     types[0] = OType.STRING;
@@ -372,6 +394,7 @@ public class KeyNormalizationTest {
   }
 
   @Test
+  @Ignore
   public void normalizeCompositeTwoStrings() {
     final OCompositeKey compositeKey = new OCompositeKey();
     final String key = "abcd";

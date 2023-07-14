@@ -27,7 +27,6 @@ import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.query.OSQLQuery;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
-import com.orientechnologies.orient.etl.context.OETLContextWrapper;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -72,7 +71,7 @@ public abstract class OETLAbstractLookupTransformer extends OETLAbstractTransfor
         else {
           index = db.getMetadata().getIndexManagerInternal().getIndex(db, lookup);
           if (index == null) {
-            OETLContextWrapper.getInstance()
+            getContext()
                 .getMessageHandler()
                 .warn(this, "WARNING: index %s not found. Lookups could be really slow", lookup);
             final String[] parts = lookup.split("\\.");
@@ -87,7 +86,11 @@ public abstract class OETLAbstractLookupTransformer extends OETLAbstractTransfor
         final OType idxFieldType = index.getDefinition().getTypes()[0];
         joinValue = OType.convert(joinValue, idxFieldType.getDefaultJavaType());
         //noinspection resource
-        result = index.getInternal().getRids(joinValue);
+        if (index.getInternal() != null) {
+          result = index.getInternal().getRids(joinValue);
+        } else {
+          result = index.get(joinValue);
+        }
       } else {
         if (sqlQuery instanceof OSQLSynchQuery) ((OSQLSynchQuery) sqlQuery).resetPagination();
 

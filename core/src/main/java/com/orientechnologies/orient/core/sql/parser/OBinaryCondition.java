@@ -9,6 +9,7 @@ import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.exception.OCommandExecutionException;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
+import com.orientechnologies.orient.core.sql.executor.OIndexSearchInfo;
 import com.orientechnologies.orient.core.sql.executor.OResult;
 import com.orientechnologies.orient.core.sql.executor.OResultInternal;
 import java.util.ArrayList;
@@ -92,6 +93,14 @@ public class OBinaryCondition extends OBooleanExpression {
     builder.append(operator.toString());
     builder.append(" ");
     right.toString(params, builder);
+  }
+
+  public void toGenericStatement(StringBuilder builder) {
+    left.toGenericStatement(builder);
+    builder.append(" ");
+    operator.toGenericStatement(builder);
+    builder.append(" ");
+    right.toGenericStatement(builder);
   }
 
   protected boolean supportsBasicCalculation() {
@@ -487,6 +496,80 @@ public class OBinaryCondition extends OBooleanExpression {
     base.right = right.copy();
 
     return result;
+  }
+
+  public boolean isIndexAware(OIndexSearchInfo info) {
+    if (left.isBaseIdentifier()) {
+      if (info.getField().equals(left.getDefaultAlias().getStringValue())) {
+        if (right.isEarlyCalculated(info.getCtx())) {
+          if (operator instanceof OEqualsCompareOperator) {
+            return true;
+          } else if (operator instanceof OContainsKeyOperator
+              && info.isMap()
+              && info.isIndexByKey()) {
+            return true;
+          } else if (info.allowsRange() && operator.isRangeOperator()) {
+            return true;
+          }
+          return false;
+        }
+      }
+    }
+    return false;
+  }
+
+  @Override
+  public boolean createRangeWith(OBooleanExpression match) {
+    if (!(match instanceof OBinaryCondition)) {
+      return false;
+    }
+    OBinaryCondition metchingCondition = (OBinaryCondition) match;
+    if (!metchingCondition.getLeft().equals(this.getLeft())) {
+      return false;
+    }
+    OBinaryCompareOperator leftOperator = metchingCondition.getOperator();
+    OBinaryCompareOperator rightOperator = this.getOperator();
+    if (leftOperator instanceof OGeOperator || leftOperator instanceof OGtOperator) {
+      return rightOperator instanceof OLeOperator || rightOperator instanceof OLtOperator;
+    }
+    if (leftOperator instanceof OLeOperator || leftOperator instanceof OLtOperator) {
+      return rightOperator instanceof OGeOperator || rightOperator instanceof OGtOperator;
+    }
+    return false;
+  }
+
+  @Override
+  public OExpression resolveKeyFrom(OBinaryCondition additional) {
+    OBinaryCompareOperator operator = getOperator();
+    if ((operator instanceof OEqualsCompareOperator)
+        || (operator instanceof OGtOperator)
+        || (operator instanceof OGeOperator)
+        || (operator instanceof OContainsKeyOperator)
+        || (operator instanceof OContainsValueOperator)) {
+      return getRight();
+    } else if (additional != null) {
+      return additional.getRight();
+    } else {
+      return null;
+      //      throw new UnsupportedOperationException("Cannot execute index query with " + this);
+    }
+  }
+
+  @Override
+  public OExpression resolveKeyTo(OBinaryCondition additional) {
+    OBinaryCompareOperator operator = this.getOperator();
+    if ((operator instanceof OEqualsCompareOperator)
+        || (operator instanceof OLtOperator)
+        || (operator instanceof OLeOperator)
+        || (operator instanceof OContainsKeyOperator)
+        || (operator instanceof OContainsValueOperator)) {
+      return getRight();
+    } else if (additional != null) {
+      return additional.getRight();
+    } else {
+      return null;
+      //      throw new UnsupportedOperationException("Cannot execute index query with " + this);
+    }
   }
 }
 /* JavaCC - OriginalChecksum=99ed1dd2812eb730de8e1931b1764da5 (do not edit this line) */

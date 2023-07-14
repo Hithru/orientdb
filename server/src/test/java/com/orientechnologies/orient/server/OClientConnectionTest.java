@@ -1,5 +1,6 @@
 package com.orientechnologies.orient.server;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -49,12 +50,12 @@ public class OClientConnectionTest {
   @Test
   public void testValidToken() throws IOException {
     OClientConnection conn = new OClientConnection(1, protocol);
-    OTokenHandler handler = new OTokenHandlerImpl(server);
+    OTokenHandler handler = new OTokenHandlerImpl(server.getContextConfiguration());
     byte[] tokenBytes = handler.getSignedBinaryToken(db, db.getUser(), conn.getData());
 
     conn.validateSession(tokenBytes, handler, null);
     assertTrue(conn.getTokenBased());
-    assertEquals(tokenBytes, conn.getTokenBytes());
+    assertArrayEquals(tokenBytes, conn.getTokenBytes());
     assertNotNull(conn.getToken());
   }
 
@@ -63,7 +64,7 @@ public class OClientConnectionTest {
     OClientConnection conn = new OClientConnection(1, protocol);
     long sessionTimeout = OGlobalConfiguration.NETWORK_TOKEN_EXPIRE_TIMEOUT.getValueAsLong();
     OGlobalConfiguration.NETWORK_TOKEN_EXPIRE_TIMEOUT.setValue(0);
-    OTokenHandler handler = new OTokenHandlerImpl(server);
+    OTokenHandler handler = new OTokenHandlerImpl(server.getContextConfiguration());
     OGlobalConfiguration.NETWORK_TOKEN_EXPIRE_TIMEOUT.setValue(sessionTimeout);
     byte[] tokenBytes = handler.getSignedBinaryToken(db, db.getUser(), conn.getData());
     Thread.sleep(1);
@@ -73,7 +74,7 @@ public class OClientConnectionTest {
   @Test(expected = OTokenSecurityException.class)
   public void testWrongToken() throws IOException {
     OClientConnection conn = new OClientConnection(1, protocol);
-    OTokenHandler handler = new OTokenHandlerImpl(server);
+    OTokenHandler handler = new OTokenHandlerImpl(server.getContextConfiguration());
     byte[] tokenBytes = new byte[120];
     conn.validateSession(tokenBytes, handler, protocol);
   }
@@ -81,11 +82,11 @@ public class OClientConnectionTest {
   @Test
   public void testAlreadyAuthenticatedOnConnection() throws IOException {
     OClientConnection conn = new OClientConnection(1, protocol);
-    OTokenHandler handler = new OTokenHandlerImpl(server);
+    OTokenHandler handler = new OTokenHandlerImpl(server.getContextConfiguration());
     byte[] tokenBytes = handler.getSignedBinaryToken(db, db.getUser(), conn.getData());
     conn.validateSession(tokenBytes, handler, protocol);
     assertTrue(conn.getTokenBased());
-    assertEquals(tokenBytes, conn.getTokenBytes());
+    assertArrayEquals(tokenBytes, conn.getTokenBytes());
     assertNotNull(conn.getToken());
     // second validation don't need token
     conn.validateSession(null, handler, protocol);
@@ -97,7 +98,7 @@ public class OClientConnectionTest {
   @Test(expected = OTokenSecurityException.class)
   public void testNotAlreadyAuthenticated() throws IOException {
     OClientConnection conn = new OClientConnection(1, protocol);
-    OTokenHandler handler = new OTokenHandlerImpl(server);
+    OTokenHandler handler = new OTokenHandlerImpl(server.getContextConfiguration());
     // second validation don't need token
     conn.validateSession(null, handler, protocol1);
   }
@@ -105,11 +106,11 @@ public class OClientConnectionTest {
   @Test(expected = OTokenSecurityException.class)
   public void testAlreadyAuthenticatedButNotOnSpecificConnection() throws IOException {
     OClientConnection conn = new OClientConnection(1, protocol);
-    OTokenHandler handler = new OTokenHandlerImpl(server);
+    OTokenHandler handler = new OTokenHandlerImpl(server.getContextConfiguration());
     byte[] tokenBytes = handler.getSignedBinaryToken(db, db.getUser(), conn.getData());
     conn.validateSession(tokenBytes, handler, protocol);
     assertTrue(conn.getTokenBased());
-    assertEquals(tokenBytes, conn.getTokenBytes());
+    assertArrayEquals(tokenBytes, conn.getTokenBytes());
     assertNotNull(conn.getToken());
     // second validation don't need token
     ONetworkProtocolBinary otherConn = Mockito.mock(ONetworkProtocolBinary.class);

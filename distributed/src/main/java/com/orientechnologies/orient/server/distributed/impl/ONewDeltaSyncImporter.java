@@ -29,10 +29,14 @@ public class ONewDeltaSyncImporter {
                   ODistributedServerLog.DIRECTION.IN,
                   "Started import of delta for database '" + databaseName + "'");
               final ODatabaseDocumentInternal db = serverInstance.openDatabase(databaseName);
+<<<<<<< HEAD
               ((ODatabaseDocumentDistributed) db)
                   .getStorageDistributed()
                   .getLocalDistributedDatabase()
                   .fillStatus();
+=======
+              ((ODatabaseDocumentDistributed) db).getDistributedShared().fillStatus();
+>>>>>>> develop
               DataInput dataInput = new DataInputStream(in);
               while (dataInput.readBoolean()) {
                 OTransactionData transaction = OTransactionData.read(dataInput);

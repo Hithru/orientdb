@@ -248,7 +248,7 @@ public abstract class OrientElement
         && !(((OIdentifiable) fieldValue).getRecord() instanceof OBlob)) {
       ODocument fieldRecord = ((OIdentifiable) fieldValue).getRecord();
       if (fieldRecord != null) {
-        final OClass schemaClass = fieldRecord.getSchemaClass();
+        final OClass schemaClass = ODocumentInternal.getImmutableSchemaClass(fieldRecord);
         if (schemaClass != null && (schemaClass.isVertexType() || schemaClass.isEdgeType())) {
           // CONVERT IT TO VERTEX/EDGE
           return (T) graph.getElement(fieldValue);
@@ -591,7 +591,7 @@ public abstract class OrientElement
     OrientBaseGraph graph = getGraph();
     if (graph == null) return className;
 
-    final OSchema schema = graph.getRawGraph().getMetadata().getSchema();
+    final OSchema schema = graph.getRawGraph().getMetadata().getImmutableSchemaSnapshot();
 
     if (!schema.existsClass(className)) {
       // CREATE A NEW CLASS AT THE FLY
@@ -600,7 +600,9 @@ public abstract class OrientElement
             new OCallable<OClass, OrientBaseGraph>() {
               @Override
               public OClass call(final OrientBaseGraph g) {
-                return schema.createClass(className, schema.getClass(getBaseClassName()));
+                final OSchema modifiableSchema = graph.getRawGraph().getMetadata().getSchema();
+                return modifiableSchema.createClass(
+                    className, modifiableSchema.getClass(getBaseClassName()));
               }
             };
         graph.executeOutsideTx(

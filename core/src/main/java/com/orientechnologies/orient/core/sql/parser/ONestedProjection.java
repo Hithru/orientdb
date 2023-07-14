@@ -231,6 +231,37 @@ public class ONestedProjection extends SimpleNode {
     }
   }
 
+  @Override
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append(":{");
+    boolean first = true;
+    if (starItem != null) {
+      starItem.toGenericStatement(builder);
+      first = false;
+    }
+    for (ONestedProjectionItem item : includeItems) {
+      if (!first) {
+        builder.append(", ");
+      }
+      item.toGenericStatement(builder);
+      first = false;
+    }
+    for (ONestedProjectionItem item : excludeItems) {
+      if (!first) {
+        builder.append(", ");
+      }
+      item.toGenericStatement(builder);
+      first = false;
+    }
+
+    builder.append("}");
+    if (recursion != null) {
+      builder.append("[");
+      recursion.toGenericStatement(builder);
+      builder.append("]");
+    }
+  }
+
   public ONestedProjection copy() {
     ONestedProjection result = new ONestedProjection(-1);
     result.includeItems = includeItems.stream().map(x -> x.copy()).collect(Collectors.toList());
@@ -316,6 +347,14 @@ public class ONestedProjection extends SimpleNode {
       starItem.deserialize(fromResult.getProperty("starItem"));
     }
     recursion = fromResult.getProperty("recursion");
+  }
+
+  public void addExcludeItem(ONestedProjectionItem item) {
+    this.excludeItems.add(item);
+  }
+
+  public void addIncludeItem(ONestedProjectionItem item) {
+    this.includeItems.add(item);
   }
 }
 /* JavaCC - OriginalChecksum=a7faf9beb3c058e28999b17cb43b26f6 (do not edit this line) */

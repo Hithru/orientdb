@@ -42,6 +42,20 @@ public class OJson extends SimpleNode {
     builder.append("}");
   }
 
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append("{");
+    boolean first = true;
+    for (OJsonItem item : items) {
+      if (!first) {
+        builder.append(", ");
+      }
+      item.toGenericStatement(builder);
+
+      first = false;
+    }
+    builder.append("}");
+  }
+
   public ODocument toDocument(OIdentifiable source, OCommandContext ctx) {
     String className = getClassNameForDocument(ctx);
     ODocument doc;
@@ -234,6 +248,10 @@ public class OJson extends SimpleNode {
         items.add(exp);
       }
     }
+  }
+
+  public void addItem(OJsonItem item) {
+    this.items.add(item);
   }
 
   public boolean isCacheable() {

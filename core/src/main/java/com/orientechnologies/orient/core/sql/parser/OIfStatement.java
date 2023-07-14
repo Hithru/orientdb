@@ -4,7 +4,7 @@ package com.orientechnologies.orient.core.sql.parser;
 
 import com.orientechnologies.orient.core.command.OBasicCommandContext;
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.db.ODatabase;
+import com.orientechnologies.orient.core.db.ODatabaseSession;
 import com.orientechnologies.orient.core.sql.executor.EmptyStep;
 import com.orientechnologies.orient.core.sql.executor.IfStep;
 import com.orientechnologies.orient.core.sql.executor.OExecutionStepInternal;
@@ -32,6 +32,20 @@ public class OIfStatement extends OStatement {
     super(p, id);
   }
 
+  public void addStatement(OStatement statement) {
+    if (this.statements == null) {
+      this.statements = new ArrayList<>();
+    }
+    this.statements.add(statement);
+  }
+
+  public void addElse(OStatement statement) {
+    if (this.elseStatements == null) {
+      this.elseStatements = new ArrayList<>();
+    }
+    this.elseStatements.add(statement);
+  }
+
   @Override
   public boolean isIdempotent() {
     for (OStatement stm : statements) {
@@ -49,7 +63,7 @@ public class OIfStatement extends OStatement {
 
   @Override
   public OResultSet execute(
-      ODatabase db, Object[] args, OCommandContext parentCtx, boolean usePlanCache) {
+      ODatabaseSession db, Object[] args, OCommandContext parentCtx, boolean usePlanCache) {
     OBasicCommandContext ctx = new OBasicCommandContext();
     if (parentCtx != null) {
       ctx.setParentWithoutOverridingChild(parentCtx);
@@ -88,7 +102,7 @@ public class OIfStatement extends OStatement {
 
   @Override
   public OResultSet execute(
-      ODatabase db, Map params, OCommandContext parentCtx, boolean usePlanCache) {
+      ODatabaseSession db, Map params, OCommandContext parentCtx, boolean usePlanCache) {
     OBasicCommandContext ctx = new OBasicCommandContext();
     if (parentCtx != null) {
       ctx.setParentWithoutOverridingChild(parentCtx);
@@ -147,6 +161,26 @@ public class OIfStatement extends OStatement {
       builder.append("\nELSE {\n");
       for (OStatement stm : elseStatements) {
         stm.toString(params, builder);
+        builder.append(";\n");
+      }
+      builder.append("}");
+    }
+  }
+
+  @Override
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append("IF(");
+    expression.toGenericStatement(builder);
+    builder.append("){\n");
+    for (OStatement stm : statements) {
+      stm.toGenericStatement(builder);
+      builder.append(";\n");
+    }
+    builder.append("}");
+    if (elseStatements.size() > 0) {
+      builder.append("\nELSE {\n");
+      for (OStatement stm : elseStatements) {
+        stm.toGenericStatement(builder);
         builder.append(";\n");
       }
       builder.append("}");

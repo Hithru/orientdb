@@ -3,6 +3,10 @@ package com.tinkerpop.blueprints.impls.orient;
 import com.orientechnologies.orient.core.db.ODatabaseType;
 import com.orientechnologies.orient.core.db.OrientDB;
 import com.orientechnologies.orient.core.db.OrientDBConfig;
+<<<<<<< HEAD
+=======
+import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
+>>>>>>> develop
 import com.orientechnologies.orient.server.OServer;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Edge;
@@ -82,9 +86,18 @@ public abstract class OrientGraphRemoteTest extends OrientGraphTest {
     }
 
     if (!clientContext.exists(graphDirectoryName)) {
+<<<<<<< HEAD
       clientContext.create(
           graphDirectoryName,
           ODatabaseType.valueOf(OrientGraphTest.getStorageType().toUpperCase()));
+=======
+      clientContext.execute(
+          "create database "
+              + graphDirectoryName
+              + " "
+              + ODatabaseType.valueOf(OrientGraphTest.getStorageType().toUpperCase())
+              + " users ( admin identified by 'admin' role admin)");
+>>>>>>> develop
     }
 
     OrientGraphFactory factory = graphFactories.get(url);
@@ -119,6 +132,10 @@ public abstract class OrientGraphRemoteTest extends OrientGraphTest {
       if (clientContext.exists(graphDirectoryName)) {
         clientContext.drop(graphDirectoryName);
       }
+<<<<<<< HEAD
+=======
+      ODatabaseDocumentTx.closeAll();
+>>>>>>> develop
 
     } catch (Exception e) {
       throw new IllegalStateException(e);

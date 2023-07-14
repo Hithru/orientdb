@@ -464,6 +464,36 @@ public class OMathExpression extends SimpleNode {
         }
         return super.apply(left == null ? 0 : left, right == null ? 0 : right);
       }
+    },
+    NULL_COALESCING(25) {
+      @Override
+      public Number apply(Integer left, Integer right) {
+        return left != null ? left : right;
+      }
+
+      @Override
+      public Number apply(Long left, Long right) {
+        return left != null ? left : right;
+      }
+
+      @Override
+      public Number apply(Float left, Float right) {
+        return left != null ? left : right;
+      }
+
+      @Override
+      public Number apply(Double left, Double right) {
+        return left != null ? left : right;
+      }
+
+      @Override
+      public Number apply(BigDecimal left, BigDecimal right) {
+        return left != null ? left : right;
+      }
+
+      public Object apply(Object left, Object right) {
+        return left != null ? left : right;
+      }
     };
 
     private static Long toLong(Object left) {
@@ -573,8 +603,8 @@ public class OMathExpression extends SimpleNode {
     }
   }
 
-  protected List<OMathExpression> childExpressions = new ArrayList<OMathExpression>();
-  protected List<Operator> operators = new ArrayList<>();
+  protected List<OMathExpression> childExpressions;
+  protected List<Operator> operators;
 
   public OMathExpression(int id) {
     super(id);
@@ -585,15 +615,21 @@ public class OMathExpression extends SimpleNode {
   }
 
   public boolean isCacheable() {
-    for (OMathExpression exp : childExpressions) {
-      if (!exp.isCacheable()) {
-        return false;
+    if (childExpressions != null) {
+      for (OMathExpression exp : childExpressions) {
+        if (!exp.isCacheable()) {
+          return false;
+        }
       }
     }
     return true;
   }
 
   public Object execute(OIdentifiable iCurrentRecord, OCommandContext ctx) {
+    if (childExpressions == null || operators == null) {
+      return null;
+    }
+
     if (childExpressions.size() == 0) {
       return null;
     }
@@ -611,6 +647,9 @@ public class OMathExpression extends SimpleNode {
   }
 
   public Object execute(OResult iCurrentRecord, OCommandContext ctx) {
+    if (childExpressions == null || operators == null) {
+      return null;
+    }
     if (childExpressions.size() == 0) {
       return null;
     }
@@ -630,27 +669,28 @@ public class OMathExpression extends SimpleNode {
   private Object calculateWithOpPriority(OResult iCurrentRecord, OCommandContext ctx) {
     Deque valuesStack = new ArrayDeque<>();
     Deque<Operator> operatorsStack = new ArrayDeque<Operator>();
+    if (childExpressions != null && operators != null) {
+      OMathExpression nextExpression = childExpressions.get(0);
+      Object val = nextExpression.execute(iCurrentRecord, ctx);
+      valuesStack.push(val == null ? NULL_VALUE : val);
 
-    OMathExpression nextExpression = childExpressions.get(0);
-    Object val = nextExpression.execute(iCurrentRecord, ctx);
-    valuesStack.push(val == null ? NULL_VALUE : val);
+      for (int i = 0; i < operators.size() && i + 1 < childExpressions.size(); i++) {
+        Operator nextOperator = operators.get(i);
+        Object rightValue = childExpressions.get(i + 1).execute(iCurrentRecord, ctx);
 
-    for (int i = 0; i < operators.size() && i + 1 < childExpressions.size(); i++) {
-      Operator nextOperator = operators.get(i);
-      Object rightValue = childExpressions.get(i + 1).execute(iCurrentRecord, ctx);
+        if (!operatorsStack.isEmpty()
+            && operatorsStack.peek().getPriority() <= nextOperator.getPriority()) {
+          Object right = valuesStack.poll();
+          right = right == NULL_VALUE ? null : right;
+          Object left = valuesStack.poll();
+          left = left == NULL_VALUE ? null : left;
+          Object calculatedValue = operatorsStack.poll().apply(left, right);
+          valuesStack.push(calculatedValue == null ? NULL_VALUE : calculatedValue);
+        }
+        operatorsStack.push(nextOperator);
 
-      if (!operatorsStack.isEmpty()
-          && operatorsStack.peek().getPriority() <= nextOperator.getPriority()) {
-        Object right = valuesStack.poll();
-        right = right == NULL_VALUE ? null : right;
-        Object left = valuesStack.poll();
-        left = left == NULL_VALUE ? null : left;
-        Object calculatedValue = operatorsStack.poll().apply(left, right);
-        valuesStack.push(calculatedValue == null ? NULL_VALUE : calculatedValue);
+        valuesStack.push(rightValue == null ? NULL_VALUE : rightValue);
       }
-      operatorsStack.push(nextOperator);
-
-      valuesStack.push(rightValue == null ? NULL_VALUE : rightValue);
     }
 
     return iterateOnPriorities(valuesStack, operatorsStack);
@@ -659,29 +699,29 @@ public class OMathExpression extends SimpleNode {
   private Object calculateWithOpPriority(OIdentifiable iCurrentRecord, OCommandContext ctx) {
     Deque valuesStack = new ArrayDeque<>();
     Deque<Operator> operatorsStack = new ArrayDeque<Operator>();
+    if (childExpressions != null && operators != null) {
+      OMathExpression nextExpression = childExpressions.get(0);
+      Object val = nextExpression.execute(iCurrentRecord, ctx);
+      valuesStack.push(val == null ? NULL_VALUE : val);
 
-    OMathExpression nextExpression = childExpressions.get(0);
-    Object val = nextExpression.execute(iCurrentRecord, ctx);
-    valuesStack.push(val == null ? NULL_VALUE : val);
+      for (int i = 0; i < operators.size() && i + 1 < childExpressions.size(); i++) {
+        Operator nextOperator = operators.get(i);
+        Object rightValue = childExpressions.get(i + 1).execute(iCurrentRecord, ctx);
 
-    for (int i = 0; i < operators.size() && i + 1 < childExpressions.size(); i++) {
-      Operator nextOperator = operators.get(i);
-      Object rightValue = childExpressions.get(i + 1).execute(iCurrentRecord, ctx);
+        if (!operatorsStack.isEmpty()
+            && operatorsStack.peek().getPriority() <= nextOperator.getPriority()) {
+          Object right = valuesStack.poll();
+          right = right == NULL_VALUE ? null : right;
+          Object left = valuesStack.poll();
+          left = left == NULL_VALUE ? null : left;
+          Object calculatedValue = operatorsStack.poll().apply(left, right);
+          valuesStack.push(calculatedValue == null ? NULL_VALUE : calculatedValue);
+        }
+        operatorsStack.push(nextOperator);
 
-      if (!operatorsStack.isEmpty()
-          && operatorsStack.peek().getPriority() <= nextOperator.getPriority()) {
-        Object right = valuesStack.poll();
-        right = right == NULL_VALUE ? null : right;
-        Object left = valuesStack.poll();
-        left = left == NULL_VALUE ? null : left;
-        Object calculatedValue = operatorsStack.poll().apply(left, right);
-        valuesStack.push(calculatedValue == null ? NULL_VALUE : calculatedValue);
+        valuesStack.push(rightValue == null ? NULL_VALUE : rightValue);
       }
-      operatorsStack.push(nextOperator);
-
-      valuesStack.push(rightValue == null ? NULL_VALUE : rightValue);
     }
-
     return iterateOnPriorities(valuesStack, operatorsStack);
   }
 
@@ -737,11 +777,33 @@ public class OMathExpression extends SimpleNode {
     this.childExpressions = childExpressions;
   }
 
+  public void addChildExpression(OMathExpression expression) {
+    if (this.childExpressions == null) {
+      this.childExpressions = new ArrayList<>();
+    }
+    this.childExpressions.add(expression);
+  }
+
+  public OMathExpression unwrapIfNeeded() {
+    if (this.childExpressions != null && this.childExpressions.size() == 1) {
+      return this.childExpressions.get(0);
+    }
+    return this;
+  }
+
   public List<Operator> getOperators() {
     return operators;
   }
 
+  public void addOperator(Operator operator) {
+    if (this.operators == null) {
+      this.operators = new ArrayList<>();
+    }
+    this.operators.add(operator);
+  }
+
   public void toString(Map<Object, Object> params, StringBuilder builder) {
+    if (childExpressions == null || operators == null) return;
     for (int i = 0; i < childExpressions.size(); i++) {
       if (i > 0) {
         builder.append(" ");
@@ -786,36 +848,94 @@ public class OMathExpression extends SimpleNode {
     }
   }
 
+  public void toGenericStatement(StringBuilder builder) {
+    if (childExpressions == null || operators == null) return;
+    for (int i = 0; i < childExpressions.size(); i++) {
+      if (i > 0) {
+        builder.append(" ");
+        switch (operators.get(i - 1)) {
+          case PLUS:
+            builder.append("+");
+            break;
+          case MINUS:
+            builder.append("-");
+            break;
+          case STAR:
+            builder.append("*");
+            break;
+          case SLASH:
+            builder.append("/");
+            break;
+          case REM:
+            builder.append("%");
+            break;
+          case LSHIFT:
+            builder.append("<<");
+            break;
+          case RSHIFT:
+            builder.append(">>");
+            break;
+          case RUNSIGNEDSHIFT:
+            builder.append(">>>");
+            break;
+          case BIT_AND:
+            builder.append("&");
+            break;
+          case BIT_OR:
+            builder.append("|");
+            break;
+          case XOR:
+            builder.append("^");
+            break;
+        }
+        builder.append(" ");
+      }
+      childExpressions.get(i).toGenericStatement(builder);
+    }
+  }
+
   protected boolean supportsBasicCalculation() {
-    for (OMathExpression expr : this.childExpressions) {
-      if (!expr.supportsBasicCalculation()) {
-        return false;
+    if (this.childExpressions != null) {
+      for (OMathExpression expr : this.childExpressions) {
+        if (!expr.supportsBasicCalculation()) {
+          return false;
+        }
       }
     }
     return true;
   }
 
   public boolean isIndexedFunctionCall() {
-    if (this.childExpressions.size() != 1) {
-      return false;
+    if (this.childExpressions != null) {
+      if (this.childExpressions.size() == 1) {
+        return this.childExpressions.get(0).isIndexedFunctionCall();
+      }
     }
-    return this.childExpressions.get(0).isIndexedFunctionCall();
+    return false;
   }
 
   public long estimateIndexedFunction(
       OFromClause target, OCommandContext context, OBinaryCompareOperator operator, Object right) {
-    if (this.childExpressions.size() != 1) {
-      return -1;
+    if (this.childExpressions != null) {
+      if (this.childExpressions.size() == 1) {
+        return this.childExpressions
+            .get(0)
+            .estimateIndexedFunction(target, context, operator, right);
+      }
     }
-    return this.childExpressions.get(0).estimateIndexedFunction(target, context, operator, right);
+    return -1;
   }
 
   public Iterable<OIdentifiable> executeIndexedFunction(
       OFromClause target, OCommandContext context, OBinaryCompareOperator operator, Object right) {
-    if (this.childExpressions.size() != 1) {
-      return null;
+    if (this.childExpressions != null) {
+      if (this.childExpressions.size() == 1) {
+        return this.childExpressions
+            .get(0)
+            .executeIndexedFunction(target, context, operator, right);
+      }
     }
-    return this.childExpressions.get(0).executeIndexedFunction(target, context, operator, right);
+    return null;
   }
 
   /**
@@ -829,12 +949,14 @@ public class OMathExpression extends SimpleNode {
    */
   public boolean canExecuteIndexedFunctionWithoutIndex(
       OFromClause target, OCommandContext context, OBinaryCompareOperator operator, Object right) {
-    if (this.childExpressions.size() != 1) {
-      return false;
+    if (this.childExpressions != null) {
+      if (this.childExpressions.size() == 1) {
+        return this.childExpressions
+            .get(0)
+            .canExecuteIndexedFunctionWithoutIndex(target, context, operator, right);
+      }
     }
-    return this.childExpressions
-        .get(0)
-        .canExecuteIndexedFunctionWithoutIndex(target, context, operator, right);
+    return false;
   }
 
   /**
@@ -847,12 +969,15 @@ public class OMathExpression extends SimpleNode {
    */
   public boolean allowsIndexedFunctionExecutionOnTarget(
       OFromClause target, OCommandContext context, OBinaryCompareOperator operator, Object right) {
-    if (this.childExpressions.size() != 1) {
-      return false;
+    if (this.childExpressions != null) {
+      if (this.childExpressions.size() == 1) {
+        return this.childExpressions
+            .get(0)
+            .allowsIndexedFunctionExecutionOnTarget(target, context, operator, right);
+      }
     }
-    return this.childExpressions
-        .get(0)
-        .allowsIndexedFunctionExecutionOnTarget(target, context, operator, right);
+
+    return false;
   }
 
   /**
@@ -868,19 +993,32 @@ public class OMathExpression extends SimpleNode {
    */
   public boolean executeIndexedFunctionAfterIndexSearch(
       OFromClause target, OCommandContext context, OBinaryCompareOperator operator, Object right) {
-    if (this.childExpressions.size() != 1) {
-      return false;
+    if (this.childExpressions != null) {
+      if (this.childExpressions.size() == 1) {
+        return this.childExpressions
+            .get(0)
+            .executeIndexedFunctionAfterIndexSearch(target, context, operator, right);
+      }
     }
-    return this.childExpressions
-        .get(0)
-        .executeIndexedFunctionAfterIndexSearch(target, context, operator, right);
+    return false;
   }
 
   public boolean isFunctionAny() {
-    if (this.childExpressions.size() != 1) {
-      return false;
+    if (this.childExpressions != null) {
+      if (this.childExpressions.size() == 1) {
+        return this.childExpressions.get(0).isFunctionAny();
+      }
     }
-    return this.childExpressions.get(0).isFunctionAny();
+    return false;
+  }
+
+  public boolean isFunctionAll() {
+    if (this.childExpressions != null) {
+      if (this.childExpressions.size() == 1) {
+        return this.childExpressions.get(0).isFunctionAll();
+      }
+    }
+    return false;
   }
 
   public boolean isFunctionAll() {
@@ -891,57 +1029,75 @@ public class OMathExpression extends SimpleNode {
   }
 
   public boolean isBaseIdentifier() {
-    if (childExpressions.size() == 1) {
-      return childExpressions.get(0).isBaseIdentifier();
+    if (this.childExpressions != null) {
+      if (childExpressions.size() == 1) {
+        return childExpressions.get(0).isBaseIdentifier();
+      }
     }
     return false;
   }
 
   public OCollate getCollate(OResult currentRecord, OCommandContext ctx) {
-    if (childExpressions.size() == 1) return childExpressions.get(0).getCollate(currentRecord, ctx);
+    if (this.childExpressions != null) {
+      if (childExpressions.size() == 1)
+        return childExpressions.get(0).getCollate(currentRecord, ctx);
+    }
     return null;
   }
 
   public boolean isEarlyCalculated(OCommandContext ctx) {
-    for (OMathExpression exp : childExpressions) {
-      if (!exp.isEarlyCalculated(ctx)) {
-        return false;
+    if (this.childExpressions != null) {
+      for (OMathExpression exp : childExpressions) {
+        if (!exp.isEarlyCalculated(ctx)) {
+          return false;
+        }
       }
     }
     return true;
   }
 
   public boolean needsAliases(Set<String> aliases) {
-    for (OMathExpression expr : childExpressions) {
-      if (expr.needsAliases(aliases)) {
-        return true;
+    if (this.childExpressions != null) {
+      for (OMathExpression expr : childExpressions) {
+        if (expr.needsAliases(aliases)) {
+          return true;
+        }
       }
     }
     return false;
   }
 
   public boolean isExpand() {
-    for (OMathExpression expr : this.childExpressions) {
-      if (expr.isExpand()) {
-        if (this.childExpressions.size() > 1) {
-          throw new OCommandExecutionException("Cannot calculate expand() with other expressions");
+    if (this.childExpressions != null) {
+
+      for (OMathExpression expr : this.childExpressions) {
+        if (expr.isExpand()) {
+          if (this.childExpressions.size() > 1) {
+            throw new OCommandExecutionException(
+                "Cannot calculate expand() with other expressions");
+          }
+          return true;
         }
-        return true;
       }
     }
     return false;
   }
 
   public boolean isAggregate() {
-    for (OMathExpression expr : this.childExpressions) {
-      if (expr.isAggregate()) {
-        return true;
+    if (this.childExpressions != null) {
+      for (OMathExpression expr : this.childExpressions) {
+        if (expr.isAggregate()) {
+          return true;
+        }
       }
     }
     return false;
   }
 
   public boolean isCount() {
+    if (this.childExpressions == null) {
+      return false;
+    }
     if (this.childExpressions.size() != 1) {
       return false;
     }
@@ -952,26 +1108,28 @@ public class OMathExpression extends SimpleNode {
       AggregateProjectionSplit aggregateProj, OCommandContext ctx) {
     if (isAggregate()) {
       OMathExpression result = new OMathExpression(-1);
-      int i = 0;
-      for (OMathExpression expr : this.childExpressions) {
-        if (i > 0) {
-          result.operators.add(operators.get(i - 1));
-        }
-        SimpleNode splitResult = expr.splitForAggregation(aggregateProj, ctx);
-        if (splitResult instanceof OMathExpression) {
-          OMathExpression res = (OMathExpression) splitResult;
-          if (res.isEarlyCalculated(ctx) || res.isAggregate()) {
-            result.childExpressions.add(res);
-          } else {
-            throw new OCommandExecutionException(
-                "Cannot mix aggregate and single record attribute values in the same projection");
+      if (this.childExpressions != null && this.operators != null) {
+        int i = 0;
+        for (OMathExpression expr : this.childExpressions) {
+          if (i > 0) {
+            result.addOperator(operators.get(i - 1));
           }
-        } else if (splitResult instanceof OExpression) {
-          result.childExpressions.add(
-              ((OExpression) splitResult)
-                  .mathExpression); // this comes from a splitted aggregate function
+          SimpleNode splitResult = expr.splitForAggregation(aggregateProj, ctx);
+          if (splitResult instanceof OMathExpression) {
+            OMathExpression res = (OMathExpression) splitResult;
+            if (res.isEarlyCalculated(ctx) || res.isAggregate()) {
+              result.addChildExpression(res);
+            } else {
+              throw new OCommandExecutionException(
+                  "Cannot mix aggregate and single record attribute values in the same projection");
+            }
+          } else if (splitResult instanceof OExpression) {
+            result.addChildExpression(
+                ((OExpression) splitResult)
+                    .mathExpression); // this comes from a splitted aggregate function
+          }
+          i++;
         }
-        i++;
       }
       return result;
     } else {
@@ -991,28 +1149,38 @@ public class OMathExpression extends SimpleNode {
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
-    result.childExpressions =
-        childExpressions.stream().map(x -> x.copy()).collect(Collectors.toList());
-    result.operators.addAll(operators);
+    if (this.childExpressions != null) {
+      result.childExpressions =
+          childExpressions.stream().map(x -> x.copy()).collect(Collectors.toList());
+    }
+    if (operators != null) {
+      result.operators = new ArrayList<>(operators);
+    }
     return result;
   }
 
   public void extractSubQueries(OIdentifier letAlias, SubQueryCollector collector) {
-    for (OMathExpression expr : this.childExpressions) {
-      expr.extractSubQueries(letAlias, collector);
+    if (this.childExpressions != null) {
+      for (OMathExpression expr : this.childExpressions) {
+        expr.extractSubQueries(letAlias, collector);
+      }
     }
   }
 
   public void extractSubQueries(SubQueryCollector collector) {
-    for (OMathExpression expr : this.childExpressions) {
-      expr.extractSubQueries(collector);
+    if (this.childExpressions != null) {
+      for (OMathExpression expr : this.childExpressions) {
+        expr.extractSubQueries(collector);
+      }
     }
   }
 
   public boolean refersToParent() {
-    for (OMathExpression expr : this.childExpressions) {
-      if (expr.refersToParent()) {
-        return true;
+    if (this.childExpressions != null) {
+      for (OMathExpression expr : this.childExpressions) {
+        if (expr.refersToParent()) {
+          return true;
+        }
       }
     }
     return false;
@@ -1043,10 +1211,12 @@ public class OMathExpression extends SimpleNode {
 
   public List<String> getMatchPatternInvolvedAliases() {
     List<String> result = new ArrayList<String>();
-    for (OMathExpression exp : childExpressions) {
-      List<String> x = exp.getMatchPatternInvolvedAliases();
-      if (x != null) {
-        result.addAll(x);
+    if (this.childExpressions != null) {
+      for (OMathExpression exp : childExpressions) {
+        List<String> x = exp.getMatchPatternInvolvedAliases();
+        if (x != null) {
+          result.addAll(x);
+        }
       }
     }
     if (result.size() == 0) {
@@ -1056,7 +1226,7 @@ public class OMathExpression extends SimpleNode {
   }
 
   public void applyRemove(OResultInternal result, OCommandContext ctx) {
-    if (childExpressions.size() != 1) {
+    if (childExpressions == null || childExpressions.size() != 1) {
       throw new OCommandExecutionException("cannot apply REMOVE " + toString());
     }
     childExpressions.get(0).applyRemove(result, ctx);

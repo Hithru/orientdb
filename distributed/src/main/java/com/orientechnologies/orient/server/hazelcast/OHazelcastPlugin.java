@@ -19,91 +19,9 @@
  */
 package com.orientechnologies.orient.server.hazelcast;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.FileSystemXmlConfig;
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.ILock;
-import com.hazelcast.core.LifecycleEvent;
-import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.core.LifecycleService;
-import com.hazelcast.core.MapEvent;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MemberAttributeEvent;
-import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.core.MembershipListener;
-import com.hazelcast.spi.exception.RetryableHazelcastException;
-import com.orientechnologies.common.concur.OOfflineNodeException;
-import com.orientechnologies.common.concur.lock.OInterruptedException;
-import com.orientechnologies.common.exception.OException;
-import com.orientechnologies.common.io.OFileUtils;
-import com.orientechnologies.common.io.OUtils;
-import com.orientechnologies.common.log.OLogManager;
-import com.orientechnologies.common.parser.OSystemVariableResolver;
-import com.orientechnologies.common.util.OCallable;
-import com.orientechnologies.common.util.OCallableNoParamNoReturn;
-import com.orientechnologies.common.util.OCallableUtils;
-import com.orientechnologies.common.util.OUncaughtExceptionHandler;
-import com.orientechnologies.orient.core.OSignalHandler;
-import com.orientechnologies.orient.core.Orient;
-import com.orientechnologies.orient.core.config.OGlobalConfiguration;
-import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
-import com.orientechnologies.orient.core.db.ODatabaseInternal;
-import com.orientechnologies.orient.core.db.ODatabaseRecordThreadLocal;
-import com.orientechnologies.orient.core.db.OScenarioThreadLocal;
-import com.orientechnologies.orient.core.db.OrientDBDistributed;
-import com.orientechnologies.orient.core.db.document.ODatabaseDocumentAbstract;
-import com.orientechnologies.orient.core.exception.OConfigurationException;
-import com.orientechnologies.orient.core.exception.ODatabaseException;
-import com.orientechnologies.orient.core.metadata.schema.OType;
-import com.orientechnologies.orient.core.record.ORecordInternal;
-import com.orientechnologies.orient.core.record.impl.ODocument;
-import com.orientechnologies.orient.core.storage.OAutoshardedStorage;
-import com.orientechnologies.orient.core.storage.impl.local.OAbstractPaginatedStorage;
-import com.orientechnologies.orient.server.OServer;
-import com.orientechnologies.orient.server.OSystemDatabase;
-import com.orientechnologies.orient.server.config.OServerParameterConfiguration;
-import com.orientechnologies.orient.server.distributed.ODistributedConfiguration;
-import com.orientechnologies.orient.server.distributed.ODistributedException;
-import com.orientechnologies.orient.server.distributed.ODistributedLifecycleListener;
-import com.orientechnologies.orient.server.distributed.ODistributedLockManager;
-import com.orientechnologies.orient.server.distributed.ODistributedRequest;
-import com.orientechnologies.orient.server.distributed.ODistributedRequestId;
-import com.orientechnologies.orient.server.distributed.ODistributedResponse;
-import com.orientechnologies.orient.server.distributed.ODistributedServerLog;
-import com.orientechnologies.orient.server.distributed.ODistributedServerLog.DIRECTION;
-import com.orientechnologies.orient.server.distributed.ODistributedStartupException;
-import com.orientechnologies.orient.server.distributed.OModifiableDistributedConfiguration;
-import com.orientechnologies.orient.server.distributed.ORemoteServerController;
-import com.orientechnologies.orient.server.distributed.impl.OClusterHealthChecker;
-import com.orientechnologies.orient.server.distributed.impl.ODistributedAbstractPlugin;
-import com.orientechnologies.orient.server.distributed.impl.ODistributedDatabaseImpl;
-import com.orientechnologies.orient.server.distributed.impl.ODistributedMessageServiceImpl;
-import com.orientechnologies.orient.server.distributed.impl.ODistributedOutput;
-import com.orientechnologies.orient.server.distributed.impl.ODistributedStorage;
-import com.orientechnologies.orient.server.distributed.impl.task.OAbstractSyncDatabaseTask;
-import com.orientechnologies.orient.server.distributed.impl.task.ODropDatabaseTask;
-import com.orientechnologies.orient.server.distributed.impl.task.OUpdateDatabaseConfigurationTask;
-import com.orientechnologies.orient.server.network.OServerNetworkListener;
-import com.orientechnologies.orient.server.network.protocol.OBeforeDatabaseOpenNetworkEventListener;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import sun.misc.Signal;
+import com.orientechnologies.orient.server.distributed.impl.ODistributedPlugin;
 
+<<<<<<< HEAD
 /**
  * Hazelcast implementation for clustering.
  *
@@ -2060,3 +1978,7 @@ public class OHazelcastPlugin extends ODistributedAbstractPlugin
     }
   }
 }
+=======
+/** We keep this since it is the easiest way not to break configuration files! */
+public class OHazelcastPlugin extends ODistributedPlugin {}
+>>>>>>> develop

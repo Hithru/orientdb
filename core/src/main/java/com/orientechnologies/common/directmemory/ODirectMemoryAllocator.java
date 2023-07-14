@@ -21,26 +21,30 @@
 package com.orientechnologies.common.directmemory;
 
 import com.kenai.jffi.MemoryIO;
-import com.kenai.jffi.Platform;
 import com.orientechnologies.common.exception.ODirectMemoryAllocationFailedException;
-import com.orientechnologies.common.jnr.ONative;
 import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.common.types.OModifiableLong;
 import com.orientechnologies.orient.core.Orient;
 import com.orientechnologies.orient.core.config.OGlobalConfiguration;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
+<<<<<<< HEAD
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+=======
+import java.lang.reflect.Field;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.*;
+>>>>>>> develop
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.LongAdder;
-import jnr.ffi.NativeLong;
-import jnr.ffi.byref.PointerByReference;
+import sun.misc.Unsafe;
 
 /**
  * Manages all allocations/deallocations from/to direct memory. Also tracks the presence of memory
@@ -49,6 +53,30 @@ import jnr.ffi.byref.PointerByReference;
  * @see OGlobalConfiguration#DIRECT_MEMORY_POOL_LIMIT
  */
 public class ODirectMemoryAllocator implements ODirectMemoryAllocatorMXBean {
+  private static final boolean PROFILE_MEMORY =
+      OGlobalConfiguration.MEMORY_PROFILING.getValueAsBoolean();
+
+  private static final int MEMORY_STATISTICS_PRINTING_INTERVAL =
+      OGlobalConfiguration.MEMORY_PROFILING_REPORT_INTERVAL.getValueAsInteger();
+
+  private static final Unsafe unsafe;
+
+  static {
+    unsafe =
+        (Unsafe)
+            AccessController.doPrivileged(
+                (PrivilegedAction<Object>)
+                    () -> {
+                      try {
+                        Field f = Unsafe.class.getDeclaredField("theUnsafe");
+                        f.setAccessible(true);
+                        return f.get(null);
+                      } catch (NoSuchFieldException | IllegalAccessException e) {
+                        return null;
+                      }
+                    });
+  }
+
   private static final boolean PROFILE_MEMORY =
       OGlobalConfiguration.MEMORY_PROFILING.getValueAsBoolean();
 
@@ -98,8 +126,11 @@ public class ODirectMemoryAllocator implements ODirectMemoryAllocatorMXBean {
       Collections.newSetFromMap(new ConcurrentHashMap<>());
 
   private final ReferenceQueue<Thread> consumptionMapEvictionQueue = new ReferenceQueue<>();
+<<<<<<< HEAD
 
   private final boolean isLinux = Platform.getPlatform().getOS() == Platform.OS.LINUX;
+=======
+>>>>>>> develop
 
   /** @return singleton instance. */
   public static ODirectMemoryAllocator instance() {
@@ -122,7 +153,11 @@ public class ODirectMemoryAllocator implements ODirectMemoryAllocatorMXBean {
     trackedBuffers = new HashMap<>();
 
     if (PROFILE_MEMORY) {
+<<<<<<< HEAD
       final long printInterval = MEMORY_STATISTICS_PRINTING_INTERVAL * 60 * 1_000;
+=======
+      final long printInterval = (long) MEMORY_STATISTICS_PRINTING_INTERVAL * 60 * 1_000;
+>>>>>>> develop
       Orient.instance()
           .scheduleTask(new MemoryStatPrinter(consumptionMaps), printInterval, printInterval);
     }
@@ -138,31 +173,45 @@ public class ODirectMemoryAllocator implements ODirectMemoryAllocatorMXBean {
    * @throws ODirectMemoryAllocationFailedException if it is impossible to allocate amount of direct
    *     memory of given size
    */
+<<<<<<< HEAD
   public OPointer allocate(int size, int align, boolean clear, Intention intention) {
+=======
+  public OPointer allocate(int size, boolean clear, Intention intention) {
+>>>>>>> develop
     if (size <= 0) {
       throw new IllegalArgumentException("Size of allocated memory can not be less or equal to 0");
     }
 
     final OPointer ptr;
-    if (align <= 0) {
-      final long pointer = MemoryIO.getInstance().allocateMemory(size, clear);
-      if (pointer <= 0) {
-        throw new ODirectMemoryAllocationFailedException(
-            "Can not allocate direct memory chunk of size " + size);
-      }
 
+<<<<<<< HEAD
       ptr = new OPointer(pointer, size, intention);
+=======
+    final long pointer;
+    if (unsafe == null) {
+      pointer = MemoryIO.getInstance().allocateMemory(size, clear);
+>>>>>>> develop
     } else {
-      if (!isLinux) {
-        throw new ODirectMemoryAllocationFailedException(
-            "Alignment of pointers is allowed only on Linux platforms.");
+      pointer = unsafe.allocateMemory(size);
+      if (clear) {
+        unsafe.setMemory(pointer, size, (byte) 0);
       }
+<<<<<<< HEAD
 
       final PointerByReference pointerByReference = new PointerByReference();
       ONative.instance()
           .posix_memalign(pointerByReference, new NativeLong(align), new NativeLong(size));
       ptr = new OPointer(pointerByReference.getValue().address(), size, intention);
+=======
+>>>>>>> develop
     }
+
+    if (pointer <= 0) {
+      throw new ODirectMemoryAllocationFailedException(
+          "Can not allocate direct memory chunk of size " + size);
+    }
+
+    ptr = new OPointer(pointer, size, intention);
 
     memoryConsumption.add(size);
     if (PROFILE_MEMORY) {
@@ -211,7 +260,13 @@ public class ODirectMemoryAllocator implements ODirectMemoryAllocatorMXBean {
 
     final long ptr = pointer.getNativePointer();
     if (ptr > 0) {
-      MemoryIO.getInstance().freeMemory(ptr);
+
+      if (unsafe != null) {
+        unsafe.freeMemory(ptr);
+      } else {
+        MemoryIO.getInstance().freeMemory(ptr);
+      }
+
       memoryConsumption.add(-pointer.getSize());
 
       if (PROFILE_MEMORY) {
@@ -337,8 +392,6 @@ public class ODirectMemoryAllocator implements ODirectMemoryAllocatorMXBean {
             new TrackedPointerReference(pointer, trackedPointersQueue);
         trackedReferences.add(reference);
         trackedBuffers.put(new TrackedPointerKey(pointer), reference);
-
-        checkTrackedPointerLeaks();
       }
     }
 
@@ -390,8 +443,6 @@ public class ODirectMemoryAllocator implements ODirectMemoryAllocatorMXBean {
           trackedReferences.remove(reference);
           reference.clear();
         }
-
-        checkTrackedPointerLeaks();
       }
     }
   }

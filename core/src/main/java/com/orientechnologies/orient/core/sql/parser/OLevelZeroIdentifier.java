@@ -34,6 +34,16 @@ public class OLevelZeroIdentifier extends SimpleNode {
     }
   }
 
+  public void toGenericStatement(StringBuilder builder) {
+    if (functionCall != null) {
+      functionCall.toGenericStatement(builder);
+    } else if (Boolean.TRUE.equals(self)) {
+      builder.append("@this");
+    } else if (collection != null) {
+      collection.toGenericStatement(builder);
+    }
+  }
+
   public Object execute(OIdentifiable iCurrentRecord, OCommandContext ctx) {
     if (functionCall != null) {
       return functionCall.execute(iCurrentRecord, ctx);

@@ -20,7 +20,6 @@
 
 package com.orientechnologies.orient.core.engine.local;
 
-import com.kenai.jffi.Platform;
 import com.orientechnologies.common.collection.closabledictionary.OClosableLinkedContainer;
 import com.orientechnologies.common.directmemory.OByteBufferPool;
 import com.orientechnologies.common.directmemory.ODirectMemoryAllocator.Intention;
@@ -30,6 +29,7 @@ import com.orientechnologies.common.io.OIOUtils;
 import com.orientechnologies.common.jnr.ONative;
 import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.orient.core.config.OGlobalConfiguration;
+import com.orientechnologies.orient.core.db.OrientDBInternal;
 import com.orientechnologies.orient.core.engine.OEngineAbstract;
 import com.orientechnologies.orient.core.engine.OMemoryAndLocalPaginatedEnginesInitializer;
 import com.orientechnologies.orient.core.exception.ODatabaseException;
@@ -40,7 +40,6 @@ import com.orientechnologies.orient.core.storage.disk.OLocalPaginatedStorage;
 import com.orientechnologies.orient.core.storage.fs.OFile;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import jnr.posix.POSIXFactory;
 
 /**
@@ -78,8 +77,7 @@ public class OEngineLocalPaginated extends OEngineAbstract {
     final String userName = System.getProperty("user.name", "unknown");
     OLogManager.instance()
         .infoNoDb(this, "System is started under an effective user : `%s`", userName);
-    if (Platform.getPlatform().getOS() == Platform.OS.LINUX
-        && POSIXFactory.getPOSIX().getegid() == 0) {
+    if (OIOUtils.isOsLinux() && POSIXFactory.getPOSIX().getegid() == 0) {
       OLogManager.instance()
           .warnNoDb(
               this,
@@ -103,7 +101,11 @@ public class OEngineLocalPaginated extends OEngineAbstract {
       final List<OPointer> pages = new ArrayList<>(pageCount);
 
       for (int i = 0; i < pageCount; i++) {
+<<<<<<< HEAD
         pages.add(bufferPool.acquireDirect(false, Intention.PAGE_PRE_ALLOCATION));
+=======
+        pages.add(bufferPool.acquireDirect(true, Intention.PAGE_PRE_ALLOCATION));
+>>>>>>> develop
       }
 
       for (final OPointer pointer : pages) {
@@ -135,21 +137,21 @@ public class OEngineLocalPaginated extends OEngineAbstract {
 
   public OStorage createStorage(
       final String dbName,
-      final Map<String, String> configuration,
       long maxWalSegSize,
       long doubleWriteLogMaxSegSize,
-      int storageId) {
+      int storageId,
+      OrientDBInternal context) {
     try {
 
       return new OLocalPaginatedStorage(
           dbName,
           dbName,
-          getMode(configuration),
           storageId,
           readCache,
           files,
           maxWalSegSize,
-          doubleWriteLogMaxSegSize);
+          doubleWriteLogMaxSegSize,
+          context);
     } catch (Exception e) {
       final String message =
           "Error on opening database: "

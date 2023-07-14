@@ -9,6 +9,10 @@ import com.orientechnologies.orient.core.record.ORecordVersionHelper;
 import com.orientechnologies.orient.core.storage.cache.OCacheEntry;
 import com.orientechnologies.orient.core.storage.cache.OCacheEntryImpl;
 import com.orientechnologies.orient.core.storage.cache.OCachePointer;
+<<<<<<< HEAD
+=======
+import java.nio.ByteBuffer;
+>>>>>>> develop
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -35,7 +39,11 @@ public class ClusterPageTest {
     OCachePointer cachePointer = new OCachePointer(pointer, bufferPool, 0, 0);
     cachePointer.incrementReferrer();
 
+<<<<<<< HEAD
     OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false);
+=======
+    OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false, null);
+>>>>>>> develop
     cacheEntry.acquireExclusiveLock();
 
     try {
@@ -81,13 +89,21 @@ public class ClusterPageTest {
     OCachePointer cachePointer = new OCachePointer(pointer, bufferPool, 0, 0);
     cachePointer.incrementReferrer();
 
+<<<<<<< HEAD
     OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false);
+=======
+    OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false, null);
+>>>>>>> develop
     cacheEntry.acquireExclusiveLock();
     try {
       OClusterPage localPage = new OClusterPage(cacheEntry);
       localPage.init();
 
       addThreeRecords(localPage);
+<<<<<<< HEAD
+=======
+
+>>>>>>> develop
     } finally {
       cacheEntry.releaseExclusiveLock();
       cachePointer.decrementReferrer();
@@ -156,7 +172,11 @@ public class ClusterPageTest {
     OCachePointer cachePointer = new OCachePointer(pointer, bufferPool, 0, 0);
     cachePointer.incrementReferrer();
 
+<<<<<<< HEAD
     OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false);
+=======
+    OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false, null);
+>>>>>>> develop
     cacheEntry.acquireExclusiveLock();
     try {
       OClusterPage localPage = new OClusterPage(cacheEntry);
@@ -213,7 +233,11 @@ public class ClusterPageTest {
     OCachePointer cachePointer = new OCachePointer(pointer, bufferPool, 0, 0);
     cachePointer.incrementReferrer();
 
+<<<<<<< HEAD
     OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false);
+=======
+    OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false, null);
+>>>>>>> develop
     cacheEntry.acquireExclusiveLock();
     try {
       OClusterPage localPage = new OClusterPage(cacheEntry);
@@ -277,7 +301,11 @@ public class ClusterPageTest {
     OCachePointer cachePointer = new OCachePointer(pointer, bufferPool, 0, 0);
     cachePointer.incrementReferrer();
 
+<<<<<<< HEAD
     OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false);
+=======
+    OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false, null);
+>>>>>>> develop
     cacheEntry.acquireExclusiveLock();
     try {
       OClusterPage localPage = new OClusterPage(cacheEntry);
@@ -341,7 +369,11 @@ public class ClusterPageTest {
     OCachePointer cachePointer = new OCachePointer(pointer, bufferPool, 0, 0);
     cachePointer.incrementReferrer();
 
+<<<<<<< HEAD
     OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false);
+=======
+    OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false, null);
+>>>>>>> develop
     cacheEntry.acquireExclusiveLock();
     try {
       OClusterPage localPage = new OClusterPage(cacheEntry);
@@ -405,7 +437,11 @@ public class ClusterPageTest {
     OCachePointer cachePointer = new OCachePointer(pointer, bufferPool, 0, 0);
     cachePointer.incrementReferrer();
 
+<<<<<<< HEAD
     OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false);
+=======
+    OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false, null);
+>>>>>>> develop
     cacheEntry.acquireExclusiveLock();
 
     try {
@@ -457,7 +493,11 @@ public class ClusterPageTest {
     OCachePointer cachePointer = new OCachePointer(pointer, bufferPool, 0, 0);
     cachePointer.incrementReferrer();
 
+<<<<<<< HEAD
     OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false);
+=======
+    OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false, null);
+>>>>>>> develop
     cacheEntry.acquireExclusiveLock();
 
     try {
@@ -509,13 +549,21 @@ public class ClusterPageTest {
     OCachePointer cachePointer = new OCachePointer(pointer, bufferPool, 0, 0);
     cachePointer.incrementReferrer();
 
+<<<<<<< HEAD
     OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false);
+=======
+    OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false, null);
+>>>>>>> develop
     cacheEntry.acquireExclusiveLock();
     try {
       OClusterPage localPage = new OClusterPage(cacheEntry);
       localPage.init();
 
       deleteAddBiggerVersion(localPage);
+<<<<<<< HEAD
+=======
+
+>>>>>>> develop
     } finally {
       cacheEntry.releaseExclusiveLock();
       cachePointer.decrementReferrer();
@@ -562,13 +610,21 @@ public class ClusterPageTest {
     OCachePointer cachePointer = new OCachePointer(pointer, bufferPool, 0, 0);
     cachePointer.incrementReferrer();
 
+<<<<<<< HEAD
     OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false);
+=======
+    OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false, null);
+>>>>>>> develop
     cacheEntry.acquireExclusiveLock();
     try {
       OClusterPage localPage = new OClusterPage(cacheEntry);
       localPage.init();
 
       deleteAddBiggerVersionNFL(localPage);
+<<<<<<< HEAD
+=======
+
+>>>>>>> develop
     } finally {
       cacheEntry.releaseExclusiveLock();
       cachePointer.decrementReferrer();
@@ -615,13 +671,21 @@ public class ClusterPageTest {
     OCachePointer cachePointer = new OCachePointer(pointer, bufferPool, 0, 0);
     cachePointer.incrementReferrer();
 
+<<<<<<< HEAD
     OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false);
+=======
+    OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false, null);
+>>>>>>> develop
     cacheEntry.acquireExclusiveLock();
     try {
       OClusterPage localPage = new OClusterPage(cacheEntry);
       localPage.init();
 
       deleteAddEqualVersion(localPage);
+<<<<<<< HEAD
+=======
+
+>>>>>>> develop
     } finally {
       cacheEntry.releaseExclusiveLock();
       cachePointer.decrementReferrer();
@@ -662,13 +726,21 @@ public class ClusterPageTest {
     OCachePointer cachePointer = new OCachePointer(pointer, bufferPool, 0, 0);
     cachePointer.incrementReferrer();
 
+<<<<<<< HEAD
     OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false);
+=======
+    OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false, null);
+>>>>>>> develop
     cacheEntry.acquireExclusiveLock();
     try {
       OClusterPage localPage = new OClusterPage(cacheEntry);
       localPage.init();
 
       deleteAddEqualVersionNFL(localPage);
+<<<<<<< HEAD
+=======
+
+>>>>>>> develop
     } finally {
       cacheEntry.releaseExclusiveLock();
       cachePointer.decrementReferrer();
@@ -709,13 +781,21 @@ public class ClusterPageTest {
     OCachePointer cachePointer = new OCachePointer(pointer, bufferPool, 0, 0);
     cachePointer.incrementReferrer();
 
+<<<<<<< HEAD
     OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false);
+=======
+    OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false, null);
+>>>>>>> develop
     cacheEntry.acquireExclusiveLock();
     try {
       OClusterPage localPage = new OClusterPage(cacheEntry);
       localPage.init();
 
       deleteAddEqualVersionKeepTombstoneVersion(localPage);
+<<<<<<< HEAD
+=======
+
+>>>>>>> develop
     } finally {
       cacheEntry.releaseExclusiveLock();
       cachePointer.decrementReferrer();
@@ -756,13 +836,21 @@ public class ClusterPageTest {
     OCachePointer cachePointer = new OCachePointer(pointer, bufferPool, 0, 0);
     cachePointer.incrementReferrer();
 
+<<<<<<< HEAD
     OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false);
+=======
+    OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false, null);
+>>>>>>> develop
     cacheEntry.acquireExclusiveLock();
     try {
       OClusterPage localPage = new OClusterPage(cacheEntry);
       localPage.init();
 
       deleteTwoOutOfFour(localPage);
+<<<<<<< HEAD
+=======
+
+>>>>>>> develop
     } finally {
       cacheEntry.releaseExclusiveLock();
       cachePointer.decrementReferrer();
@@ -840,13 +928,21 @@ public class ClusterPageTest {
     OCachePointer cachePointer = new OCachePointer(pointer, bufferPool, 0, 0);
     cachePointer.incrementReferrer();
 
+<<<<<<< HEAD
     OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false);
+=======
+    OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false, null);
+>>>>>>> develop
     cacheEntry.acquireExclusiveLock();
     try {
       OClusterPage localPage = new OClusterPage(cacheEntry);
       localPage.init();
 
       addFullPageDeleteAndAddAgain(localPage);
+<<<<<<< HEAD
+=======
+
+>>>>>>> develop
     } finally {
       cacheEntry.releaseExclusiveLock();
       cachePointer.decrementReferrer();
@@ -921,13 +1017,21 @@ public class ClusterPageTest {
     OCachePointer cachePointer = new OCachePointer(pointer, bufferPool, 0, 0);
     cachePointer.incrementReferrer();
 
+<<<<<<< HEAD
     OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false);
+=======
+    OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false, null);
+>>>>>>> develop
     cacheEntry.acquireExclusiveLock();
     try {
       OClusterPage localPage = new OClusterPage(cacheEntry);
       localPage.init();
 
       addFullPageDeleteAndAddAgainNFL(localPage);
+<<<<<<< HEAD
+=======
+
+>>>>>>> develop
     } finally {
       cacheEntry.releaseExclusiveLock();
       cachePointer.decrementReferrer();
@@ -998,7 +1102,11 @@ public class ClusterPageTest {
     OCachePointer cachePointer = new OCachePointer(pointer, bufferPool, 0, 0);
     cachePointer.incrementReferrer();
 
+<<<<<<< HEAD
     OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false);
+=======
+    OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false, null);
+>>>>>>> develop
     cacheEntry.acquireExclusiveLock();
 
     try {
@@ -1008,6 +1116,10 @@ public class ClusterPageTest {
       localPage.init();
 
       addBigRecordDeleteAndAddSmallRecords(seed, localPage);
+<<<<<<< HEAD
+=======
+
+>>>>>>> develop
     } finally {
       cacheEntry.releaseExclusiveLock();
       cachePointer.decrementReferrer();
@@ -1071,7 +1183,11 @@ public class ClusterPageTest {
     OCachePointer cachePointer = new OCachePointer(pointer, bufferPool, 0, 0);
     cachePointer.incrementReferrer();
 
+<<<<<<< HEAD
     OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false);
+=======
+    OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false, null);
+>>>>>>> develop
     cacheEntry.acquireExclusiveLock();
 
     final long seed = System.currentTimeMillis();
@@ -1151,7 +1267,11 @@ public class ClusterPageTest {
     OCachePointer cachePointer = new OCachePointer(pointer, bufferPool, 0, 0);
     cachePointer.incrementReferrer();
 
+<<<<<<< HEAD
     OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false);
+=======
+    OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false, null);
+>>>>>>> develop
     cacheEntry.acquireExclusiveLock();
 
     final long seed = System.currentTimeMillis();
@@ -1160,6 +1280,10 @@ public class ClusterPageTest {
       localPage.init();
 
       findLastRecord(seed, localPage);
+<<<<<<< HEAD
+=======
+
+>>>>>>> develop
     } finally {
       cacheEntry.releaseExclusiveLock();
       cachePointer.decrementReferrer();
@@ -1227,13 +1351,21 @@ public class ClusterPageTest {
     OCachePointer cachePointer = new OCachePointer(pointer, bufferPool, 0, 0);
     cachePointer.incrementReferrer();
 
+<<<<<<< HEAD
     OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false);
+=======
+    OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false, null);
+>>>>>>> develop
     cacheEntry.acquireExclusiveLock();
     try {
       OClusterPage localPage = new OClusterPage(cacheEntry);
       localPage.init();
 
       setGetNextPage(localPage);
+<<<<<<< HEAD
+=======
+
+>>>>>>> develop
     } finally {
       cacheEntry.releaseExclusiveLock();
       cachePointer.decrementReferrer();
@@ -1253,7 +1385,11 @@ public class ClusterPageTest {
     OCachePointer cachePointer = new OCachePointer(pointer, bufferPool, 0, 0);
     cachePointer.incrementReferrer();
 
+<<<<<<< HEAD
     OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false);
+=======
+    OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false, null);
+>>>>>>> develop
     cacheEntry.acquireExclusiveLock();
     try {
       OClusterPage localPage = new OClusterPage(cacheEntry);
@@ -1279,13 +1415,21 @@ public class ClusterPageTest {
     OCachePointer cachePointer = new OCachePointer(pointer, bufferPool, 0, 0);
     cachePointer.incrementReferrer();
 
+<<<<<<< HEAD
     OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false);
+=======
+    OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false, null);
+>>>>>>> develop
     cacheEntry.acquireExclusiveLock();
     try {
       OClusterPage localPage = new OClusterPage(cacheEntry);
       localPage.init();
 
       replaceOneRecordWithEqualSize(localPage);
+<<<<<<< HEAD
+=======
+
+>>>>>>> develop
     } finally {
       cacheEntry.releaseExclusiveLock();
       cachePointer.decrementReferrer();
@@ -1327,7 +1471,11 @@ public class ClusterPageTest {
     OCachePointer cachePointer = new OCachePointer(pointer, bufferPool, 0, 0);
     cachePointer.incrementReferrer();
 
+<<<<<<< HEAD
     OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false);
+=======
+    OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false, null);
+>>>>>>> develop
     cacheEntry.acquireExclusiveLock();
 
     try {
@@ -1335,6 +1483,10 @@ public class ClusterPageTest {
       localPage.init();
 
       replaceOneRecordNoVersionUpdate(localPage);
+<<<<<<< HEAD
+=======
+
+>>>>>>> develop
     } finally {
       cacheEntry.releaseExclusiveLock();
       cachePointer.decrementReferrer();
@@ -1371,7 +1523,11 @@ public class ClusterPageTest {
     OCachePointer cachePointer = new OCachePointer(pointer, bufferPool, 0, 0);
     cachePointer.incrementReferrer();
 
+<<<<<<< HEAD
     OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false);
+=======
+    OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false, null);
+>>>>>>> develop
     cacheEntry.acquireExclusiveLock();
     try {
       OClusterPage localPage = new OClusterPage(cacheEntry);
@@ -1409,4 +1565,15 @@ public class ClusterPageTest {
         .isEqualTo(new byte[] {5, 2, 3, 4, 5, 11, 5, 4, 3, 2, 1});
     Assert.assertEquals(localPage.getRecordVersion(index), recordVersion);
   }
+<<<<<<< HEAD
+=======
+
+  private byte[] getBytes(ByteBuffer buffer, int len) {
+    byte[] result = new byte[len];
+    buffer.position(ClusterPageTest.SYSTEM_OFFSET);
+    buffer.get(result);
+
+    return result;
+  }
+>>>>>>> develop
 }

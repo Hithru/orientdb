@@ -49,7 +49,7 @@ import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.ORecordAbstract;
 import com.orientechnologies.orient.core.record.ORecordInternal;
 import com.orientechnologies.orient.core.record.impl.ODocument;
-import com.orientechnologies.orient.core.storage.OStorage;
+import com.orientechnologies.orient.core.record.impl.ODocumentInternal;
 import com.orientechnologies.orient.core.tx.OTransactionOptimistic;
 import com.orientechnologies.orient.object.db.OObjectDatabaseTx;
 import com.orientechnologies.orient.object.db.OObjectLazyMap;
@@ -116,16 +116,18 @@ public class OObjectEntitySerializer {
   }
 
   protected static OObjectEntitySerializedSchema getCurrentSerializedSchema() {
-    OStorage storage = ODatabaseRecordThreadLocal.instance().get().getStorage();
+    ODatabaseDocumentInternal instance = ODatabaseRecordThreadLocal.instance().get();
     OObjectEntitySerializedSchema serializedShchema =
-        storage.getResource(
-            SIMPLE_NAME,
-            new Callable<OObjectEntitySerializedSchema>() {
-              @Override
-              public OObjectEntitySerializedSchema call() throws Exception {
-                return new OObjectEntitySerializedSchema();
-              }
-            });
+        instance
+            .getSharedContext()
+            .getResource(
+                SIMPLE_NAME,
+                new Callable<OObjectEntitySerializedSchema>() {
+                  @Override
+                  public OObjectEntitySerializedSchema call() throws Exception {
+                    return new OObjectEntitySerializedSchema();
+                  }
+                });
 
     return serializedShchema;
   }
@@ -1208,7 +1210,7 @@ public class OObjectEntitySerializer {
     OProperty schemaProperty;
 
     final Class<?> pojoClass = iPojo.getClass();
-    final OClass schemaClass = iRecord.getSchemaClass();
+    final OClass schemaClass = ODocumentInternal.getImmutableSchemaClass(iRecord);
 
     // CHECK FOR ID BINDING
     final Field idField = getIdField(pojoClass);
@@ -1306,7 +1308,7 @@ public class OObjectEntitySerializer {
         if (fieldValue != null) {
           if (isEmbeddedObject(p)) {
             // AUTO CREATE SCHEMA CLASS
-            if (iRecord.getSchemaClass() == null) {
+            if (ODocumentInternal.getImmutableSchemaClass(iRecord) == null) {
               db.getMetadata().getSchema().createClass(iPojo.getClass());
               iRecord.setClassNameIfExists(iPojo.getClass().getSimpleName());
             }

@@ -39,7 +39,6 @@ import com.orientechnologies.orient.core.sql.OCommandExecutorSQLAbstract;
 import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 import com.orientechnologies.orient.core.sql.parser.OHaSyncClusterStatement;
 import com.orientechnologies.orient.core.sql.parser.OStatementCache;
-import com.orientechnologies.orient.core.storage.impl.local.OAbstractPaginatedStorage;
 import com.orientechnologies.orient.server.OServer;
 import com.orientechnologies.orient.server.distributed.ODistributedConfiguration;
 import com.orientechnologies.orient.server.distributed.ODistributedException;
@@ -47,11 +46,10 @@ import com.orientechnologies.orient.server.distributed.ODistributedRequest;
 import com.orientechnologies.orient.server.distributed.ODistributedResponse;
 import com.orientechnologies.orient.server.distributed.ODistributedServerLog;
 import com.orientechnologies.orient.server.distributed.impl.ODatabaseDocumentDistributed;
-import com.orientechnologies.orient.server.distributed.impl.ODistributedAbstractPlugin;
 import com.orientechnologies.orient.server.distributed.impl.ODistributedDatabaseChunk;
+import com.orientechnologies.orient.server.distributed.impl.ODistributedPlugin;
 import com.orientechnologies.orient.server.distributed.impl.task.OCopyDatabaseChunkTask;
 import com.orientechnologies.orient.server.distributed.impl.task.OSyncClusterTask;
-import com.orientechnologies.orient.server.hazelcast.OHazelcastPlugin;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -94,11 +92,8 @@ public class OCommandExecutorSQLHASyncCluster extends OCommandExecutorSQLAbstrac
       throw new OCommandExecutionException("OrientDB is not started in distributed mode");
     }
 
-    final OHazelcastPlugin dManager =
-        (OHazelcastPlugin)
-            ((ODatabaseDocumentDistributed) database)
-                .getStorageDistributed()
-                .getDistributedManager();
+    final ODistributedPlugin dManager =
+        (ODistributedPlugin) ((ODatabaseDocumentDistributed) database).getDistributedManager();
     if (dManager == null || !dManager.isEnabled())
       throw new OCommandExecutionException("OrientDB is not started in distributed mode");
 
@@ -126,7 +121,7 @@ public class OCommandExecutorSQLHASyncCluster extends OCommandExecutorSQLAbstrac
   }
 
   public static Object replaceCluster(
-      final OHazelcastPlugin dManager,
+      final ODistributedPlugin dManager,
       final ODatabaseDocumentInternal database,
       final OServer serverInstance,
       final String databaseName,
@@ -137,7 +132,7 @@ public class OCommandExecutorSQLHASyncCluster extends OCommandExecutorSQLAbstrac
   }
 
   public static Object replaceCluster(
-      final ODistributedAbstractPlugin dManager,
+      final ODistributedPlugin dManager,
       final OServer serverInstance,
       final String databaseName,
       final String clusterName) {
@@ -257,12 +252,10 @@ public class OCommandExecutorSQLHASyncCluster extends OCommandExecutorSQLAbstrac
 
       ODatabaseDocumentInternal db = ODatabaseRecordThreadLocal.instance().getIfDefined();
       final boolean openDatabaseHere = db == null;
-      if (db == null) db = serverInstance.openDatabase("plocal:" + dbPath, "", "", null, true);
+      if (db == null) db = serverInstance.openDatabase(databaseName);
 
       try {
 
-        final OAbstractPaginatedStorage stg =
-            (OAbstractPaginatedStorage) db.getStorage().getUnderlying();
         db.getLocalCache().invalidate();
         int clusterId = db.getClusterIdByName(clusterName);
         OClass klass = db.getMetadata().getSchema().getClassByClusterId(clusterId);

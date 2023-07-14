@@ -74,14 +74,14 @@ public class OOrBlock extends OBooleanExpression {
     this.subBlocks = subBlocks;
   }
 
+  public void addSubBlock(OBooleanExpression block) {
+    this.subBlocks.add(block);
+  }
+
   public void toString(Map<Object, Object> params, StringBuilder builder) {
     if (subBlocks == null || subBlocks.size() == 0) {
       return;
     }
-    // if (subBlocks.size() == 1) {
-    // subBlocks.get(0).toString(params, builder);
-    // return;
-    // }
 
     boolean first = true;
     for (OBooleanExpression expr : subBlocks) {
@@ -89,6 +89,21 @@ public class OOrBlock extends OBooleanExpression {
         builder.append(" OR ");
       }
       expr.toString(params, builder);
+      first = false;
+    }
+  }
+
+  public void toGenericStatement(StringBuilder builder) {
+    if (subBlocks == null || subBlocks.size() == 0) {
+      return;
+    }
+
+    boolean first = true;
+    for (OBooleanExpression expr : subBlocks) {
+      if (!first) {
+        builder.append(" OR ");
+      }
+      expr.toGenericStatement(builder);
       first = false;
     }
   }

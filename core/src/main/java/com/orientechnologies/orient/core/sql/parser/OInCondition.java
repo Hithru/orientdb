@@ -6,6 +6,7 @@ import com.orientechnologies.common.collection.OMultiValue;
 import com.orientechnologies.orient.core.command.OBasicCommandContext;
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
+import com.orientechnologies.orient.core.sql.executor.OIndexSearchInfo;
 import com.orientechnologies.orient.core.sql.executor.OResult;
 import com.orientechnologies.orient.core.sql.executor.OResultSet;
 import com.orientechnologies.orient.core.sql.operator.OQueryOperatorEquals;
@@ -170,6 +171,22 @@ public class OInCondition extends OBooleanExpression {
       rightParam.toString(params, builder);
     } else if (rightMathExpression != null) {
       rightMathExpression.toString(params, builder);
+    }
+  }
+
+  public void toGenericStatement(StringBuilder builder) {
+    left.toGenericStatement(builder);
+    builder.append(" IN ");
+    if (rightStatement != null) {
+      builder.append("(");
+      rightStatement.toGenericStatement(builder);
+      builder.append(")");
+    } else if (right != null) {
+      builder.append(PARAMETER_PLACEHOLDER);
+    } else if (rightParam != null) {
+      rightParam.toGenericStatement(builder);
+    } else if (rightMathExpression != null) {
+      rightMathExpression.toGenericStatement(builder);
     }
   }
 
@@ -374,6 +391,51 @@ public class OInCondition extends OBooleanExpression {
 
   public void setRightMathExpression(OMathExpression rightMathExpression) {
     this.rightMathExpression = rightMathExpression;
+  }
+
+  public boolean isIndexAware(OIndexSearchInfo info) {
+    if (left.isBaseIdentifier()) {
+      if (info.getField().equals(left.getDefaultAlias().getStringValue())) {
+        if (rightMathExpression != null) {
+          return rightMathExpression.isEarlyCalculated(info.getCtx());
+        } else if (rightParam != null) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  @Override
+  public OExpression resolveKeyFrom(OBinaryCondition additional) {
+    OExpression item = new OExpression(-1);
+    if (getRightMathExpression() != null) {
+      item.setMathExpression(getRightMathExpression());
+      return item;
+    } else if (getRightParam() != null) {
+      OBaseExpression e = new OBaseExpression(-1);
+      e.setInputParam(getRightParam().copy());
+      item.setMathExpression(e);
+      return item;
+    } else {
+      throw new UnsupportedOperationException("Cannot execute index query with " + this);
+    }
+  }
+
+  @Override
+  public OExpression resolveKeyTo(OBinaryCondition additional) {
+    OExpression item = new OExpression(-1);
+    if (getRightMathExpression() != null) {
+      item.setMathExpression(getRightMathExpression());
+      return item;
+    } else if (getRightParam() != null) {
+      OBaseExpression e = new OBaseExpression(-1);
+      e.setInputParam(getRightParam().copy());
+      item.setMathExpression(e);
+      return item;
+    } else {
+      throw new UnsupportedOperationException("Cannot execute index query with " + this);
+    }
   }
 }
 /* JavaCC - OriginalChecksum=00df7cb1877c0a12d24205c1700653c7 (do not edit this line) */

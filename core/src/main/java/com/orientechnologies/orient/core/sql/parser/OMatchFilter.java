@@ -172,6 +172,19 @@ public class OMatchFilter extends SimpleNode {
     builder.append("}");
   }
 
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append("{");
+    boolean first = true;
+    for (OMatchFilterItem item : items) {
+      if (!first) {
+        builder.append(", ");
+      }
+      item.toGenericStatement(builder);
+      first = false;
+    }
+    builder.append("}");
+  }
+
   @Override
   public OMatchFilter copy() {
     OMatchFilter result = new OMatchFilter(-1);
@@ -195,6 +208,10 @@ public class OMatchFilter extends SimpleNode {
   @Override
   public int hashCode() {
     return items != null ? items.hashCode() : 0;
+  }
+
+  public void addItem(OMatchFilterItem item) {
+    this.items.add(item);
   }
 }
 /* JavaCC - OriginalChecksum=6b099371c69e0d0c1c106fc96b3072de (do not edit this line) */

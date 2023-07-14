@@ -20,14 +20,12 @@
 package com.orientechnologies.orient.server.distributed;
 
 import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
-import com.orientechnologies.orient.core.storage.impl.local.paginated.wal.OLogSequenceNumber;
+import com.orientechnologies.orient.core.db.ODatabaseSession;
 import com.orientechnologies.orient.core.tx.OTransactionId;
 import com.orientechnologies.orient.core.tx.OTransactionSequenceStatus;
 import com.orientechnologies.orient.core.tx.OTxMetadataHolder;
 import com.orientechnologies.orient.core.tx.ValidationResult;
 import com.orientechnologies.orient.server.distributed.task.ORemoteTask;
-import java.io.IOException;
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -40,6 +38,7 @@ public interface ODistributedDatabase {
 
   String getDatabaseName();
 
+<<<<<<< HEAD
   ODistributedResponse send2Nodes(
       ODistributedRequest iRequest,
       Collection<String> iClusterNames,
@@ -47,6 +46,8 @@ public interface ODistributedDatabase {
       ODistributedRequest.EXECUTION_MODE iExecutionMode,
       Object localResult);
 
+=======
+>>>>>>> develop
   void setOnline();
 
   String dump();
@@ -59,8 +60,6 @@ public interface ODistributedDatabase {
    * @param nodeName node id
    */
   void handleUnreachableNode(String nodeName);
-
-  ODistributedSyncConfiguration getSyncConfiguration();
 
   void waitForOnline();
 
@@ -97,11 +96,6 @@ public interface ODistributedDatabase {
 
   long getProcessedRequests();
 
-  void checkNodeInConfiguration(ODistributedConfiguration cfg, String serverName);
-
-  void setLSN(String sourceNodeName, OLogSequenceNumber taskLastLSN, boolean writeLastOperation)
-      throws IOException;
-
   Optional<OTransactionId> nextId();
 
   List<OTransactionId> missingTransactions(OTransactionSequenceStatus lastState);
@@ -110,5 +104,15 @@ public interface ODistributedDatabase {
 
   void checkReverseSync(OTransactionSequenceStatus lastState);
 
+<<<<<<< HEAD
+=======
+  ODistributedConfiguration getDistributedConfiguration();
+
+  ODistributedConfiguration getDistributedConfiguration(ODatabaseSession session);
+
+  void setDistributedConfiguration(
+      final OModifiableDistributedConfiguration distributedConfiguration);
+
+>>>>>>> develop
   void fillStatus();
 }

@@ -5,7 +5,6 @@ import static org.junit.Assert.assertEquals;
 
 import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
 import com.orientechnologies.orient.core.db.ODatabaseSession;
-import com.orientechnologies.orient.core.db.ODatabaseType;
 import com.orientechnologies.orient.core.db.OrientDB;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.db.record.ORecordOperation;
@@ -19,19 +18,22 @@ import com.orientechnologies.orient.server.OServer;
 import com.orientechnologies.orient.server.distributed.ODistributedRequestId;
 import com.orientechnologies.orient.server.distributed.impl.task.OTransactionPhase1Task;
 import com.orientechnologies.orient.server.distributed.impl.task.OTransactionPhase1TaskResult;
-import com.orientechnologies.orient.server.distributed.impl.task.transaction.OTxConcurrentModification;
-import com.orientechnologies.orient.server.distributed.impl.task.transaction.OTxSuccess;
-import com.orientechnologies.orient.server.distributed.impl.task.transaction.OTxUniqueIndex;
+import com.orientechnologies.orient.server.distributed.impl.task.transaction.*;
 import java.io.IOException;
+<<<<<<< HEAD
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+=======
+import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+>>>>>>> develop
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 public class OTransactionPhase1TaskTest {
-
   private ODatabaseSession session;
   private OServer server;
 
@@ -42,7 +44,9 @@ public class OTransactionPhase1TaskTest {
     server.startup(getClass().getClassLoader().getResourceAsStream("orientdb-server-config.xml"));
     server.activate();
     OrientDB orientDB = server.getContext();
-    orientDB.create(OTransactionPhase1TaskTest.class.getSimpleName(), ODatabaseType.PLOCAL);
+    orientDB.execute(
+        "create database ? plocal users(admin identified by 'admin' role admin)",
+        OTransactionPhase1TaskTest.class.getSimpleName());
     session = orientDB.open(OTransactionPhase1TaskTest.class.getSimpleName(), "admin", "admin");
     session.createClass("TestClass");
     OClass clazz = session.createClass("TestClassInd");
@@ -74,9 +78,11 @@ public class OTransactionPhase1TaskTest {
     operations.add(new ORecordOperation(rec1, ORecordOperation.UPDATED));
     operations.add(new ORecordOperation(id1.getIdentity(), ORecordOperation.DELETED));
     operations.add(new ORecordOperation(rec2, ORecordOperation.CREATED));
+    OTransactionId txId =
+        server.getDistributedManager().getDatabase(session.getName()).nextId().get();
+    server.getDistributedManager().getDatabase(session.getName()).rollback(txId);
 
-    OTransactionPhase1Task task =
-        new OTransactionPhase1Task(operations, new OTransactionId(Optional.empty(), 0, 1));
+    OTransactionPhase1Task task = new OTransactionPhase1Task(operations, txId, new TreeSet<>());
     OTransactionPhase1TaskResult res =
         (OTransactionPhase1TaskResult)
             task.execute(
@@ -91,19 +97,22 @@ public class OTransactionPhase1TaskTest {
 
   @Test
   public void testExecutionConcurrentModificationUpdate() throws Exception {
-    ODocument doc = new ODocument("TestClass");
+    final ODocument doc = new ODocument("TestClass");
     doc.field("first", "one");
     session.save(doc);
-    ODocument old = doc.copy();
+    final ODocument old = doc.copy();
     doc.field("first", "two");
     session.save(doc);
     session.getLocalCache().clear();
 
     old.field("first", "three");
-    List<ORecordOperation> operations = new ArrayList<>();
+    final List<ORecordOperation> operations = new ArrayList<>();
     operations.add(new ORecordOperation(old, ORecordOperation.UPDATED));
-    OTransactionPhase1Task task =
-        new OTransactionPhase1Task(operations, new OTransactionId(Optional.empty(), 0, 1));
+
+    OTransactionId id =
+        server.getDistributedManager().getDatabase(session.getName()).nextId().get();
+    server.getDistributedManager().getDatabase(session.getName()).rollback(id);
+    OTransactionPhase1Task task = new OTransactionPhase1Task(operations, id, new TreeSet<>());
     OTransactionPhase1TaskResult res =
         (OTransactionPhase1TaskResult)
             task.execute(
@@ -111,7 +120,6 @@ public class OTransactionPhase1TaskTest {
                 server,
                 null,
                 (ODatabaseDocumentInternal) session);
-
     assertTrue(res.getResultPayload() instanceof OTxConcurrentModification);
     assertEquals(
         ((OTxConcurrentModification) res.getResultPayload()).getRecordId(), old.getIdentity());
@@ -121,19 +129,22 @@ public class OTransactionPhase1TaskTest {
 
   @Test
   public void testExecutionConcurrentModificationDelete() throws Exception {
-    ODocument doc = new ODocument("TestClass");
+    final ODocument doc = new ODocument("TestClass");
     doc.field("first", "one");
     session.save(doc);
-    ODocument old = doc.copy();
+    final ODocument old = doc.copy();
     doc.field("first", "two");
     session.save(doc);
     session.getLocalCache().clear();
 
-    List<ORecordOperation> operations = new ArrayList<>();
+    final List<ORecordOperation> operations = new ArrayList<>();
     operations.add(new ORecordOperation(old, ORecordOperation.DELETED));
 
-    OTransactionPhase1Task task =
-        new OTransactionPhase1Task(operations, new OTransactionId(Optional.empty(), 0, 1));
+    OTransactionId id =
+        server.getDistributedManager().getDatabase(session.getName()).nextId().get();
+    server.getDistributedManager().getDatabase(session.getName()).rollback(id);
+
+    OTransactionPhase1Task task = new OTransactionPhase1Task(operations, id, new TreeSet<>());
     OTransactionPhase1TaskResult res =
         (OTransactionPhase1TaskResult)
             task.execute(
@@ -141,7 +152,6 @@ public class OTransactionPhase1TaskTest {
                 server,
                 null,
                 (ODatabaseDocumentInternal) session);
-
     assertTrue(res.getResultPayload() instanceof OTxConcurrentModification);
     assertEquals(
         ((OTxConcurrentModification) res.getResultPayload()).getRecordId(), old.getIdentity());
@@ -151,19 +161,24 @@ public class OTransactionPhase1TaskTest {
 
   @Test
   public void testExecutionDuplicateKey() throws Exception {
-    ODocument doc = new ODocument("TestClassInd");
+    final ODocument doc = new ODocument("TestClassInd");
     doc.field("one", "value");
     session.save(doc);
-    ODocument doc1 = new ODocument("TestClassInd");
+    final ODocument doc1 = new ODocument("TestClassInd");
     ORecordInternal.setIdentity(
         doc1, new ORecordId(session.getClass("TestClassInd").getDefaultClusterId(), 1));
     doc1.field("one", "value");
 
-    List<ORecordOperation> operations = new ArrayList<>();
+    final List<ORecordOperation> operations = new ArrayList<>();
     operations.add(new ORecordOperation(doc1, ORecordOperation.CREATED));
+    final SortedSet<OTransactionUniqueKey> uniqueIndexKeys = new TreeSet<OTransactionUniqueKey>();
+    uniqueIndexKeys.add(new OTransactionUniqueKey("TestClassInd.one", "value", 0));
 
-    OTransactionPhase1Task task =
-        new OTransactionPhase1Task(operations, new OTransactionId(Optional.empty(), 0, 1));
+    OTransactionId id =
+        server.getDistributedManager().getDatabase(session.getName()).nextId().get();
+    server.getDistributedManager().getDatabase(session.getName()).rollback(id);
+
+    OTransactionPhase1Task task = new OTransactionPhase1Task(operations, id, uniqueIndexKeys);
     OTransactionPhase1TaskResult res =
         (OTransactionPhase1TaskResult)
             task.execute(
@@ -171,7 +186,6 @@ public class OTransactionPhase1TaskTest {
                 server,
                 null,
                 (ODatabaseDocumentInternal) session);
-
     assertTrue(res.getResultPayload() instanceof OTxUniqueIndex);
     assertEquals(((OTxUniqueIndex) res.getResultPayload()).getRecordId(), doc.getIdentity());
   }

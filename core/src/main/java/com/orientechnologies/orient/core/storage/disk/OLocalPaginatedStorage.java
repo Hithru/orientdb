@@ -31,12 +31,17 @@ import com.orientechnologies.common.io.OIOUtils;
 import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.common.parser.OSystemVariableResolver;
 import com.orientechnologies.common.serialization.types.OStringSerializer;
+<<<<<<< HEAD
 import com.orientechnologies.common.thread.OThreadPoolExecutorWithLogging;
+=======
+>>>>>>> develop
 import com.orientechnologies.orient.core.OConstants;
 import com.orientechnologies.orient.core.command.OCommandOutputListener;
 import com.orientechnologies.orient.core.compression.impl.OZIPCompressionUtil;
 import com.orientechnologies.orient.core.config.OContextConfiguration;
 import com.orientechnologies.orient.core.config.OGlobalConfiguration;
+import com.orientechnologies.orient.core.db.OrientDBEmbedded;
+import com.orientechnologies.orient.core.db.OrientDBInternal;
 import com.orientechnologies.orient.core.engine.local.OEngineLocalPaginated;
 import com.orientechnologies.orient.core.exception.OStorageException;
 import com.orientechnologies.orient.core.index.engine.v1.OCellBTreeMultiValueIndexEngine;
@@ -51,6 +56,7 @@ import com.orientechnologies.orient.core.storage.cluster.v2.FreeSpaceMap;
 import com.orientechnologies.orient.core.storage.config.OClusterBasedStorageConfiguration;
 import com.orientechnologies.orient.core.storage.fs.OFile;
 import com.orientechnologies.orient.core.storage.impl.local.OAbstractPaginatedStorage;
+import com.orientechnologies.orient.core.storage.impl.local.OStartupMetadata;
 import com.orientechnologies.orient.core.storage.impl.local.OStorageConfigurationSegment;
 import com.orientechnologies.orient.core.storage.impl.local.paginated.StorageStartupMetadata;
 import com.orientechnologies.orient.core.storage.impl.local.paginated.atomicoperations.OAtomicOperation;
@@ -59,35 +65,19 @@ import com.orientechnologies.orient.core.storage.impl.local.paginated.wal.OWrite
 import com.orientechnologies.orient.core.storage.impl.local.paginated.wal.cas.CASDiskWriteAheadLog;
 import com.orientechnologies.orient.core.storage.index.engine.OHashTableIndexEngine;
 import com.orientechnologies.orient.core.storage.index.engine.OSBTreeIndexEngine;
+import com.orientechnologies.orient.core.storage.index.versionmap.OVersionPositionMap;
 import com.orientechnologies.orient.core.storage.ridbag.sbtree.OIndexRIDContainer;
 import com.orientechnologies.orient.core.storage.ridbag.sbtree.OSBTreeCollectionManagerShared;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.SecureRandom;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import net.jpountz.xxhash.XXHash64;
@@ -130,7 +120,7 @@ public class OLocalPaginatedStorage extends OAbstractPaginatedStorage {
     OClusterPositionMap.DEF_EXTENSION,
     OSBTreeIndexEngine.DATA_FILE_EXTENSION,
     OIndexRIDContainer.INDEX_FILE_EXTENSION,
-    OSBTreeCollectionManagerShared.DEFAULT_EXTENSION,
+    OSBTreeCollectionManagerShared.FILE_EXTENSION,
     OSBTreeIndexEngine.NULL_BUCKET_FILE_EXTENSION,
     OClusterBasedStorageConfiguration.MAP_FILE_EXTENSION,
     OClusterBasedStorageConfiguration.DATA_FILE_EXTENSION,
@@ -139,18 +129,15 @@ public class OLocalPaginatedStorage extends OAbstractPaginatedStorage {
     OCellBTreeMultiValueIndexEngine.DATA_FILE_EXTENSION,
     OCellBTreeMultiValueIndexEngine.M_CONTAINER_EXTENSION,
     DoubleWriteLogGL.EXTENSION,
+<<<<<<< HEAD
     FreeSpaceMap.DEF_EXTENSION
+=======
+    FreeSpaceMap.DEF_EXTENSION,
+    OVersionPositionMap.DEF_EXTENSION
+>>>>>>> develop
   };
 
   private static final int ONE_KB = 1024;
-
-  private static final OThreadPoolExecutorWithLogging segmentAdderExecutor;
-
-  static {
-    segmentAdderExecutor =
-        new OThreadPoolExecutorWithLogging(
-            0, 1, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<>(), new SegmentAppenderFactory());
-  }
 
   private final int deleteMaxRetries;
   private final int deleteWaitTime;
@@ -165,20 +152,18 @@ public class OLocalPaginatedStorage extends OAbstractPaginatedStorage {
   private final long walMaxSegSize;
   private final long doubleWriteLogMaxSegSize;
 
-  private final AtomicReference<Future<Void>> segmentAppender = new AtomicReference<>();
-
   protected volatile byte[] iv;
 
   public OLocalPaginatedStorage(
       final String name,
       final String filePath,
-      final String mode,
       final int id,
       final OReadCache readCache,
       final OClosableLinkedContainer<Long, OFile> files,
       final long walMaxSegSize,
-      long doubleWriteLogMaxSegSize) {
-    super(name, filePath, mode, id);
+      long doubleWriteLogMaxSegSize,
+      OrientDBInternal context) {
+    super(name, filePath, id, context);
 
     this.walMaxSegSize = walMaxSegSize;
     this.files = files;
@@ -203,7 +188,7 @@ public class OLocalPaginatedStorage extends OAbstractPaginatedStorage {
   @Override
   public void create(final OContextConfiguration contextConfiguration) {
     try {
-      stateLock.acquireWriteLock();
+      stateLock.writeLock().lock();
       try {
         final Path storageFolder = storagePath;
         if (!Files.exists(storageFolder)) {
@@ -212,7 +197,7 @@ public class OLocalPaginatedStorage extends OAbstractPaginatedStorage {
 
         super.create(contextConfiguration);
       } finally {
-        stateLock.releaseWriteLock();
+        stateLock.writeLock().unlock();
       }
     } catch (final RuntimeException e) {
       throw logAndPrepareForRethrow(e);
@@ -224,27 +209,21 @@ public class OLocalPaginatedStorage extends OAbstractPaginatedStorage {
   }
 
   @Override
-  protected final String normalizeName(final String name) {
-    final int firstIndexOf = name.lastIndexOf('/');
-    final int secondIndexOf = name.lastIndexOf(java.io.File.separator);
-
-    if (firstIndexOf >= 0 || secondIndexOf >= 0)
-      return name.substring(Math.max(firstIndexOf, secondIndexOf) + 1);
-    else return name;
-  }
-
-  @Override
   public final boolean exists() {
     try {
+<<<<<<< HEAD
       if (status == STATUS.OPEN || status == STATUS.INTERNAL_ERROR) return true;
+=======
+      if (status == STATUS.OPEN || isInError() || status == STATUS.MIGRATION) return true;
+>>>>>>> develop
 
       return exists(storagePath);
     } catch (final RuntimeException e) {
-      throw logAndPrepareForRethrow(e);
+      throw logAndPrepareForRethrow(e, false);
     } catch (final Error e) {
-      throw logAndPrepareForRethrow(e);
+      throw logAndPrepareForRethrow(e, false);
     } catch (final Throwable t) {
-      throw logAndPrepareForRethrow(t);
+      throw logAndPrepareForRethrow(t, false);
     }
   }
 
@@ -270,6 +249,7 @@ public class OLocalPaginatedStorage extends OAbstractPaginatedStorage {
       final OCommandOutputListener iOutput,
       final int compressionLevel,
       final int bufferSize) {
+    stateLock.readLock().lock();
     try {
       if (out == null) throw new IllegalArgumentException("Backup output is null");
 
@@ -321,11 +301,13 @@ public class OLocalPaginatedStorage extends OAbstractPaginatedStorage {
         release();
       }
     } catch (final RuntimeException e) {
-      throw logAndPrepareForRethrow(e);
+      throw logAndPrepareForRethrow(e, false);
     } catch (final Error e) {
-      throw logAndPrepareForRethrow(e);
+      throw logAndPrepareForRethrow(e, false);
     } catch (final Throwable t) {
-      throw logAndPrepareForRethrow(t);
+      throw logAndPrepareForRethrow(t, false);
+    } finally {
+      stateLock.readLock().unlock();
     }
   }
 
@@ -336,9 +318,12 @@ public class OLocalPaginatedStorage extends OAbstractPaginatedStorage {
       final Callable<Object> callable,
       final OCommandOutputListener iListener) {
     try {
-      if (!isClosed()) close(true, false);
+      stateLock.writeLock().lock();
       try {
-        stateLock.acquireWriteLock();
+        if (!isClosed()) {
+          close(true, false);
+        }
+
         final java.io.File dbDir =
             new java.io.File(
                 OIOUtils.getPathFromDatabaseName(
@@ -356,7 +341,7 @@ public class OLocalPaginatedStorage extends OAbstractPaginatedStorage {
               }
           }
         }
-
+        Files.createDirectories(Paths.get(storagePath.toString()));
         OZIPCompressionUtil.uncompressDirectory(in, storagePath.toString(), iListener);
 
         final java.io.File[] newStorageFiles = dbDir.listFiles();
@@ -386,10 +371,15 @@ public class OLocalPaginatedStorage extends OAbstractPaginatedStorage {
             OLogManager.instance().error(this, "Error on calling callback on database restore", e);
           }
       } finally {
-        stateLock.releaseWriteLock();
+        stateLock.writeLock().unlock();
       }
 
-      open(null, null, new OContextConfiguration());
+      open(new OContextConfiguration());
+      atomicOperationsManager.executeInsideAtomicOperation(
+          null,
+          (atomicOperation) -> {
+            generateDatabaseInstanceId(atomicOperation);
+          });
     } catch (final RuntimeException e) {
       throw logAndPrepareForRethrow(e);
     } catch (final Error e) {
@@ -524,14 +514,18 @@ public class OLocalPaginatedStorage extends OAbstractPaginatedStorage {
   }
 
   @Override
+<<<<<<< HEAD
   protected StartupMetadata checkIfStorageDirty() throws IOException {
+=======
+  protected OStartupMetadata checkIfStorageDirty() throws IOException {
+>>>>>>> develop
     if (startupMetadata.exists()) startupMetadata.open(OConstants.getVersion());
     else {
       startupMetadata.create(OConstants.getVersion());
       startupMetadata.makeDirty(OConstants.getVersion());
     }
 
-    return new StartupMetadata(startupMetadata.getLastTxId(), startupMetadata.getTxMetadata());
+    return new OStartupMetadata(startupMetadata.getLastTxId(), startupMetadata.getTxMetadata());
   }
 
   @Override
@@ -604,9 +598,8 @@ public class OLocalPaginatedStorage extends OAbstractPaginatedStorage {
   }
 
   public static void deleteFilesFromDisc(
-      String name, int maxRetries, int waitTime, String databaseDirectory) {
-    java.io.File dbDir; // GET REAL DIRECTORY
-    dbDir = new java.io.File(databaseDirectory);
+      final String name, final int maxRetries, final int waitTime, final String databaseDirectory) {
+    File dbDir = new java.io.File(databaseDirectory);
     if (!dbDir.exists() || !dbDir.isDirectory()) dbDir = dbDir.getParentFile();
 
     // RETRIES
@@ -614,11 +607,11 @@ public class OLocalPaginatedStorage extends OAbstractPaginatedStorage {
       if (dbDir != null && dbDir.exists() && dbDir.isDirectory()) {
         int notDeletedFiles = 0;
 
-        final java.io.File[] storageFiles = dbDir.listFiles();
+        final File[] storageFiles = dbDir.listFiles();
         if (storageFiles == null) continue;
 
         // TRY TO DELETE ALL THE FILES
-        for (final java.io.File f : storageFiles) {
+        for (final File f : storageFiles) {
           // DELETE ONLY THE SUPPORTED FILES
           for (final String ext : ALL_FILE_EXTENSIONS)
             if (f.getPath().endsWith(ext)) {
@@ -643,7 +636,6 @@ public class OLocalPaginatedStorage extends OAbstractPaginatedStorage {
           return;
         }
       } else return;
-
       OLogManager.instance()
           .debug(
               OLocalPaginatedStorage.class,
@@ -668,7 +660,11 @@ public class OLocalPaginatedStorage extends OAbstractPaginatedStorage {
 
   @Override
   protected void clearStorageDirty() throws IOException {
+<<<<<<< HEAD
     if (status != STATUS.INTERNAL_ERROR) {
+=======
+    if (!isInError()) {
+>>>>>>> develop
       startupMetadata.clearDirty();
     }
   }
@@ -752,7 +748,7 @@ public class OLocalPaginatedStorage extends OAbstractPaginatedStorage {
 
     fuzzyCheckpointTask =
         fuzzyCheckpointExecutor.scheduleWithFixedDelay(
-            new PeriodicFuzzyCheckpoint(),
+            new OPeriodicFuzzyCheckpoint(this),
             contextConfiguration.getValueAsInteger(
                 OGlobalConfiguration.WAL_FUZZY_CHECKPOINT_INTERVAL),
             contextConfiguration.getValueAsInteger(
@@ -768,7 +764,7 @@ public class OLocalPaginatedStorage extends OAbstractPaginatedStorage {
       walPath = Paths.get(configWalPath);
     }
 
-    final CASDiskWriteAheadLog diskWriteAheadLog =
+    writeAheadLog =
         new CASDiskWriteAheadLog(
             name,
             storagePath,
@@ -792,6 +788,7 @@ public class OLocalPaginatedStorage extends OAbstractPaginatedStorage {
                 OGlobalConfiguration.STORAGE_PRINT_WAL_PERFORMANCE_STATISTICS),
             contextConfiguration.getValueAsInteger(
                 OGlobalConfiguration.STORAGE_PRINT_WAL_PERFORMANCE_INTERVAL));
+<<<<<<< HEAD
 
     writeAheadLog = diskWriteAheadLog;
     writeAheadLog.addCheckpointListener(this);
@@ -814,6 +811,9 @@ public class OLocalPaginatedStorage extends OAbstractPaginatedStorage {
             appender.cancel(false);
           }
         });
+=======
+    writeAheadLog.addCheckpointListener(this);
+>>>>>>> develop
 
     final int pageSize =
         contextConfiguration.getValueAsInteger(OGlobalConfiguration.DISK_CACHE_PAGE_SIZE) * ONE_KB;
@@ -851,7 +851,12 @@ public class OLocalPaginatedStorage extends OAbstractPaginatedStorage {
                 OGlobalConfiguration.STORAGE_CHECKSUM_MODE, OChecksumMode.class),
             iv,
             aesKey,
+<<<<<<< HEAD
             contextConfiguration.getValueAsBoolean(OGlobalConfiguration.STORAGE_CALL_FSYNC));
+=======
+            contextConfiguration.getValueAsBoolean(OGlobalConfiguration.STORAGE_CALL_FSYNC),
+            ((OrientDBEmbedded) context).getIoExecutor());
+>>>>>>> develop
 
     wowCache.loadRegisteredFiles();
     wowCache.addBackgroundExceptionListener(this);
@@ -886,67 +891,6 @@ public class OLocalPaginatedStorage extends OAbstractPaginatedStorage {
     }
   }
 
-  private class PeriodicFuzzyCheckpoint implements Runnable {
-    @Override
-    public final void run() {
-      try {
-        makeFuzzyCheckpoint();
-      } catch (final RuntimeException e) {
-        OLogManager.instance().error(this, "Error during fuzzy checkpoint", e);
-      }
-    }
-  }
-
-  private final class SegmentAdder implements Callable<Void> {
-    private final long segment;
-    private final CASDiskWriteAheadLog wal;
-
-    private SegmentAdder(final long segment, final CASDiskWriteAheadLog wal) {
-      this.segment = segment;
-      this.wal = wal;
-    }
-
-    @Override
-    public Void call() {
-      try {
-        if (status != STATUS.OPEN) {
-          return null;
-        }
-
-        stateLock.acquireReadLock();
-        try {
-          if (status != STATUS.OPEN) {
-            return null;
-          }
-
-          final long freezeId = atomicOperationsManager.freezeComponentOperations();
-          try {
-            wal.appendSegment(segment + 1);
-          } finally {
-            atomicOperationsManager.releaseComponentOperations(freezeId);
-          }
-
-          atomicOperationsTable.compactTable();
-        } finally {
-          stateLock.releaseReadLock();
-        }
-
-      } catch (final Exception e) {
-        OLogManager.instance()
-            .errorNoDb(this, "Error during addition of new segment in storage %s.", e, getName());
-        throw e;
-      }
-
-      return null;
-    }
-  }
-
-  private static final class SegmentAppenderFactory implements ThreadFactory {
-    private SegmentAppenderFactory() {}
-
-    @Override
-    public Thread newThread(final Runnable r) {
-      return new Thread(OAbstractPaginatedStorage.storageThreadGroup, r, "Segment adder thread");
-    }
-  }
+  @Override
+  protected void checkBackupRunning() {}
 }

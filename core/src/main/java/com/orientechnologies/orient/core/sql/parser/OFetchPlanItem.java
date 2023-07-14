@@ -25,6 +25,10 @@ public class OFetchPlanItem extends SimpleNode {
     super(p, id);
   }
 
+  public void addFieldToChain(String field) {
+    this.fieldChain.add(field);
+  }
+
   public void toString(Map<Object, Object> params, StringBuilder builder) {
     if (Boolean.TRUE.equals(star)) {
       builder.append("*");
@@ -48,6 +52,31 @@ public class OFetchPlanItem extends SimpleNode {
     }
     builder.append(":");
     rightDepth.toString(params, builder);
+  }
+
+  public void toGenericStatement(StringBuilder builder) {
+    if (Boolean.TRUE.equals(star)) {
+      builder.append("*");
+    } else {
+      if (leftDepth != null) {
+        builder.append("[");
+        leftDepth.toGenericStatement(builder);
+        builder.append("]");
+      } else if (leftStar) {
+        builder.append("[*]");
+      }
+
+      boolean first = true;
+      for (String s : fieldChain) {
+        if (!first) {
+          builder.append(".");
+        }
+        builder.append(s);
+        first = false;
+      }
+    }
+    builder.append(":");
+    rightDepth.toGenericStatement(builder);
   }
 
   public OFetchPlanItem copy() {

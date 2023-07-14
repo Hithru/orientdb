@@ -47,8 +47,11 @@ public final class OSBTreeNullBucketV1<V> extends ODurablePage {
   }
 
   public void setValue(final byte[] value, final OBinarySerializer<V> valueSerializer) {
-    setByteValue(NEXT_FREE_POSITION, (byte) 1);
+<<<<<<< HEAD
+=======
 
+>>>>>>> develop
+    setByteValue(NEXT_FREE_POSITION, (byte) 1);
     setByteValue(NEXT_FREE_POSITION + 1, (byte) 1);
     setBinaryValue(NEXT_FREE_POSITION + 2, value);
   }

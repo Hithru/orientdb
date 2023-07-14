@@ -46,6 +46,12 @@ public class OSleepStatement extends OSimpleExecStatement {
   }
 
   @Override
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append("SLEEP ");
+    millis.toGenericStatement(builder);
+  }
+
+  @Override
   public OSleepStatement copy() {
     OSleepStatement result = new OSleepStatement(-1);
     result.millis = millis == null ? null : millis.copy();

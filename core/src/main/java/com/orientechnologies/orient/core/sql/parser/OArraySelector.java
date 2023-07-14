@@ -40,6 +40,19 @@ public class OArraySelector extends SimpleNode {
     }
   }
 
+  @Override
+  public void toGenericStatement(StringBuilder builder) {
+    if (rid != null) {
+      rid.toGenericStatement(builder);
+    } else if (inputParam != null) {
+      inputParam.toGenericStatement(builder);
+    } else if (expression != null) {
+      expression.toGenericStatement(builder);
+    } else if (integer != null) {
+      integer.toGenericStatement(builder);
+    }
+  }
+
   public Object getValue(OIdentifiable iCurrentRecord, Object iResult, OCommandContext ctx) {
     Object result = null;
     if (inputParam != null) {

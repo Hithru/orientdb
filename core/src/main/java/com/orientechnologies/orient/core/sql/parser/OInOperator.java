@@ -70,6 +70,10 @@ public class OInOperator extends SimpleNode implements OBinaryCompareOperator {
     builder.append("IN");
   }
 
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append("IN");
+  }
+
   @Override
   public boolean supportsBasicCalculation() {
     return true;

@@ -50,8 +50,8 @@ public final class AsyncReadCache implements OReadCache {
 
   private final WTinyLFUPolicy policy;
 
-  private final Buffer<OCacheEntry> readBuffer = new BoundedBuffer<>();
-  private final MPSCLinkedQueue<Runnable> writeBuffer = new MPSCLinkedQueue<>();
+  private final Buffer readBuffer = new BoundedBuffer();
+  private final MPSCLinkedQueue<OCacheEntry> writeBuffer = new MPSCLinkedQueue<>();
   private final AtomicInteger cacheSize = new AtomicInteger();
   private final int maxCacheSize;
 
@@ -104,7 +104,6 @@ public final class AsyncReadCache implements OReadCache {
   public final OCacheEntry loadForWrite(
       final long fileId,
       final long pageIndex,
-      final boolean checkPinnedPages,
       final OWriteCache writeCache,
       final boolean verifyChecksums,
       final OLogSequenceNumber startLSN) {
@@ -122,7 +121,6 @@ public final class AsyncReadCache implements OReadCache {
   public final OCacheEntry loadForRead(
       final long fileId,
       final long pageIndex,
-      final boolean checkPinnedPages,
       final OWriteCache writeCache,
       final boolean verifyChecksums) {
     return doLoad(fileId, (int) pageIndex, writeCache, verifyChecksums);
@@ -158,7 +156,11 @@ public final class AsyncReadCache implements OReadCache {
 
                       updatedEntry[0] =
                           new OCacheEntryImpl(
+<<<<<<< HEAD
                               page.getFileId(), page.getPageIndex(), pointer, false);
+=======
+                              page.getFileId(), page.getPageIndex(), pointer, false, this);
+>>>>>>> develop
                       return null;
                     } catch (final IOException e) {
                       throw OException.wrapException(
@@ -233,7 +235,11 @@ public final class AsyncReadCache implements OReadCache {
 
                       cacheSize.incrementAndGet();
                       return new OCacheEntryImpl(
+<<<<<<< HEAD
                           page.getFileId(), page.getPageIndex(), pointer, true);
+=======
+                          page.getFileId(), page.getPageIndex(), pointer, true, this);
+>>>>>>> develop
                     } catch (final IOException e) {
                       throw OException.wrapException(
                           new OStorageException(
@@ -275,16 +281,19 @@ public final class AsyncReadCache implements OReadCache {
   }
 
   private OCacheEntry addNewPagePointerToTheCache(final long fileId, final int pageIndex) {
-    final PageKey pageKey = new PageKey(fileId, pageIndex);
 
     final OPointer pointer = bufferPool.acquireDirect(true, Intention.ADD_NEW_PAGE_IN_DISK_CACHE);
     final OCachePointer cachePointer = new OCachePointer(pointer, bufferPool, fileId, pageIndex);
     cachePointer.incrementReadersReferrer();
 
+<<<<<<< HEAD
     final OCacheEntry cacheEntry = new OCacheEntryImpl(fileId, pageIndex, cachePointer, true);
+=======
+    final OCacheEntry cacheEntry = new OCacheEntryImpl(fileId, pageIndex, cachePointer, true, this);
+>>>>>>> develop
     cacheEntry.acquireEntry();
 
-    final OCacheEntry oldCacheEntry = data.putIfAbsent(pageKey, cacheEntry);
+    final OCacheEntry oldCacheEntry = data.putIfAbsent(cacheEntry.getPageKey(), cacheEntry);
     if (oldCacheEntry != null) {
       throw new IllegalStateException(
           "Page  " + fileId + ":" + pageIndex + " was allocated in other thread");
@@ -306,7 +315,7 @@ public final class AsyncReadCache implements OReadCache {
   }
 
   @Override
-  public final void releaseFromRead(final OCacheEntry cacheEntry, final OWriteCache writeCache) {
+  public final void releaseFromRead(final OCacheEntry cacheEntry) {
     cacheEntry.releaseEntry();
 
     if (!cacheEntry.insideCache()) {
@@ -320,22 +329,23 @@ public final class AsyncReadCache implements OReadCache {
     final OCachePointer cachePointer = cacheEntry.getCachePointer();
     assert cachePointer != null;
 
+<<<<<<< HEAD
     final PageKey pageKey = new PageKey(cacheEntry.getFileId(), cacheEntry.getPageIndex());
+=======
+>>>>>>> develop
     if (cacheEntry.isNewlyAllocatedPage() || changed) {
       if (cacheEntry.isNewlyAllocatedPage()) {
         cacheEntry.clearAllocationFlag();
       }
 
       data.compute(
-          pageKey,
+          cacheEntry.getPageKey(),
           (page, entry) -> {
             writeCache.store(
                 cacheEntry.getFileId(), cacheEntry.getPageIndex(), cacheEntry.getCachePointer());
             return entry; // may be absent if page in pinned pages, in such case we use map as
             // virtual lock
           });
-
-      cacheEntry.clearPageOperations();
     }
 
     // We need to release exclusive lock from cache pointer after we put it into the write cache so
@@ -370,10 +380,7 @@ public final class AsyncReadCache implements OReadCache {
 
     cacheEntry.acquireExclusiveLock();
     cacheEntry.markAllocated();
-    cacheEntry.clearPageOperations();
-
     writeCache.updateDirtyPagesTable(cacheEntry.getCachePointer(), startLSN);
-
     return cacheEntry;
   }
 
@@ -386,10 +393,10 @@ public final class AsyncReadCache implements OReadCache {
   }
 
   private void afterAdd(final OCacheEntry entry) {
-    afterWrite(() -> policy.onAdd(entry));
+    afterWrite(entry);
   }
 
-  private void afterWrite(final Runnable command) {
+  private void afterWrite(final OCacheEntry command) {
     writeBuffer.offer(command);
 
     drainStatus.lazySet(DrainStatus.REQUIRED);
@@ -457,30 +464,30 @@ public final class AsyncReadCache implements OReadCache {
   }
 
   private void drainReadBuffers() {
-    readBuffer.drainTo(policy::onAccess);
+    readBuffer.drainTo(policy);
   }
 
   private void drainWriteBuffer() {
     for (int i = 0; i < WRITE_BUFFER_MAX_BATCH; i++) {
-      final Runnable command = writeBuffer.poll();
+      final OCacheEntry entry = writeBuffer.poll();
 
-      if (command == null) {
+      if (entry == null) {
         break;
       }
 
-      command.run();
+      this.policy.onAdd(entry);
     }
   }
 
   private void emptyWriteBuffer() {
     while (true) {
-      final Runnable command = writeBuffer.poll();
+      final OCacheEntry entry = writeBuffer.poll();
 
-      if (command == null) {
+      if (entry == null) {
         break;
       }
 
-      command.run();
+      this.policy.onAdd(entry);
     }
   }
 

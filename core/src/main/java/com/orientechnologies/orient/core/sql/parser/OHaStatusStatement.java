@@ -30,7 +30,38 @@ public class OHaStatusStatement extends OSimpleExecStatement {
   }
 
   @Override
+  public boolean isIdempotent() {
+    return true;
+  }
+
+  @Override
   public void toString(Map<Object, Object> params, StringBuilder builder) {
+    builder.append("HA STATUS");
+    if (servers) {
+      builder.append(" -servers");
+    }
+    if (db) {
+      builder.append(" -db");
+    }
+    if (latency) {
+      builder.append(" -latency");
+    }
+    if (messages) {
+      builder.append(" -messages");
+    }
+    if (locks) {
+      builder.append(" -locks");
+    }
+    if (outputText) {
+      builder.append(" -output=text");
+    }
+    if (servers) {
+      builder.append(" -servers");
+    }
+  }
+
+  @Override
+  public void toGenericStatement(StringBuilder builder) {
     builder.append("HA STATUS");
     if (servers) {
       builder.append(" -servers");

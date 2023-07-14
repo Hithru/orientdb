@@ -24,6 +24,7 @@ import com.orientechnologies.orient.core.command.OCommandOutputListener;
 import com.orientechnologies.orient.core.command.OCommandRequestText;
 import com.orientechnologies.orient.core.config.OContextConfiguration;
 import com.orientechnologies.orient.core.conflict.ORecordConflictStrategy;
+import com.orientechnologies.orient.core.db.OrientDBInternal;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
 import com.orientechnologies.orient.core.db.record.OCurrentStorageComponentsFactory;
 import com.orientechnologies.orient.core.db.record.ORecordOperation;
@@ -154,10 +155,10 @@ public class PostponedEngineStartTest {
     final OStorage storage =
         ENGINE2.createStorage(
             ENGINE2.getName() + ":storage",
-            null,
             125 * 1024 * 1024,
             25 * 1024 * 1024,
-            Integer.MAX_VALUE);
+            Integer.MAX_VALUE,
+            null);
 
     Assert.assertNotNull(storage);
 
@@ -220,10 +221,10 @@ public class PostponedEngineStartTest {
     @Override
     public OStorage createStorage(
         String iURL,
-        Map<String, String> parameters,
         long maxWalSegSize,
         long doubleWriteLogMaxSegSize,
-        int storageId) {
+        int storageId,
+        OrientDBInternal context) {
       return new OStorage() {
 
         @Override
@@ -256,21 +257,6 @@ public class PostponedEngineStartTest {
 
         @Override
         public String getCreatedAtVersion() {
-          return null;
-        }
-
-        @Override
-        public boolean existsResource(String iName) {
-          return false;
-        }
-
-        @Override
-        public <T> T removeResource(String iName) {
-          return null;
-        }
-
-        @Override
-        public <T> T getResource(String iName, Callable<T> iCallback) {
           return null;
         }
 
@@ -395,12 +381,6 @@ public class PostponedEngineStartTest {
         @Override
         public long getClusterRecordsSizeByName(String clusterName) {
           return 0;
-        }
-
-        @Override
-        public boolean setClusterAttribute(
-            String clusterName, OCluster.ATTRIBUTES attribute, Object value) {
-          return false;
         }
 
         @Override
@@ -654,6 +634,16 @@ public class PostponedEngineStartTest {
 
         @Override
         public void clearProperties() {}
+
+        @Override
+        public int[] getClustersIds(Set<String> filterClusters) {
+          return null;
+        }
+
+        @Override
+        public OrientDBInternal getContext() {
+          return null;
+        }
       };
     }
 
@@ -678,10 +668,10 @@ public class PostponedEngineStartTest {
     @Override
     public OStorage createStorage(
         String iURL,
-        Map<String, String> parameters,
         long maxWalSegSize,
         long doubleWriteLogMaxSegSize,
-        int storageId) {
+        int storageId,
+        OrientDBInternal context) {
       throw new UnsupportedOperationException();
     }
 

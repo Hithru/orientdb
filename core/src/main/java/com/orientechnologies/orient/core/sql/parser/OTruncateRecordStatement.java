@@ -29,6 +29,13 @@ public class OTruncateRecordStatement extends OSimpleExecStatement {
     super(p, id);
   }
 
+  public void addRecord(ORid rid) {
+    if (this.records == null) {
+      this.records = new ArrayList<>();
+    }
+    this.records.add(rid);
+  }
+
   @Override
   public OResultSet executeSimple(OCommandContext ctx) {
     List<ORid> recs = new ArrayList<>();
@@ -75,6 +82,25 @@ public class OTruncateRecordStatement extends OSimpleExecStatement {
           builder.append(",");
         }
         r.toString(params, builder);
+        first = false;
+      }
+      builder.append("]");
+    }
+  }
+
+  @Override
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append("TRUNCATE RECORD ");
+    if (record != null) {
+      record.toGenericStatement(builder);
+    } else {
+      builder.append("[");
+      boolean first = true;
+      for (ORid r : records) {
+        if (!first) {
+          builder.append(",");
+        }
+        r.toGenericStatement(builder);
         first = false;
       }
       builder.append("]");

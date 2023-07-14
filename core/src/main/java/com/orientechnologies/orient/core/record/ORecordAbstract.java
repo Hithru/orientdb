@@ -45,6 +45,12 @@ import java.util.WeakHashMap;
 
 @SuppressWarnings({"unchecked", "serial"})
 public abstract class ORecordAbstract implements ORecord {
+  public static final String BASE_FORMAT =
+      "rid,version,class,type,attribSameRow,keepTypes,alwaysFetchEmbedded";
+  public static final String DEFAULT_FORMAT = BASE_FORMAT + "," + "fetchPlan:*:0";
+  public static final String OLD_FORMAT_WITH_LATE_TYPES = BASE_FORMAT + "," + "fetchPlan:*:0";
+  // TODO: take new format
+  // public static final String DEFAULT_FORMAT = OLD_FORMAT_WITH_LATE_TYPES;
   protected ORecordId recordId;
   protected int recordVersion = 0;
 
@@ -123,6 +129,17 @@ public abstract class ORecordAbstract implements ORecord {
     return this;
   }
 
+  protected ORecordAbstract fromStream(final byte[] iRecordBuffer, ODatabaseDocumentInternal db) {
+    dirty = false;
+    contentChanged = false;
+    dirtyManager = null;
+    source = iRecordBuffer;
+    size = iRecordBuffer != null ? iRecordBuffer.length : 0;
+    status = ORecordElement.STATUS.LOADED;
+
+    return this;
+  }
+
   public ORecordAbstract setDirty() {
     if (!dirty && status != STATUS.UNMARSHALLING) {
       dirty = true;
@@ -165,28 +182,27 @@ public abstract class ORecordAbstract implements ORecord {
 
   public <RET extends ORecord> RET fromJSON(final InputStream iContentResult) throws IOException {
     final ByteArrayOutputStream out = new ByteArrayOutputStream();
-    OIOUtils.copyStream(iContentResult, out, -1);
+    OIOUtils.copyStream(iContentResult, out);
     ORecordSerializerJSON.INSTANCE.fromString(out.toString(), this, null);
     return (RET) this;
   }
 
   public String toJSON() {
-    return toJSON(
-        "rid,version,class,type,attribSameRow,keepTypes,alwaysFetchEmbedded,fetchPlan:*:0");
+    return toJSON(DEFAULT_FORMAT);
   }
 
-  public String toJSON(final String iFormat) {
+  public String toJSON(final String format) {
     return ORecordSerializerJSON.INSTANCE
-        .toString(this, new StringBuilder(1024), iFormat == null ? "" : iFormat)
+        .toString(this, new StringBuilder(1024), format == null ? "" : format)
         .toString();
   }
 
-  public void toJSON(final String iFormat, final OutputStream stream) throws IOException {
-    stream.write(toJSON(iFormat).toString().getBytes());
+  public void toJSON(final String format, final OutputStream stream) throws IOException {
+    stream.write(toJSON(format).getBytes());
   }
 
   public void toJSON(final OutputStream stream) throws IOException {
-    stream.write(toJSON().toString().getBytes());
+    stream.write(toJSON().getBytes());
   }
 
   @Override
@@ -445,7 +461,7 @@ public abstract class ORecordAbstract implements ORecord {
   }
 
   protected <RET extends ORecord> RET flatCopy() {
-    return (RET) copy();
+    return copy();
   }
 
   protected void addIdentityChangeListener(OIdentityChangeListener identityChangeListener) {

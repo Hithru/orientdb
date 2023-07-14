@@ -9,6 +9,7 @@ import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.OCommandSQL;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
+import com.orientechnologies.orient.setup.ServerRun;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -160,14 +161,16 @@ public class HaSyncClusterIT extends AbstractServerClusterTest {
                           }
                           long processed =
                               messageService.getProcessedRequests() - gossip - deploy_cluster;
+                          if (messageStats != null) {
 
-                          OLogManager.instance()
-                              .info(
-                                  this,
-                                  "Waiting for processed requests to be [%d], actual [%d] with stats [%s] ",
-                                  NUM_RECORDS,
-                                  processed,
-                                  messageStats.toJSON());
+                            OLogManager.instance()
+                                .info(
+                                    this,
+                                    "Waiting for processed requests to be [%d], actual [%d] with stats [%s] ",
+                                    NUM_RECORDS,
+                                    processed,
+                                    messageStats.toJSON());
+                          }
 
                           return processed >= NUM_RECORDS;
                         }

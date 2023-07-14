@@ -19,6 +19,7 @@
  */
 package com.orientechnologies.orient.server.distributed;
 
+import com.orientechnologies.common.thread.OThreadPoolExecutors;
 import com.orientechnologies.orient.client.binary.OChannelBinarySynchClient;
 import com.orientechnologies.orient.client.remote.OBinaryRequest;
 import com.orientechnologies.orient.client.remote.message.ODistributedConnectRequest;
@@ -32,9 +33,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Date;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.RejectedExecutionHandler;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -54,7 +54,7 @@ public class ORemoteServerChannel {
   private int protocolVersion;
   private ODistributedRequest prevRequest;
   private ODistributedResponse prevResponse;
-  private String localNodeName;
+  private final String localNodeName;
 
   private static final int MAX_RETRY = 3;
   private static final String CLIENT_TYPE = "OrientDB Server";
@@ -62,13 +62,19 @@ public class ORemoteServerChannel {
   private int sessionId = -1;
   private byte[] sessionToken;
   private OToken tokenInstance = null;
+<<<<<<< HEAD
   private OBinaryTokenSerializer tokenDeserializer = new OBinaryTokenSerializer();
   private OContextConfiguration contextConfig = new OContextConfiguration();
   private Date createdOn = new Date();
+=======
+  private final OBinaryTokenSerializer tokenDeserializer = new OBinaryTokenSerializer();
+  private final OContextConfiguration contextConfig = new OContextConfiguration();
+  private final Date createdOn = new Date();
+>>>>>>> develop
 
   private volatile int totalConsecutiveErrors = 0;
   private static final int MAX_CONSECUTIVE_ERRORS = 10;
-  private ExecutorService executor;
+  private final ExecutorService executor;
 
   public ORemoteServerChannel(
       final ORemoteServerAvailabilityCheck check,
@@ -97,14 +103,15 @@ public class ORemoteServerChannel {
           try {
             if (!executor.getQueue().offer(task, timeout, TimeUnit.MILLISECONDS)) {
               check.nodeDisconnected(server);
+              throw new RejectedExecutionException("Unable to enqueue task");
             }
           } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+            throw new RejectedExecutionException("Unable to enqueue task");
           }
         };
-    executor =
-        new ThreadPoolExecutor(
-            1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(10), reject);
+
+    executor = OThreadPoolExecutors.newSingleThreadPool("ORemoteServerChannel", 10, reject);
 
     connect();
   }
@@ -134,7 +141,11 @@ public class ORemoteServerChannel {
   }
 
   public void checkReconnect() {
+<<<<<<< HEAD
     if (tokenInstance.isCloseToExpire()) {
+=======
+    if (tokenInstance == null || tokenInstance.isCloseToExpire()) {
+>>>>>>> develop
       for (int retry = 1;
           retry <= MAX_RETRY && totalConsecutiveErrors < MAX_CONSECUTIVE_ERRORS;
           ++retry) {
@@ -205,6 +216,7 @@ public class ORemoteServerChannel {
   }
 
   public void connect() throws IOException {
+    networkClose();
     channel =
         new OChannelBinarySynchClient(
             remoteHost,

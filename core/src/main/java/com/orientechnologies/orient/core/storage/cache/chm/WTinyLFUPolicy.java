@@ -7,7 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /** Window TinyLFU eviction policy https://arxiv.org/pdf/1512.00727.pdf. */
-final class WTinyLFUPolicy {
+public final class WTinyLFUPolicy {
   private static final int EDEN_PERCENT = 20;
   private static final int PROBATIONARY_PERCENT = 20;
 
@@ -52,8 +52,8 @@ final class WTinyLFUPolicy {
     return maxSize;
   }
 
-  void onAccess(OCacheEntry cacheEntry) {
-    admittor.increment(PageKey.hashCode(cacheEntry.getFileId(), (int) cacheEntry.getPageIndex()));
+  public void onAccess(OCacheEntry cacheEntry) {
+    admittor.increment(cacheEntry.getPageKey().hashCode());
 
     if (!cacheEntry.isDead()) {
       if (probation.contains(cacheEntry)) {
@@ -78,7 +78,7 @@ final class WTinyLFUPolicy {
   }
 
   void onAdd(final OCacheEntry cacheEntry) {
-    admittor.increment(PageKey.hashCode(cacheEntry.getFileId(), (int) cacheEntry.getPageIndex()));
+    admittor.increment(cacheEntry.getPageKey().hashCode());
 
     if (cacheEntry.isAlive()) {
       assert !eden.contains(cacheEntry);
@@ -105,10 +105,8 @@ final class WTinyLFUPolicy {
       } else {
         final OCacheEntry victim = probation.peek();
 
-        final int candidateKeyHashCode =
-            PageKey.hashCode(candidate.getFileId(), (int) candidate.getPageIndex());
-        final int victimKeyHashCode =
-            PageKey.hashCode(victim.getFileId(), (int) victim.getPageIndex());
+        final int candidateKeyHashCode = candidate.getPageKey().hashCode();
+        final int victimKeyHashCode = victim.getPageKey().hashCode();
 
         final int candidateFrequency = admittor.frequency(candidateKeyHashCode);
         final int victimFrequency = admittor.frequency(victimKeyHashCode);
@@ -118,8 +116,7 @@ final class WTinyLFUPolicy {
           probation.moveToTheTail(candidate);
 
           if (victim.freeze()) {
-            final boolean removed =
-                data.remove(new PageKey(victim.getFileId(), (int) victim.getPageIndex()), victim);
+            final boolean removed = data.remove(victim.getPageKey(), victim);
             victim.makeDead();
 
             if (removed) {
@@ -135,9 +132,7 @@ final class WTinyLFUPolicy {
           }
         } else {
           if (candidate.freeze()) {
-            final boolean removed =
-                data.remove(
-                    new PageKey(candidate.getFileId(), (int) candidate.getPageIndex()), candidate);
+            final boolean removed = data.remove(candidate.getPageKey(), candidate);
             candidate.makeDead();
 
             if (removed) {
@@ -209,20 +204,17 @@ final class WTinyLFUPolicy {
 
     int counter = 0;
     for (final OCacheEntry cacheEntry : eden) {
-      assert data.get(new PageKey(cacheEntry.getFileId(), (int) cacheEntry.getPageIndex()))
-          == cacheEntry;
+      assert data.get(cacheEntry.getPageKey()) == cacheEntry;
       counter++;
     }
 
     for (final OCacheEntry cacheEntry : probation) {
-      assert data.get(new PageKey(cacheEntry.getFileId(), (int) cacheEntry.getPageIndex()))
-          == cacheEntry;
+      assert data.get(cacheEntry.getPageKey()) == cacheEntry;
       counter++;
     }
 
     for (final OCacheEntry cacheEntry : protection) {
-      assert data.get(new PageKey(cacheEntry.getFileId(), (int) cacheEntry.getPageIndex()))
-          == cacheEntry;
+      assert data.get(cacheEntry.getPageKey()) == cacheEntry;
       counter++;
     }
 

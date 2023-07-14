@@ -4,12 +4,15 @@ import com.orientechnologies.common.util.OArrays;
 import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
 import com.orientechnologies.orient.core.exception.ODatabaseException;
 import com.orientechnologies.orient.core.exception.OSchemaException;
+import com.orientechnologies.orient.core.index.OIndex;
+import com.orientechnologies.orient.core.index.OIndexManagerAbstract;
 import com.orientechnologies.orient.core.metadata.security.ORole;
 import com.orientechnologies.orient.core.metadata.security.ORule;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class OViewEmbedded extends OViewImpl {
 
@@ -52,7 +55,7 @@ public class OViewEmbedded extends OViewImpl {
     throw new UnsupportedOperationException();
   }
 
-  protected OClass removeBaseClassInternal(final OClass baseClass) {
+  public OClass removeBaseClassInternal(final OClass baseClass) {
     acquireSchemaWriteLock();
     try {
       checkEmbedded();
@@ -137,7 +140,7 @@ public class OViewEmbedded extends OViewImpl {
       clusterIds[clusterIds.length - 1] = clusterId;
       Arrays.sort(clusterIds);
 
-      addPolymorphicClusterId(clusterId);
+      onlyAddPolymorphicClusterId(clusterId);
 
       if (defaultClusterId == NOT_EXISTENT_CLUSTER_ID) defaultClusterId = clusterId;
 
@@ -235,7 +238,7 @@ public class OViewEmbedded extends OViewImpl {
         }
         clusterIds = newClusterIds;
 
-        removePolymorphicClusterId(clusterToRemove);
+        onlyRemovePolymorphicClusterId(clusterToRemove);
       }
 
       if (defaultClusterId == clusterToRemove) {
@@ -266,5 +269,33 @@ public class OViewEmbedded extends OViewImpl {
 
   public OClass setAbstract(boolean isAbstract) {
     throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public OViewRemovedMetadata replaceViewClusterAndIndex(final int cluster, List<OIndex> indexes) {
+    acquireSchemaWriteLock();
+    try {
+      List<String> oldIndexes = inactivateIndexes();
+      int[] oldClusters = getClusterIds();
+      addClusterId(cluster);
+      for (int i : oldClusters) {
+        removeClusterId(i);
+      }
+      addActiveIndexes(indexes.stream().map(x -> x.getName()).collect(Collectors.toList()));
+      return new OViewRemovedMetadata(oldClusters, oldIndexes);
+    } finally {
+      releaseSchemaWriteLock();
+    }
+  }
+
+  protected void addClusterIdToIndexes(int iId) {
+    final String clusterName = getDatabase().getClusterNameById(iId);
+    final List<String> indexesToAdd = new ArrayList<String>();
+
+    for (OIndex index : getIndexes()) indexesToAdd.add(index.getName());
+
+    final OIndexManagerAbstract indexManager =
+        getDatabase().getMetadata().getIndexManagerInternal();
+    for (String indexName : indexesToAdd) indexManager.addClusterToIndex(clusterName, indexName);
   }
 }

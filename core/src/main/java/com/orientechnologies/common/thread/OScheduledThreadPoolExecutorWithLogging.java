@@ -13,18 +13,8 @@ import java.util.concurrent.ThreadFactory;
  * inside of the tasks which caused tasks to stop.
  */
 public class OScheduledThreadPoolExecutorWithLogging extends ScheduledThreadPoolExecutor {
-  public OScheduledThreadPoolExecutorWithLogging(int corePoolSize) {
-    super(corePoolSize);
-  }
-
   public OScheduledThreadPoolExecutorWithLogging(int corePoolSize, ThreadFactory threadFactory) {
     super(corePoolSize, threadFactory);
-  }
-
-  @SuppressWarnings("unused")
-  public OScheduledThreadPoolExecutorWithLogging(
-      int corePoolSize, RejectedExecutionHandler handler) {
-    super(corePoolSize, handler);
   }
 
   @SuppressWarnings("unused")
@@ -37,7 +27,7 @@ public class OScheduledThreadPoolExecutorWithLogging extends ScheduledThreadPool
   protected void afterExecute(Runnable r, Throwable t) {
     super.afterExecute(r, t);
 
-    if (r instanceof Future<?>) {
+    if ((t == null) && r instanceof Future<?>) {
       final Future<?> future = (Future<?>) r;
       // scheduled futures can block execution forever if they are not done
       if (future.isDone()) {

@@ -16,6 +16,10 @@
 package com.orientechnologies.orient.server.distributed;
 
 import com.orientechnologies.common.log.OLogManager;
+<<<<<<< HEAD
+=======
+import com.orientechnologies.orient.setup.ServerRun;
+>>>>>>> develop
 import java.util.HashSet;
 import java.util.Set;
 import org.assertj.core.api.Assertions;

@@ -24,10 +24,16 @@ public class OMatchPathItemFirst extends OMatchPathItem {
   }
 
   public void toString(Map<Object, Object> params, StringBuilder builder) {
-
     function.toString(params, builder);
     if (filter != null) {
       filter.toString(params, builder);
+    }
+  }
+
+  public void toGenericStatement(StringBuilder builder) {
+    function.toGenericStatement(builder);
+    if (filter != null) {
+      filter.toGenericStatement(builder);
     }
   }
 

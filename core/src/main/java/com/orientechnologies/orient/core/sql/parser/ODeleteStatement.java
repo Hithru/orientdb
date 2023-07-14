@@ -4,7 +4,7 @@ package com.orientechnologies.orient.core.sql.parser;
 
 import com.orientechnologies.orient.core.command.OBasicCommandContext;
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.db.ODatabase;
+import com.orientechnologies.orient.core.db.ODatabaseSession;
 import com.orientechnologies.orient.core.sql.executor.ODeleteExecutionPlan;
 import com.orientechnologies.orient.core.sql.executor.ODeleteExecutionPlanner;
 import com.orientechnologies.orient.core.sql.executor.OResultSet;
@@ -39,6 +39,24 @@ public class ODeleteStatement extends OStatement {
     }
     if (limit != null) {
       limit.toString(params, builder);
+    }
+    if (unsafe) {
+      builder.append(" UNSAFE");
+    }
+  }
+
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append("DELETE FROM ");
+    fromClause.toGenericStatement(builder);
+    if (returnBefore) {
+      builder.append(" RETURN BEFORE");
+    }
+    if (whereClause != null) {
+      builder.append(" WHERE ");
+      whereClause.toGenericStatement(builder);
+    }
+    if (limit != null) {
+      limit.toGenericStatement(builder);
     }
     if (unsafe) {
       builder.append(" UNSAFE");
@@ -86,7 +104,7 @@ public class ODeleteStatement extends OStatement {
 
   @Override
   public OResultSet execute(
-      ODatabase db, Map params, OCommandContext parentCtx, boolean usePlanCache) {
+      ODatabaseSession db, Map params, OCommandContext parentCtx, boolean usePlanCache) {
     OBasicCommandContext ctx = new OBasicCommandContext();
     if (parentCtx != null) {
       ctx.setParentWithoutOverridingChild(parentCtx);
@@ -105,7 +123,7 @@ public class ODeleteStatement extends OStatement {
 
   @Override
   public OResultSet execute(
-      ODatabase db, Object[] args, OCommandContext parentCtx, boolean usePlanCache) {
+      ODatabaseSession db, Object[] args, OCommandContext parentCtx, boolean usePlanCache) {
     OBasicCommandContext ctx = new OBasicCommandContext();
     if (parentCtx != null) {
       ctx.setParentWithoutOverridingChild(parentCtx);
@@ -132,6 +150,7 @@ public class ODeleteStatement extends OStatement {
     ODeleteExecutionPlanner planner = new ODeleteExecutionPlanner(this);
     ODeleteExecutionPlan result = planner.createExecutionPlan(ctx, enableProfiling);
     result.setStatement(this.originalStatement);
+    result.setGenericStatement(this.toGenericStatement());
     return result;
   }
 

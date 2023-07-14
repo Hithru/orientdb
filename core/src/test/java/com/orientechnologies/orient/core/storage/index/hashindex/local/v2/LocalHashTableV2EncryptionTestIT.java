@@ -4,7 +4,6 @@ import com.orientechnologies.common.io.OFileUtils;
 import com.orientechnologies.common.serialization.types.OIntegerSerializer;
 import com.orientechnologies.orient.core.db.ODatabaseInternal;
 import com.orientechnologies.orient.core.db.ODatabaseSession;
-import com.orientechnologies.orient.core.db.ODatabaseType;
 import com.orientechnologies.orient.core.db.OrientDB;
 import com.orientechnologies.orient.core.db.OrientDBConfig;
 import com.orientechnologies.orient.core.encryption.OEncryption;
@@ -30,7 +29,8 @@ public class LocalHashTableV2EncryptionTestIT extends LocalHashTableV2Base {
     OFileUtils.deleteRecursively(dbDirectory);
     final OrientDBConfig config = OrientDBConfig.builder().build();
     orientDB = new OrientDB("plocal:" + buildDirectory, config);
-    orientDB.create(DB_NAME, ODatabaseType.PLOCAL);
+    orientDB.execute(
+        "create database " + DB_NAME + " plocal users ( admin identified by 'admin' role admin)");
 
     ODatabaseSession databaseDocumentTx = orientDB.open(DB_NAME, "admin", "admin");
     storage = (OAbstractPaginatedStorage) ((ODatabaseInternal) databaseDocumentTx).getStorage();

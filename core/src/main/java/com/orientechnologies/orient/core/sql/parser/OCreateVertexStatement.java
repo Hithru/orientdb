@@ -4,7 +4,7 @@ package com.orientechnologies.orient.core.sql.parser;
 
 import com.orientechnologies.orient.core.command.OBasicCommandContext;
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.db.ODatabase;
+import com.orientechnologies.orient.core.db.ODatabaseSession;
 import com.orientechnologies.orient.core.sql.executor.OCreateVertexExecutionPlanner;
 import com.orientechnologies.orient.core.sql.executor.OInsertExecutionPlan;
 import com.orientechnologies.orient.core.sql.executor.OInternalExecutionPlan;
@@ -30,7 +30,7 @@ public class OCreateVertexStatement extends OStatement {
 
   @Override
   public OResultSet execute(
-      ODatabase db, Map params, OCommandContext parentCtx, boolean usePlanCache) {
+      ODatabaseSession db, Map params, OCommandContext parentCtx, boolean usePlanCache) {
     OBasicCommandContext ctx = new OBasicCommandContext();
     if (parentCtx != null) {
       ctx.setParentWithoutOverridingChild(parentCtx);
@@ -49,7 +49,7 @@ public class OCreateVertexStatement extends OStatement {
 
   @Override
   public OResultSet execute(
-      ODatabase db, Object[] args, OCommandContext parentCtx, boolean usePlanCache) {
+      ODatabaseSession db, Object[] args, OCommandContext parentCtx, boolean usePlanCache) {
     OBasicCommandContext ctx = new OBasicCommandContext();
     if (parentCtx != null) {
       ctx.setParentWithoutOverridingChild(parentCtx);
@@ -77,6 +77,7 @@ public class OCreateVertexStatement extends OStatement {
     OCreateVertexExecutionPlanner planner = new OCreateVertexExecutionPlanner(this);
     OInternalExecutionPlan result = planner.createExecutionPlan(ctx, enableProfiling);
     result.setStatement(this.originalStatement);
+    result.setGenericStatement(this.toGenericStatement());
     return result;
   }
 
@@ -102,6 +103,31 @@ public class OCreateVertexStatement extends OStatement {
         builder.append(" ");
       }
       insertBody.toString(params, builder);
+    }
+  }
+
+  public void toGenericStatement(StringBuilder builder) {
+
+    builder.append("CREATE VERTEX ");
+    if (targetClass != null) {
+      targetClass.toGenericStatement(builder);
+      if (targetClusterName != null) {
+        builder.append(" CLUSTER ");
+        targetClusterName.toGenericStatement(builder);
+      }
+    }
+    if (targetCluster != null) {
+      targetCluster.toGenericStatement(builder);
+    }
+    if (returnStatement != null) {
+      builder.append(" RETURN ");
+      returnStatement.toGenericStatement(builder);
+    }
+    if (insertBody != null) {
+      if (targetClass != null || targetCluster != null || returnStatement != null) {
+        builder.append(" ");
+      }
+      insertBody.toGenericStatement(builder);
     }
   }
 

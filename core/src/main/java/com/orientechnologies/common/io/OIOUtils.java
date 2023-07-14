@@ -19,8 +19,6 @@
  */
 package com.orientechnologies.common.io;
 
-import com.kenai.jffi.Platform;
-import com.orientechnologies.common.jnr.LastErrorException;
 import com.orientechnologies.common.jnr.ONative;
 import com.orientechnologies.common.util.OPatternConst;
 import java.io.BufferedReader;
@@ -183,14 +181,11 @@ public class OIOUtils {
     }
   }
 
-  public static long copyStream(final InputStream in, final OutputStream out, long iMax)
-      throws IOException {
-    if (iMax < 0) iMax = Long.MAX_VALUE;
-
+  public static long copyStream(final InputStream in, final OutputStream out) throws IOException {
     final byte[] buf = new byte[8192];
     int byteRead = 0;
     long byteTotal = 0;
-    while ((byteRead = in.read(buf, 0, (int) Math.min(buf.length, iMax - byteTotal))) > 0) {
+    while ((byteRead = in.read(buf)) != -1) {
       out.write(buf, 0, byteRead);
       byteTotal += byteRead;
     }
@@ -371,32 +366,6 @@ public class OIOUtils {
     }
   }
 
-  public static void readByteBuffer(ByteBuffer buffer, int fd) throws IOException {
-    int bytesToRead = buffer.limit();
-
-    int read = 0;
-
-    while (read < bytesToRead) {
-      buffer.position(read);
-
-      final int r;
-
-      try {
-        r = (int) ONative.instance().read(fd, buffer, buffer.remaining());
-      } catch (LastErrorException e) {
-        throw new IOException("Error during reading from file", e);
-      }
-
-      if (r < 0) {
-        throw new EOFException("End of file is reached");
-      }
-
-      read += r;
-    }
-
-    buffer.position(read);
-  }
-
   public static int writeByteBuffer(ByteBuffer buffer, FileChannel channel, long position)
       throws IOException {
     int bytesToWrite = buffer.limit();
@@ -411,8 +380,33 @@ public class OIOUtils {
     return written;
   }
 
+  private static boolean compareStartIgnoreCase(String contaner, String contained) {
+    return contaner.startsWith(contained)
+        || contaner.toUpperCase().startsWith(contained.toUpperCase())
+        || contaner.toLowerCase().startsWith(contained.toLowerCase());
+  }
+
+  public static boolean isOsWindows() {
+    String osName = System.getProperty("os.name").split(" ")[0];
+    if (compareStartIgnoreCase(osName, "windows")) {
+      return true;
+
+    } else {
+      return false;
+    }
+  }
+
+  public static boolean isOsLinux() {
+    String osName = System.getProperty("os.name").split(" ")[0];
+    if (compareStartIgnoreCase(osName, "linux")) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   public static int calculateBlockSize(String path) {
-    if (Platform.getPlatform().getOS() != Platform.OS.LINUX) {
+    if (!isOsLinux()) {
       return -1;
     }
 
@@ -437,9 +431,7 @@ public class OIOUtils {
       }
     }
 
-    final int _PC_REC_XFER_ALIGN = 0x11;
-
-    int fsBlockSize = ONative.instance().pathconf(path, _PC_REC_XFER_ALIGN);
+    int fsBlockSize = (int) ONative.instance().blockSize(path);
     int pageSize = ONative.instance().getpagesize();
     fsBlockSize = lcm(fsBlockSize, pageSize);
 

@@ -84,6 +84,20 @@ public class ORevokeStatement extends OSimpleExecStatement {
   }
 
   @Override
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append("REVOKE ");
+    if (revokePolicy) {
+      builder.append("POLICY");
+    } else {
+      permission.toGenericStatement(builder);
+    }
+    builder.append(" ON ");
+    this.securityResource.toGenericStatement(builder);
+    builder.append(" FROM ");
+    actor.toGenericStatement(builder);
+  }
+
+  @Override
   public ORevokeStatement copy() {
     ORevokeStatement result = new ORevokeStatement(-1);
     result.permission = permission == null ? null : permission.copy();

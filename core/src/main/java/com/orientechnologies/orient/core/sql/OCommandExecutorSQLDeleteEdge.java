@@ -97,7 +97,6 @@ public class OCommandExecutorSQLDeleteEdge extends OCommandExecutorSQLSetAware
         originalTemp =
             parserText.substring(parserGetPreviousPosition(), parserGetCurrentPosition()).trim();
 
-      final OModifiableBoolean shutdownFlag = new OModifiableBoolean();
       ODatabaseDocumentInternal curDb = ODatabaseRecordThreadLocal.instance().get();
       //      final OrientGraph graph = OGraphCommandExecutorSQLFactory.getGraph(false,
       // shutdownFlag);
@@ -136,7 +135,7 @@ public class OCommandExecutorSQLDeleteEdge extends OCommandExecutorSQLSetAware
           } else if (temp.equals(KEYWORD_WHERE)) {
             if (clazz == null)
               // ASSIGN DEFAULT CLASS
-              clazz = curDb.getMetadata().getSchema().getClass("E");
+              clazz = curDb.getMetadata().getImmutableSchemaSnapshot().getClass("E");
 
             where =
                 parserGetCurrentPosition() > -1

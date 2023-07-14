@@ -4,8 +4,13 @@ package com.orientechnologies.orient.core.sql.parser;
 
 import com.orientechnologies.orient.core.command.OBasicCommandContext;
 import com.orientechnologies.orient.core.command.OCommandContext;
+<<<<<<< HEAD
 import com.orientechnologies.orient.core.db.ODatabase;
 import com.orientechnologies.orient.core.db.ODatabaseInternal;
+=======
+import com.orientechnologies.orient.core.db.ODatabaseInternal;
+import com.orientechnologies.orient.core.db.ODatabaseSession;
+>>>>>>> develop
 import com.orientechnologies.orient.core.db.ODatabaseStats;
 import com.orientechnologies.orient.core.exception.OCommandExecutionException;
 import com.orientechnologies.orient.core.sql.executor.OExecutionPlan;
@@ -29,13 +34,23 @@ public class OProfileStatement extends OStatement {
 
   @Override
   public void toString(Map<Object, Object> params, StringBuilder builder) {
-    builder.append("EXPLAIN ");
+    builder.append("PROFILE ");
     statement.toString(params, builder);
   }
 
   @Override
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append("PROFILE ");
+    statement.toGenericStatement(builder);
+  }
+
+  @Override
   public OResultSet execute(
+<<<<<<< HEAD
       ODatabase db, Object[] args, OCommandContext parentCtx, boolean usePlanCache) {
+=======
+      ODatabaseSession db, Object[] args, OCommandContext parentCtx, boolean usePlanCache) {
+>>>>>>> develop
     ((ODatabaseInternal) db).resetRecordLoadStats();
     OBasicCommandContext ctx = new OBasicCommandContext();
     if (parentCtx != null) {
@@ -77,7 +92,11 @@ public class OProfileStatement extends OStatement {
 
   @Override
   public OResultSet execute(
+<<<<<<< HEAD
       ODatabase db, Map args, OCommandContext parentCtx, boolean usePlanCache) {
+=======
+      ODatabaseSession db, Map args, OCommandContext parentCtx, boolean usePlanCache) {
+>>>>>>> develop
     ((ODatabaseInternal) db).resetRecordLoadStats();
     OBasicCommandContext ctx = new OBasicCommandContext();
     if (parentCtx != null) {

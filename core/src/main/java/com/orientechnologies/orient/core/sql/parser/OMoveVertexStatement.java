@@ -4,7 +4,7 @@ package com.orientechnologies.orient.core.sql.parser;
 
 import com.orientechnologies.orient.core.command.OBasicCommandContext;
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.db.ODatabase;
+import com.orientechnologies.orient.core.db.ODatabaseSession;
 import com.orientechnologies.orient.core.sql.executor.OMoveVertexExecutionPlanner;
 import com.orientechnologies.orient.core.sql.executor.OResultSet;
 import com.orientechnologies.orient.core.sql.executor.OUpdateExecutionPlan;
@@ -28,7 +28,7 @@ public class OMoveVertexStatement extends OStatement {
 
   @Override
   public OResultSet execute(
-      ODatabase db, Object[] args, OCommandContext parentCtx, boolean usePlanCache) {
+      ODatabaseSession db, Object[] args, OCommandContext parentCtx, boolean usePlanCache) {
     Map<Object, Object> params = new HashMap<>();
     if (args != null) {
       for (int i = 0; i < args.length; i++) {
@@ -40,7 +40,7 @@ public class OMoveVertexStatement extends OStatement {
 
   @Override
   public OResultSet execute(
-      ODatabase db, Map params, OCommandContext parentCtx, boolean usePlanCache) {
+      ODatabaseSession db, Map params, OCommandContext parentCtx, boolean usePlanCache) {
     OBasicCommandContext ctx = new OBasicCommandContext();
     if (parentCtx != null) {
       ctx.setParentWithoutOverridingChild(parentCtx);
@@ -81,6 +81,28 @@ public class OMoveVertexStatement extends OStatement {
     if (batch != null) {
       builder.append(" ");
       batch.toString(params, builder);
+    }
+  }
+
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append("MOVE VERTEX ");
+    source.toGenericStatement(builder);
+    builder.append(" TO ");
+    if (targetCluster != null) {
+      targetCluster.toGenericStatement(builder);
+    } else {
+      builder.append("CLASS:");
+      targetClass.toGenericStatement(builder);
+    }
+
+    if (updateOperations != null) {
+      builder.append(" ");
+      updateOperations.toGenericStatement(builder);
+    }
+
+    if (batch != null) {
+      builder.append(" ");
+      batch.toGenericStatement(builder);
     }
   }
 

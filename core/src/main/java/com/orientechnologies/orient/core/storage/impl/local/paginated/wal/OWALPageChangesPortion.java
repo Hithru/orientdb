@@ -23,6 +23,7 @@ public class OWALPageChangesPortion implements OWALChanges {
   private byte[][][] pageChunks;
 
   private final int pageSize;
+  private final int chunksCount;
 
   public OWALPageChangesPortion() {
     this(PAGE_SIZE);
@@ -30,6 +31,7 @@ public class OWALPageChangesPortion implements OWALChanges {
 
   OWALPageChangesPortion(int pageSize) {
     this.pageSize = pageSize;
+    this.chunksCount = (pageSize + (PORTION_BYTES - 1)) / PORTION_BYTES;
     if (pageSize % PORTION_BYTES != 0) {
       throw new IllegalArgumentException("Page size should be a multiple of " + PORTION_BYTES);
     }
@@ -154,9 +156,7 @@ public class OWALPageChangesPortion implements OWALChanges {
         if (pageChunk != null) {
           for (int j = 0; j < PORTION_SIZE; j++) {
             if (pageChunk[j] != null) {
-              offset += OByteSerializer.BYTE_SIZE;
-              offset += OByteSerializer.BYTE_SIZE;
-              offset += 2 * CHUNK_SIZE;
+              offset += 2 * OByteSerializer.BYTE_SIZE + CHUNK_SIZE;
             }
           }
         }
@@ -365,10 +365,17 @@ public class OWALPageChangesPortion implements OWALChanges {
     }
 
     if (pageChunks == null) {
-      pageChunks = new byte[(pageSize + (PORTION_BYTES - 1)) / PORTION_BYTES][][];
+      pageChunks = new byte[this.chunksCount][][];
     }
 
+<<<<<<< HEAD
     int portionIndex = pageOffset / PORTION_BYTES;
+=======
+    int portionIndex = offset / PORTION_BYTES;
+    assert portionIndex < pageChunks.length;
+    assert (pageChunks.length - portionIndex) * PORTION_BYTES >= data.length
+        : "wrong portionIndex:" + portionIndex + " data:" + data.length;
+>>>>>>> develop
 
     if (pageChunks[portionIndex] == null) {
       pageChunks[portionIndex] = new byte[PORTION_SIZE][];
@@ -387,7 +394,7 @@ public class OWALPageChangesPortion implements OWALChanges {
 
         // pointer can be null for new pages
         if (pointer != null) {
-          pointer.position(portionIndex * PORTION_BYTES + (chunkIndex) * CHUNK_SIZE);
+          pointer.position(portionIndex * PORTION_BYTES + chunkIndex * CHUNK_SIZE);
           pointer.get(chunk);
         }
 

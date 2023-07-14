@@ -89,6 +89,19 @@ public class OTruncateClusterStatement extends ODDLStatement {
   }
 
   @Override
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append("TRUNCATE CLUSTER ");
+    if (clusterName != null) {
+      clusterName.toGenericStatement(builder);
+    } else if (clusterNumber != null) {
+      clusterNumber.toGenericStatement(builder);
+    }
+    if (unsafe) {
+      builder.append(" UNSAFE");
+    }
+  }
+
+  @Override
   public OTruncateClusterStatement copy() {
     OTruncateClusterStatement result = new OTruncateClusterStatement(-1);
     result.clusterName = clusterName == null ? null : clusterName.copy();

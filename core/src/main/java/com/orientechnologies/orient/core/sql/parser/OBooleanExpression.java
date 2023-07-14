@@ -6,6 +6,7 @@ import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.exception.OCommandExecutionException;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
+import com.orientechnologies.orient.core.sql.executor.OIndexSearchInfo;
 import com.orientechnologies.orient.core.sql.executor.OResult;
 import com.orientechnologies.orient.core.sql.executor.OResultInternal;
 import java.util.Collections;
@@ -74,6 +75,11 @@ public abstract class OBooleanExpression extends SimpleNode {
 
         public void toString(Map<Object, Object> params, StringBuilder builder) {
           builder.append("true");
+        }
+
+        @Override
+        public void toGenericStatement(StringBuilder builder) {
+          builder.append(PARAMETER_PLACEHOLDER);
         }
 
         @Override
@@ -152,6 +158,11 @@ public abstract class OBooleanExpression extends SimpleNode {
 
         public void toString(Map<Object, Object> params, StringBuilder builder) {
           builder.append("false");
+        }
+
+        @Override
+        public void toGenericStatement(StringBuilder builder) {
+          builder.append(PARAMETER_PLACEHOLDER);
         }
 
         @Override
@@ -285,5 +296,25 @@ public abstract class OBooleanExpression extends SimpleNode {
    */
   public boolean isAlwaysTrue() {
     return false;
+  }
+
+  public boolean isIndexAware(OIndexSearchInfo info) {
+    return false;
+  }
+
+  public boolean createRangeWith(OBooleanExpression match) {
+    return false;
+  }
+
+  public boolean isFullTextIndexAware(String indexField) {
+    return false;
+  }
+
+  public OExpression resolveKeyFrom(OBinaryCondition additional) {
+    throw new UnsupportedOperationException("Cannot execute index query with " + this);
+  }
+
+  public OExpression resolveKeyTo(OBinaryCondition additional) {
+    throw new UnsupportedOperationException("Cannot execute index query with " + this);
   }
 }

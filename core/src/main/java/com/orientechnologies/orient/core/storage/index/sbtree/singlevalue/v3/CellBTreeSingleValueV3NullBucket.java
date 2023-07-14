@@ -49,6 +49,10 @@ public final class CellBTreeSingleValueV3NullBucket extends ODurablePage {
   }
 
   public void setValue(final ORID value) {
+<<<<<<< HEAD
+=======
+
+>>>>>>> develop
     setByteValue(NEXT_FREE_POSITION, (byte) 1);
 
     setShortValue(NEXT_FREE_POSITION + 1, (short) value.getClusterId());

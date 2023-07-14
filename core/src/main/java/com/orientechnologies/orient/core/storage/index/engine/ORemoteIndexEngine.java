@@ -61,6 +61,16 @@ public class ORemoteIndexEngine implements OIndexEngine {
   }
 
   @Override
+  public void updateUniqueIndexVersion(final Object key) {
+    // not implemented
+  }
+
+  @Override
+  public int getUniqueIndexVersion(final Object key) {
+    return 0; // not implemented
+  }
+
+  @Override
   public void init(
       String indexName,
       String indexType,

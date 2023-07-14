@@ -31,7 +31,11 @@ public class SBTreeLeafBucketV1Test {
     OCachePointer cachePointer = new OCachePointer(pointer, bufferPool, 0, 0);
     cachePointer.incrementReferrer();
 
+<<<<<<< HEAD
     OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false);
+=======
+    OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false, null);
+>>>>>>> develop
     cacheEntry.acquireExclusiveLock();
 
     OSBTreeBucketV1<Long, OIdentifiable> treeBucket = new OSBTreeBucketV1<>(cacheEntry);
@@ -66,7 +70,11 @@ public class SBTreeLeafBucketV1Test {
     OPointer pointer = bufferPool.acquireDirect(true, Intention.TEST);
 
     OCachePointer cachePointer = new OCachePointer(pointer, bufferPool, 0, 0);
+<<<<<<< HEAD
     OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false);
+=======
+    OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false, null);
+>>>>>>> develop
     cacheEntry.acquireExclusiveLock();
 
     cachePointer.incrementReferrer();
@@ -114,7 +122,11 @@ public class SBTreeLeafBucketV1Test {
     OPointer pointer = bufferPool.acquireDirect(true, Intention.TEST);
 
     OCachePointer cachePointer = new OCachePointer(pointer, bufferPool, 0, 0);
+<<<<<<< HEAD
     OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false);
+=======
+    OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false, null);
+>>>>>>> develop
     cacheEntry.acquireExclusiveLock();
 
     cachePointer.incrementReferrer();
@@ -187,7 +199,11 @@ public class SBTreeLeafBucketV1Test {
     OCachePointer cachePointer = new OCachePointer(pointer, bufferPool, 0, 0);
     cachePointer.incrementReferrer();
 
+<<<<<<< HEAD
     OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false);
+=======
+    OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false, null);
+>>>>>>> develop
     cacheEntry.acquireExclusiveLock();
 
     OSBTreeBucketV1<Long, OIdentifiable> treeBucket = new OSBTreeBucketV1<>(cacheEntry);
@@ -283,7 +299,11 @@ public class SBTreeLeafBucketV1Test {
     OCachePointer cachePointer = new OCachePointer(pointer, bufferPool, 0, 0);
     cachePointer.incrementReferrer();
 
+<<<<<<< HEAD
     OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false);
+=======
+    OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false, null);
+>>>>>>> develop
     cacheEntry.acquireExclusiveLock();
 
     OSBTreeBucketV1<Long, OIdentifiable> treeBucket = new OSBTreeBucketV1<>(cacheEntry);
@@ -375,7 +395,11 @@ public class SBTreeLeafBucketV1Test {
     OCachePointer cachePointer = new OCachePointer(pointer, bufferPool, 0, 0);
     cachePointer.incrementReferrer();
 
+<<<<<<< HEAD
     OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false);
+=======
+    OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false, null);
+>>>>>>> develop
     cacheEntry.acquireExclusiveLock();
 
     OSBTreeBucketV1<Long, OIdentifiable> treeBucket = new OSBTreeBucketV1<>(cacheEntry);
@@ -394,7 +418,11 @@ public class SBTreeLeafBucketV1Test {
     OCachePointer cachePointer = new OCachePointer(pointer, bufferPool, 0, 0);
     cachePointer.incrementReferrer();
 
+<<<<<<< HEAD
     OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false);
+=======
+    OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false, null);
+>>>>>>> develop
     cacheEntry.acquireExclusiveLock();
 
     OSBTreeBucketV1<Long, OIdentifiable> treeBucket = new OSBTreeBucketV1<>(cacheEntry);

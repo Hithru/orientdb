@@ -5,7 +5,6 @@ import com.orientechnologies.common.serialization.types.OIntegerSerializer;
 import com.orientechnologies.orient.core.config.OGlobalConfiguration;
 import com.orientechnologies.orient.core.db.ODatabaseInternal;
 import com.orientechnologies.orient.core.db.ODatabaseSession;
-import com.orientechnologies.orient.core.db.ODatabaseType;
 import com.orientechnologies.orient.core.db.OrientDB;
 import com.orientechnologies.orient.core.db.OrientDBConfig;
 import com.orientechnologies.orient.core.serialization.serializer.binary.impl.OLinkSerializer;
@@ -17,6 +16,7 @@ import com.orientechnologies.orient.core.storage.disk.OLocalPaginatedStorage;
 import com.orientechnologies.orient.core.storage.fs.OFile;
 import com.orientechnologies.orient.core.storage.impl.local.OAbstractPaginatedStorage;
 import com.orientechnologies.orient.core.storage.impl.local.paginated.base.ODurablePage;
+<<<<<<< HEAD
 import com.orientechnologies.orient.core.storage.impl.local.paginated.wal.OAtomicUnitEndRecord;
 import com.orientechnologies.orient.core.storage.impl.local.paginated.wal.OAtomicUnitStartRecord;
 import com.orientechnologies.orient.core.storage.impl.local.paginated.wal.OFileCreatedWALRecord;
@@ -25,6 +25,9 @@ import com.orientechnologies.orient.core.storage.impl.local.paginated.wal.ONonTx
 import com.orientechnologies.orient.core.storage.impl.local.paginated.wal.OOperationUnitBodyRecord;
 import com.orientechnologies.orient.core.storage.impl.local.paginated.wal.OUpdatePageRecord;
 import com.orientechnologies.orient.core.storage.impl.local.paginated.wal.OWALRecord;
+=======
+import com.orientechnologies.orient.core.storage.impl.local.paginated.wal.*;
+>>>>>>> develop
 import com.orientechnologies.orient.core.storage.impl.local.paginated.wal.cas.CASDiskWriteAheadLog;
 import com.orientechnologies.orient.core.storage.impl.local.paginated.wal.common.OperationIdLSN;
 import com.orientechnologies.orient.core.storage.impl.local.paginated.wal.common.WriteableWALRecord;
@@ -36,11 +39,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import org.assertj.core.api.Assertions;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.*;
 
 /**
  * @author Andrey Lomakin (a.lomakin-at-orientdb.com)
@@ -90,7 +89,10 @@ public class SBTreeV1WALTestIT extends SBTreeV1TestIT {
   }
 
   private void createActualSBTree() throws Exception {
-    orientDB.create(ACTUAL_DB_NAME, ODatabaseType.PLOCAL);
+    orientDB.execute(
+        "create database "
+            + ACTUAL_DB_NAME
+            + " plocal users ( admin identified by 'admin' role admin)");
 
     databaseDocumentTx = orientDB.open(ACTUAL_DB_NAME, "admin", "admin");
     actualStorage =
@@ -119,7 +121,10 @@ public class SBTreeV1WALTestIT extends SBTreeV1TestIT {
   }
 
   private void createExpectedSBTree() {
-    orientDB.create(EXPECTED_DB_NAME, ODatabaseType.PLOCAL);
+    orientDB.execute(
+        "create database "
+            + EXPECTED_DB_NAME
+            + " plocal users ( admin identified by 'admin' role admin)");
 
     expectedDatabaseDocumentTx = orientDB.open(EXPECTED_DB_NAME, "admin", "admin");
     expectedStorage =
@@ -329,7 +334,7 @@ public class SBTreeV1WALTestIT extends SBTreeV1TestIT {
 
               OCacheEntry cacheEntry =
                   expectedReadCache.loadForWrite(
-                      fileId, pageIndex, true, expectedWriteCache, false, null);
+                      fileId, pageIndex, expectedWriteCache, false, null);
               if (cacheEntry == null) {
                 do {
                   if (cacheEntry != null) {

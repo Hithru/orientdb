@@ -271,7 +271,10 @@ public final class HashIndexBucketV2<K, V> extends ODurablePage {
     }
 
     setBinaryValue(entryPosition, value);
+<<<<<<< HEAD
 
+=======
+>>>>>>> develop
     return 1;
   }
 
@@ -324,7 +327,10 @@ public final class HashIndexBucketV2<K, V> extends ODurablePage {
     }
 
     insertEntry(hashCode, key, value, index, entreeSize);
+<<<<<<< HEAD
 
+=======
+>>>>>>> develop
     return true;
   }
 

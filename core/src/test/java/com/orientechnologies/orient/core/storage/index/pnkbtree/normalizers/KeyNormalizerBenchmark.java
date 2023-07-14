@@ -1,9 +1,31 @@
 package com.orientechnologies.orient.core.storage.index.pnkbtree.normalizers;
 
-import com.ibm.icu.text.Collator;
 import com.orientechnologies.orient.core.index.OCompositeKey;
 import com.orientechnologies.orient.core.metadata.schema.OType;
+<<<<<<< HEAD:core/src/test/java/com/orientechnologies/orient/core/storage/index/pnkbtree/normalizers/KeyNormalizerBenchmark.java
 import org.openjdk.jmh.annotations.*;
+=======
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.text.Collator;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.concurrent.TimeUnit;
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Level;
+import org.openjdk.jmh.annotations.Measurement;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.Setup;
+import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Warmup;
+>>>>>>> develop:core/src/test/java/com/orientechnologies/orient/core/storage/index/nkbtree/normalizers/KeyNormalizerBenchmark.java
 import org.openjdk.jmh.profile.StackProfiler;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;

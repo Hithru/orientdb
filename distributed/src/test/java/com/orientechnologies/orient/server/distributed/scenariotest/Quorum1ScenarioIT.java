@@ -23,8 +23,8 @@ import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
 import com.orientechnologies.orient.server.distributed.OModifiableDistributedConfiguration;
-import com.orientechnologies.orient.server.distributed.ServerRun;
-import com.orientechnologies.orient.server.hazelcast.OHazelcastPlugin;
+import com.orientechnologies.orient.server.distributed.impl.ODistributedPlugin;
+import com.orientechnologies.orient.setup.ServerRun;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.Test;
@@ -68,15 +68,15 @@ public class Quorum1ScenarioIT extends AbstractScenarioTest {
 
     ODocument cfg = null;
     ServerRun server = serverInstance.get(0);
-    OHazelcastPlugin manager =
-        (OHazelcastPlugin) server.getServerInstance().getDistributedManager();
+    ODistributedPlugin manager =
+        (ODistributedPlugin) server.getServerInstance().getDistributedManager();
     OModifiableDistributedConfiguration databaseConfiguration =
         manager.getDatabaseConfiguration(getDatabaseName()).modify();
     cfg = databaseConfiguration.getDocument();
     cfg.field("writeQuorum", 1);
     cfg.field("autoDeploy", true);
     cfg.field("version", (Integer) cfg.field("version") + 1);
-    manager.updateCachedDatabaseConfiguration(getDatabaseName(), databaseConfiguration, true);
+    manager.updateCachedDatabaseConfiguration(getDatabaseName(), databaseConfiguration);
     System.out.println("\nConfiguration updated.");
 
     // execute writes on server1 and server2

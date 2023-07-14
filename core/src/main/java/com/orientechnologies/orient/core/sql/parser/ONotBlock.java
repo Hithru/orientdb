@@ -71,6 +71,13 @@ public class ONotBlock extends OBooleanExpression {
     sub.toString(params, builder);
   }
 
+  public void toGenericStatement(StringBuilder builder) {
+    if (negate) {
+      builder.append("NOT ");
+    }
+    sub.toGenericStatement(builder);
+  }
+
   @Override
   public boolean supportsBasicCalculation() {
     return true;

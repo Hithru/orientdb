@@ -54,6 +54,12 @@ public class ORecordInternal {
     return rec;
   }
 
+  public static void fromStream(
+      final ORecord record, final byte[] iBuffer, ODatabaseDocumentInternal db) {
+    final ORecordAbstract rec = (ORecordAbstract) record;
+    rec.fromStream(iBuffer, db);
+  }
+
   /** Internal only. Changes the identity of the record. */
   public static ORecordAbstract setIdentity(
       final ORecord record, final int iClusterId, final long iClusterPosition) {
@@ -149,18 +155,22 @@ public class ORecordInternal {
 
   public static void track(final ORecordElement pointer, final OIdentifiable pointed) {
     ORecordElement firstRecord = pointer;
-    while (!(firstRecord instanceof ORecord)) {
-      firstRecord = pointer.getOwner();
+    while (firstRecord != null && !(firstRecord instanceof ORecord)) {
+      firstRecord = firstRecord.getOwner();
     }
-    ((ORecordAbstract) firstRecord).track(pointed);
+    if (firstRecord instanceof ORecordAbstract) {
+      ((ORecordAbstract) firstRecord).track(pointed);
+    }
   }
 
   public static void unTrack(final ORecordElement pointer, final OIdentifiable pointed) {
     ORecordElement firstRecord = pointer;
-    while (!(firstRecord instanceof ORecord)) {
-      firstRecord = pointer.getOwner();
+    while (firstRecord != null && !(firstRecord instanceof ORecord)) {
+      firstRecord = firstRecord.getOwner();
     }
-    ((ORecordAbstract) firstRecord).unTrack(pointed);
+    if (firstRecord instanceof ORecordAbstract) {
+      ((ORecordAbstract) firstRecord).unTrack(pointed);
+    }
   }
 
   public static ORecordSerializer getRecordSerializer(ORecord iRecord) {

@@ -117,10 +117,11 @@ public class DoubleWriteLogGL implements DoubleWriteLog {
       this.currentSegment =
           latestPath.map(path -> extractSegmentId(path.getFileName().toString()) + 1).orElse(0L);
 
-      this.currentFile = createLogFile();
+      Path path = createLogFilePath();
+      this.currentFile = createLogFile(path);
       this.currentLogSize = calculateLogSize();
 
-      blockSize = OIOUtils.calculateBlockSize(storagePath.toAbsolutePath().toString());
+      blockSize = OIOUtils.calculateBlockSize(path.toAbsolutePath().toString());
       if (blockSize == -1) {
         blockSize = DEFAULT_BLOCK_SIZE;
       }
@@ -144,15 +145,27 @@ public class DoubleWriteLogGL implements DoubleWriteLog {
     return Long.parseLong(index);
   }
 
+<<<<<<< HEAD
   private FileChannel createLogFile() throws IOException {
     final Path currentFilePath = storagePath.resolve(generateSegmentsName(currentSegment));
+=======
+  private FileChannel createLogFile(Path path) throws IOException {
+>>>>>>> develop
     return FileChannel.open(
-        currentFilePath,
-        StandardOpenOption.WRITE,
-        StandardOpenOption.CREATE_NEW,
-        StandardOpenOption.SYNC);
+        path, StandardOpenOption.WRITE, StandardOpenOption.CREATE_NEW, StandardOpenOption.SYNC);
   }
 
+<<<<<<< HEAD
+=======
+  private Path createLogFilePath() throws IOException {
+    return storagePath.resolve(generateSegmentsName(currentSegment));
+  }
+
+  private FileChannel createLogFile() throws IOException {
+    return createLogFile(createLogFilePath());
+  }
+
+>>>>>>> develop
   private String generateSegmentsName(long id) {
     return storageName + "_" + id + EXTENSION;
   }
@@ -178,7 +191,11 @@ public class DoubleWriteLogGL implements DoubleWriteLog {
 
       sizeToAllocate += buffers.length * METADATA_SIZE;
       final OPointer pageContainer =
+<<<<<<< HEAD
           ALLOCATOR.allocate(sizeToAllocate, -1, false, Intention.DWL_ALLOCATE_CHUNK);
+=======
+          ALLOCATOR.allocate(sizeToAllocate, false, Intention.DWL_ALLOCATE_CHUNK);
+>>>>>>> develop
 
       try {
         final ByteBuffer containerBuffer;
@@ -192,9 +209,14 @@ public class DoubleWriteLogGL implements DoubleWriteLog {
 
           final int maxCompressedLength = LZ_4_COMPRESSOR.maxCompressedLength(buffer.limit());
           final OPointer compressedPointer =
+<<<<<<< HEAD
               ODirectMemoryAllocator.instance()
                   .allocate(
                       maxCompressedLength, -1, false, Intention.DWL_ALLOCATE_COMPRESSED_CHUNK);
+=======
+              ALLOCATOR.allocate(
+                  maxCompressedLength, false, Intention.DWL_ALLOCATE_COMPRESSED_CHUNK);
+>>>>>>> develop
           try {
             final ByteBuffer compressedBuffer = compressedPointer.getNativeByteBuffer();
             LZ_4_COMPRESSOR.compress(buffer, compressedBuffer);
@@ -270,7 +292,11 @@ public class DoubleWriteLogGL implements DoubleWriteLog {
                   OLogManager.instance()
                       .errorNoDb(
                           this,
+<<<<<<< HEAD
                           "Can not delete segment of double write log - %d in storage %s",
+=======
+                          "Can not delete segment of double write log - %s in storage %s",
+>>>>>>> develop
                           e,
                           segment,
                           storageName);
@@ -462,7 +488,8 @@ public class DoubleWriteLogGL implements DoubleWriteLog {
                   new ORawPair<>(fileId, pageIndex + i), new ORawPair<>(segmentId, position));
             }
 
-            position += ((METADATA_SIZE + compressedLen + blockSize - -1) / blockSize) * blockSize;
+            position +=
+                (long) ((METADATA_SIZE + compressedLen + blockSize - -1) / blockSize) * blockSize;
           }
         }
       }

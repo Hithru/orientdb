@@ -53,6 +53,16 @@ public class OSuffixIdentifier extends SimpleNode {
     }
   }
 
+  public void toGenericStatement(StringBuilder builder) {
+    if (identifier != null) {
+      identifier.toGenericStatement(builder);
+    } else if (recordAttribute != null) {
+      recordAttribute.toGenericStatement(builder);
+    } else if (star) {
+      builder.append("*");
+    }
+  }
+
   public Object execute(OIdentifiable iCurrentRecord, OCommandContext ctx) {
     if (star) {
       return iCurrentRecord;

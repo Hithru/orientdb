@@ -19,11 +19,11 @@
  */
 package com.orientechnologies.orient.core.storage;
 
-import com.orientechnologies.common.concur.resource.OSharedContainer;
 import com.orientechnologies.common.util.OCallable;
 import com.orientechnologies.orient.core.command.OCommandRequestText;
 import com.orientechnologies.orient.core.config.OContextConfiguration;
 import com.orientechnologies.orient.core.conflict.ORecordConflictStrategy;
+import com.orientechnologies.orient.core.db.OrientDBInternal;
 import com.orientechnologies.orient.core.db.record.OCurrentStorageComponentsFactory;
 import com.orientechnologies.orient.core.db.record.ORecordOperation;
 import com.orientechnologies.orient.core.exception.ORecordNotFoundException;
@@ -48,19 +48,23 @@ import java.util.TimeZone;
  * @author Luca Garulli (l.garulli--(at)--orientdb.com)
  * @see com.orientechnologies.orient.core.storage.memory.ODirectMemoryStorage
  */
-public interface OStorage extends OBackupable, OSharedContainer, OStorageInfo {
-  String CLUSTER_DEFAULT_NAME = "default";
+public interface OStorage extends OBackupable, OStorageInfo {
+  public String CLUSTER_DEFAULT_NAME = "default";
 
-  enum STATUS {
+  public enum STATUS {
     CLOSED,
     OPEN,
+    MIGRATION,
     CLOSING,
     @Deprecated
     OPENING,
+<<<<<<< HEAD
     INTERNAL_ERROR
+=======
+>>>>>>> develop
   }
 
-  enum LOCKING_STRATEGY {
+  public enum LOCKING_STRATEGY {
     NONE,
     DEFAULT,
     SHARED_LOCK,
@@ -154,9 +158,6 @@ public interface OStorage extends OBackupable, OSharedContainer, OStorageInfo {
 
   long getClusterRecordsSizeByName(final String clusterName);
 
-  boolean setClusterAttribute(
-      final String clusterName, OCluster.ATTRIBUTES attribute, Object value);
-
   String getClusterRecordConflictStrategy(final int clusterId);
 
   String getClusterEncryption(final int clusterId);
@@ -229,6 +230,7 @@ public interface OStorage extends OBackupable, OSharedContainer, OStorageInfo {
 
   boolean isRemote();
 
+  @Deprecated
   boolean isDistributed();
 
   boolean isAssigningClusterIds();
@@ -289,4 +291,12 @@ public interface OStorage extends OBackupable, OSharedContainer, OStorageInfo {
   void setRecordSerializer(String recordSerializer, int version);
 
   void clearProperties();
+
+  int[] getClustersIds(Set<String> filterClusters);
+
+  default boolean isIcrementalBackupRunning() {
+    return false;
+  }
+
+  OrientDBInternal getContext();
 }

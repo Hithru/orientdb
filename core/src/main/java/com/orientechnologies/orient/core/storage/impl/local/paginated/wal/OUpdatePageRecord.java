@@ -73,11 +73,14 @@ public class OUpdatePageRecord extends OAbstractPageWALRecord {
   }
 
   @Override
+<<<<<<< HEAD
   public boolean trackOperationId() {
     return true;
   }
 
   @Override
+=======
+>>>>>>> develop
   public boolean equals(final Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
@@ -85,6 +88,7 @@ public class OUpdatePageRecord extends OAbstractPageWALRecord {
 
     final OUpdatePageRecord that = (OUpdatePageRecord) o;
 
+<<<<<<< HEAD
     if (operationIdLSN == null && that.operationIdLSN == null) {
       return true;
     }
@@ -97,16 +101,34 @@ public class OUpdatePageRecord extends OAbstractPageWALRecord {
     }
 
     return Objects.equals(operationIdLSN.lsn, that.operationIdLSN.lsn);
+=======
+    if (logSequenceNumber == null && that.logSequenceNumber == null) {
+      return true;
+    }
+    if (logSequenceNumber == null) {
+      return false;
+    }
+
+    if (that.logSequenceNumber == null) {
+      return false;
+    }
+
+    return Objects.equals(logSequenceNumber, that.logSequenceNumber);
+>>>>>>> develop
   }
 
   @Override
   public int hashCode() {
     int result = super.hashCode();
+<<<<<<< HEAD
     result =
         31 * result
             + (operationIdLSN != null && operationIdLSN.lsn != null
                 ? operationIdLSN.lsn.hashCode()
                 : 0);
+=======
+    result = 31 * result + (logSequenceNumber != null ? logSequenceNumber.hashCode() : 0);
+>>>>>>> develop
     return result;
   }
 

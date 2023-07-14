@@ -56,15 +56,17 @@ public class OLiveCommandResultListenerTest {
   public void before() throws IOException {
     MockitoAnnotations.initMocks(this);
     Mockito.when(server.getContextConfiguration()).thenReturn(new OContextConfiguration());
+
     db = new ODatabaseDocumentTx("memory:" + OLiveCommandResultListenerTest.class.getSimpleName());
     db.create();
     OClientConnectionManager manager = new OClientConnectionManager(server);
     protocol = new ONetworkProtocolBinary(server);
     protocol.initVariables(server, channelBinary);
     connection = manager.connect(protocol);
-    OTokenHandlerImpl tokenHandler = new OTokenHandlerImpl(server);
+    OTokenHandlerImpl tokenHandler = new OTokenHandlerImpl(new OContextConfiguration());
+    Mockito.when(server.getTokenHandler()).thenReturn(tokenHandler);
     byte[] token = tokenHandler.getSignedBinaryToken(db, db.getUser(), connection.getData());
-    connection = manager.connect(protocol, connection, token, tokenHandler);
+    connection = manager.connect(protocol, connection, token);
     connection.setDatabase(db);
     connection.getData().setSerializationImpl(ORecordSerializerNetwork.NAME);
     Mockito.when(server.getClientConnectionManager()).thenReturn(manager);

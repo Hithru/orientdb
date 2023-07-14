@@ -20,49 +20,55 @@
 
 package com.orientechnologies.orient.client.remote;
 
+import com.orientechnologies.common.concur.resource.OCloseable;
 import com.orientechnologies.common.log.OLogManager;
+import com.orientechnologies.orient.core.OOrientShutdownListener;
+import com.orientechnologies.orient.core.OOrientStartupListener;
+import com.orientechnologies.orient.core.Orient;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.db.record.ridbag.ORidBag;
-import com.orientechnologies.orient.core.storage.OStorage;
 import com.orientechnologies.orient.core.storage.impl.local.paginated.atomicoperations.OAtomicOperation;
 import com.orientechnologies.orient.core.storage.index.sbtreebonsai.local.OSBTreeBonsai;
 import com.orientechnologies.orient.core.storage.ridbag.sbtree.OBonsaiCollectionPointer;
-import com.orientechnologies.orient.core.storage.ridbag.sbtree.OSBTreeCollectionManagerAbstract;
+import com.orientechnologies.orient.core.storage.ridbag.sbtree.OSBTreeCollectionManager;
+import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 /** @author Artem Orobets (enisher-at-gmail.com) */
-public class OSBTreeCollectionManagerRemote extends OSBTreeCollectionManagerAbstract {
+public class OSBTreeCollectionManagerRemote
+    implements OCloseable,
+        OSBTreeCollectionManager,
+        OOrientStartupListener,
+        OOrientShutdownListener {
 
   private volatile ThreadLocal<Map<UUID, WeakReference<ORidBag>>> pendingCollections =
       new PendingCollectionsThreadLocal();
 
-  public OSBTreeCollectionManagerRemote(OStorage storage) {
-    super(storage);
+  public OSBTreeCollectionManagerRemote() {
+
+    Orient.instance().registerWeakOrientStartupListener(this);
+    Orient.instance().registerWeakOrientShutdownListener(this);
   }
 
   @Override
   public void onShutdown() {
     pendingCollections = null;
-    super.onShutdown();
   }
 
   @Override
   public void onStartup() {
-    super.onStartup();
     if (pendingCollections == null) pendingCollections = new PendingCollectionsThreadLocal();
   }
 
-  @Override
   protected OSBTreeBonsai<OIdentifiable, Integer> createEdgeTree(
       OAtomicOperation atomicOperation, final int clusterId) {
     throw new UnsupportedOperationException(
         "Creation of SB-Tree from remote storage is not allowed");
   }
 
-  @Override
   protected OSBTreeBonsai<OIdentifiable, Integer> loadTree(
       OBonsaiCollectionPointer collectionPointer) {
     throw new UnsupportedOperationException();
@@ -115,5 +121,47 @@ public class OSBTreeCollectionManagerRemote extends OSBTreeCollectionManagerAbst
     protected Map<UUID, WeakReference<ORidBag>> initialValue() {
       return new HashMap<UUID, WeakReference<ORidBag>>();
     }
+  }
+
+  @Override
+  public OSBTreeBonsai<OIdentifiable, Integer> createAndLoadTree(
+      OAtomicOperation atomicOperation, int clusterId) throws IOException {
+    return loadSBTree(createSBTree(clusterId, atomicOperation, null));
+  }
+
+  @Override
+  public OBonsaiCollectionPointer createSBTree(
+      int clusterId, OAtomicOperation atomicOperation, UUID ownerUUID) throws IOException {
+    OSBTreeBonsai<OIdentifiable, Integer> tree = createEdgeTree(atomicOperation, clusterId);
+    return tree.getCollectionPointer();
+  }
+
+  @Override
+  public OSBTreeBonsai<OIdentifiable, Integer> loadSBTree(
+      OBonsaiCollectionPointer collectionPointer) {
+
+    final OSBTreeBonsai<OIdentifiable, Integer> tree;
+    tree = loadTree(collectionPointer);
+
+    return tree;
+  }
+
+  @Override
+  public void releaseSBTree(OBonsaiCollectionPointer collectionPointer) {}
+
+  @Override
+  public void delete(OBonsaiCollectionPointer collectionPointer) {}
+
+  @Override
+  public void close() {
+    clear();
+  }
+
+  public void clear() {}
+
+  void clearClusterCache(final long fileId, String fileName) {}
+
+  int size() {
+    return 0;
   }
 }

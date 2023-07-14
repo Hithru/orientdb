@@ -21,8 +21,8 @@ package com.orientechnologies.orient.server.distributed.impl.task;
 
 import com.orientechnologies.orient.core.command.OCommandDistributedReplicateRequest;
 import com.orientechnologies.orient.core.config.OGlobalConfiguration;
+import com.orientechnologies.orient.core.config.OStorageConfiguration;
 import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
-import com.orientechnologies.orient.core.util.ODateHelper;
 import com.orientechnologies.orient.server.OServer;
 import com.orientechnologies.orient.server.distributed.ODistributedRequestId;
 import com.orientechnologies.orient.server.distributed.ODistributedServerLog;
@@ -52,12 +52,10 @@ public class OGossipTask extends OAbstractRemoteTask {
   private String lockManagerServer;
 
   private static final SimpleDateFormat dateFormat =
-      new SimpleDateFormat(ODateHelper.DEF_DATETIME_FORMAT);
+      new SimpleDateFormat(OStorageConfiguration.DEFAULT_DATETIME_FORMAT);
 
-  public OGossipTask() {}
-
-  public OGossipTask(final String lockManagerServer) {
-    this.lockManagerServer = lockManagerServer;
+  public OGossipTask() {
+    this.lockManagerServer = "";
   }
 
   @Override
@@ -82,12 +80,6 @@ public class OGossipTask extends OAbstractRemoteTask {
 
     // RETURN LOCAL TIME
     return lockManagerServer;
-  }
-
-  /** Uses the UNLOCK queue that is never blocked. */
-  @Override
-  public int[] getPartitionKey() {
-    return FAST_NOLOCK;
   }
 
   @Override

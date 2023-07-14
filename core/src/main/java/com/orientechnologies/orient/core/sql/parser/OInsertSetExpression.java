@@ -32,4 +32,10 @@ public class OInsertSetExpression {
   public boolean isCacheable() {
     return right.isCacheable();
   }
+
+  public void toGenericStatement(StringBuilder builder) {
+    left.toGenericStatement(builder);
+    builder.append(" = ");
+    right.toGenericStatement(builder);
+  }
 }

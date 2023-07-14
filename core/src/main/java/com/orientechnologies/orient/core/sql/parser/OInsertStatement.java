@@ -4,7 +4,7 @@ package com.orientechnologies.orient.core.sql.parser;
 
 import com.orientechnologies.orient.core.command.OBasicCommandContext;
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.db.ODatabase;
+import com.orientechnologies.orient.core.db.ODatabaseSession;
 import com.orientechnologies.orient.core.sql.executor.OInsertExecutionPlan;
 import com.orientechnologies.orient.core.sql.executor.OInsertExecutionPlanner;
 import com.orientechnologies.orient.core.sql.executor.OResultSet;
@@ -73,6 +73,47 @@ public class OInsertStatement extends OStatement {
     }
   }
 
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append("INSERT INTO ");
+    if (targetClass != null) {
+      targetClass.toGenericStatement(builder);
+      if (targetClusterName != null) {
+        builder.append(" CLUSTER ");
+        targetClusterName.toGenericStatement(builder);
+      }
+    }
+    if (targetCluster != null) {
+      targetCluster.toGenericStatement(builder);
+    }
+    if (targetIndex != null) {
+      targetIndex.toGenericStatement(builder);
+    }
+    if (insertBody != null) {
+      builder.append(" ");
+      insertBody.toGenericStatement(builder);
+    }
+    if (returnStatement != null) {
+      builder.append(" RETURN ");
+      returnStatement.toGenericStatement(builder);
+    }
+    if (selectStatement != null) {
+      builder.append(" ");
+      if (selectWithFrom) {
+        builder.append("FROM ");
+      }
+      if (selectInParentheses) {
+        builder.append("(");
+      }
+      selectStatement.toGenericStatement(builder);
+      if (selectInParentheses) {
+        builder.append(")");
+      }
+    }
+    if (unsafe) {
+      builder.append(" UNSAFE");
+    }
+  }
+
   @Override
   public OInsertStatement copy() {
     OInsertStatement result = new OInsertStatement(-1);
@@ -91,7 +132,7 @@ public class OInsertStatement extends OStatement {
 
   @Override
   public OResultSet execute(
-      ODatabase db, Object[] args, OCommandContext parentCtx, boolean usePlanCache) {
+      ODatabaseSession db, Object[] args, OCommandContext parentCtx, boolean usePlanCache) {
     OBasicCommandContext ctx = new OBasicCommandContext();
     if (parentCtx != null) {
       ctx.setParentWithoutOverridingChild(parentCtx);
@@ -116,7 +157,7 @@ public class OInsertStatement extends OStatement {
 
   @Override
   public OResultSet execute(
-      ODatabase db, Map params, OCommandContext parentCtx, boolean usePlanCache) {
+      ODatabaseSession db, Map params, OCommandContext parentCtx, boolean usePlanCache) {
     OBasicCommandContext ctx = new OBasicCommandContext();
     if (parentCtx != null) {
       ctx.setParentWithoutOverridingChild(parentCtx);
@@ -137,6 +178,7 @@ public class OInsertStatement extends OStatement {
     OInsertExecutionPlanner planner = new OInsertExecutionPlanner(this);
     OInsertExecutionPlan result = planner.createExecutionPlan(ctx, enableProfiling);
     result.setStatement(originalStatement);
+    result.setGenericStatement(this.toGenericStatement());
     return result;
   }
 

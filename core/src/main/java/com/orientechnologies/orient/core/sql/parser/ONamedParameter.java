@@ -39,6 +39,10 @@ public class ONamedParameter extends OInputParameter {
     }
   }
 
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append(":" + paramName);
+  }
+
   public Object getValue(Map<Object, Object> params) {
     Object result = null;
     if (params != null) {

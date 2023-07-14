@@ -236,7 +236,11 @@ public class ODocumentHelper {
     } else if (Date.class.isAssignableFrom(iFieldType)) {
       if (iValue instanceof String && ODatabaseRecordThreadLocal.instance().isDefined()) {
         ODatabaseDocumentInternal db = ODatabaseRecordThreadLocal.instance().get();
+<<<<<<< HEAD
         final OStorageConfiguration config = db.getStorage().getConfiguration();
+=======
+        final OStorageConfiguration config = db.getStorageInfo().getConfiguration();
+>>>>>>> develop
 
         DateFormat formatter;
 
@@ -849,11 +853,7 @@ public class ODocumentHelper {
       else
         try {
           result =
-              ODatabaseRecordThreadLocal.instance()
-                  .get()
-                  .getStorage()
-                  .getConfiguration()
-                  .getDateFormatInstance()
+              ODateHelper.getDateFormatInstance(ODatabaseRecordThreadLocal.instance().get())
                   .parse(currentValue.toString());
         } catch (ParseException ignore) {
         }
@@ -864,11 +864,7 @@ public class ODocumentHelper {
       else
         try {
           result =
-              ODatabaseRecordThreadLocal.instance()
-                  .get()
-                  .getStorage()
-                  .getConfiguration()
-                  .getDateTimeFormatInstance()
+              ODateHelper.getDateTimeFormatInstance(ODatabaseRecordThreadLocal.instance().get())
                   .parse(currentValue.toString());
         } catch (ParseException ignore) {
         }
@@ -1634,6 +1630,9 @@ public class ODocumentHelper {
         && ((ORID) myValue).isPersistent()) {
       ORID convertedValue = ridMapper.map((ORID) myValue);
       if (convertedValue != null) myValue = convertedValue;
+    }
+    if (myValue instanceof Date && otherValue instanceof Date) {
+      return ((Date) myValue).getTime() / 1000 == ((Date) otherValue).getTime() / 1000;
     }
 
     return myValue.equals(otherValue);

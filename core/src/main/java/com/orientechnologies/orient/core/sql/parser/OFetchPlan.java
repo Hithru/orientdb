@@ -21,6 +21,10 @@ public class OFetchPlan extends SimpleNode {
     super(p, id);
   }
 
+  public void addItem(OFetchPlanItem item) {
+    this.items.add(item);
+  }
+
   public void toString(Map<Object, Object> params, StringBuilder builder) {
     builder.append("FETCHPLAN ");
     boolean first = true;
@@ -30,6 +34,20 @@ public class OFetchPlan extends SimpleNode {
       }
 
       item.toString(params, builder);
+      first = false;
+    }
+  }
+
+  @Override
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append("FETCHPLAN ");
+    boolean first = true;
+    for (OFetchPlanItem item : items) {
+      if (!first) {
+        builder.append(" ");
+      }
+
+      item.toGenericStatement(builder);
       first = false;
     }
   }

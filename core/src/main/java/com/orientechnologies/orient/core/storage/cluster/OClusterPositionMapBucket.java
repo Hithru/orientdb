@@ -130,7 +130,10 @@ public final class OClusterPositionMapBucket extends ODurablePage {
   public void updateEntry(
       final int index, final int pageIndex, final int recordPosition, final byte status) {
     final int position = entryPosition(index);
+<<<<<<< HEAD
 
+=======
+>>>>>>> develop
     setByteValue(position, status);
     setLongValue(position + OByteSerializer.BYTE_SIZE, pageIndex);
     setIntValue(position + OByteSerializer.BYTE_SIZE + OLongSerializer.LONG_SIZE, recordPosition);
@@ -171,12 +174,9 @@ public final class OClusterPositionMapBucket extends ODurablePage {
 
   private PositionEntry readEntry(int position) {
     position += OByteSerializer.BYTE_SIZE;
-
     final long pageIndex = getLongValue(position);
     position += OLongSerializer.LONG_SIZE;
-
     final int pagePosition = getIntValue(position);
-
     return new PositionEntry(pageIndex, pagePosition);
   }
 

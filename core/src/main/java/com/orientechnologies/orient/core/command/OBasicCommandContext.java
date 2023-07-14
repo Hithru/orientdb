@@ -20,7 +20,7 @@
 package com.orientechnologies.orient.core.command;
 
 import com.orientechnologies.common.concur.OTimeoutException;
-import com.orientechnologies.orient.core.db.ODatabase;
+import com.orientechnologies.orient.core.db.ODatabaseSession;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.record.impl.ODocumentHelper;
@@ -44,7 +44,7 @@ public class OBasicCommandContext implements OCommandContext {
   public static final String TIMEOUT_STRATEGY = "TIMEOUT_STARTEGY";
   public static final String INVALID_COMPARE_COUNT = "INVALID_COMPARE_COUNT";
 
-  protected ODatabase database;
+  protected ODatabaseSession database;
   protected Object[] args;
 
   protected boolean recordMetrics = false;
@@ -90,7 +90,7 @@ public class OBasicCommandContext implements OCommandContext {
         if (lastPart.startsWith("$")) result = parent.getVariable(lastPart.substring(1));
         else result = ODocumentHelper.getFieldValue(parent, lastPart);
 
-        return result != null ? result : iDefault;
+        return result != null ? resolveValue(result) : iDefault;
 
       } else if (firstPart.equalsIgnoreCase("ROOT")) {
         OCommandContext p = this;
@@ -99,7 +99,7 @@ public class OBasicCommandContext implements OCommandContext {
         if (lastPart.startsWith("$")) result = p.getVariable(lastPart.substring(1));
         else result = ODocumentHelper.getFieldValue(p, lastPart, this);
 
-        return result != null ? result : iDefault;
+        return result != null ? resolveValue(result) : iDefault;
       }
     } else {
       firstPart = iName;
@@ -122,7 +122,14 @@ public class OBasicCommandContext implements OCommandContext {
 
     if (pos > -1) result = ODocumentHelper.getFieldValue(result, lastPart, this);
 
-    return result != null ? result : iDefault;
+    return result != null ? resolveValue(result) : iDefault;
+  }
+
+  private Object resolveValue(Object value) {
+    if (value instanceof ODynamicVariable) {
+      value = ((ODynamicVariable) value).resolve(this);
+    }
+    return value;
   }
 
   protected Object getVariableFromParentHierarchy(String varName) {
@@ -133,6 +140,10 @@ public class OBasicCommandContext implements OCommandContext {
       return ((OBasicCommandContext) parent).getVariableFromParentHierarchy(varName);
     }
     return null;
+  }
+
+  public OCommandContext setDynamicVariable(String iName, final ODynamicVariable iValue) {
+    return setVariable(iName, iValue);
   }
 
   public OCommandContext setVariable(String iName, final Object iValue) {
@@ -364,7 +375,7 @@ public class OBasicCommandContext implements OCommandContext {
     return this.uniqueResult.add(toAdd);
   }
 
-  public ODatabase getDatabase() {
+  public ODatabaseSession getDatabase() {
     if (database != null) {
       return database;
     }
@@ -374,7 +385,7 @@ public class OBasicCommandContext implements OCommandContext {
     return null;
   }
 
-  public void setDatabase(ODatabase database) {
+  public void setDatabase(ODatabaseSession database) {
     this.database = database;
   }
 

@@ -9,13 +9,16 @@
     OF ANY KIND, either express or implied. ~ See the License for the specific 
     language governing permissions and ~ limitations under the License. -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.orientechnologies</groupId>
     <artifactId>orientdb-parent</artifactId>
+<<<<<<< HEAD
     <version>3.1.14-SNAPSHOT</version>
+=======
+    <version>3.2.20-SNAPSHOT</version>
+>>>>>>> develop
     <packaging>pom</packaging>
 
     <name>OrientDB</name>
@@ -35,24 +38,9 @@
 
     <developers>
         <developer>
-            <id>l.garulli</id>
-            <name>Luca Garulli</name>
-            <email>l.garulli@orientdb.com</email>
-            <organization>Orientechnologies</organization>
-            <organizationUrl>http://www.orientdb.com</organizationUrl>
-            <roles>
-                <role>architect</role>
-                <role>developer</role>
-                <role>founder</role>
-            </roles>
-            <timezone>+1</timezone>
-        </developer>
-        <developer>
             <id>lomakin.andrey</id>
             <name>Andrey Lomakin</name>
             <organization>OrientDB</organization>
-            <email>a.lomakin@orientdb.com</email>
-            <organizationUrl>http://www.orientdb.com</organizationUrl>
             <roles>
                 <role>architect</role>
                 <role>developer</role>
@@ -60,21 +48,8 @@
             <timezone>+2</timezone>
         </developer>
         <developer>
-            <id>e.risa</id>
-            <name>Enrico Risa</name>
-            <email>e.risa@orientdb.com</email>
-            <organizationUrl>http://www.orientdb.com</organizationUrl>
-            <roles>
-                <role>architect</role>
-                <role>developer</role>
-            </roles>
-            <timezone>+1</timezone>
-        </developer>
-        <developer>
             <id>l.aquila</id>
             <name>Luigi Dell'Aquila</name>
-            <email>l.dellaquila@orientdb.com</email>
-            <organizationUrl>http://www.orientdb.com</organizationUrl>
             <roles>
                 <role>architect</role>
                 <role>developer</role>
@@ -84,8 +59,6 @@
         <developer>
             <id>e.tagliaferri</id>
             <name>Emanuale Tagliaferri</name>
-            <email>l.tagliaferri@orientdb.com</email>
-            <organizationUrl>http://www.orientdb.com</organizationUrl>
             <roles>
                 <role>architect</role>
                 <role>developer</role>
@@ -107,6 +80,7 @@
         <module>core</module>
         <module>object</module>
         <module>server</module>
+        <module>security</module>
         <module>tools</module>
         <module>tests</module>
         <module>distributed</module>
@@ -122,7 +96,8 @@
         <connection>scm:git:git@github.com:orientechnologies/orientdb.git</connection>
         <developerConnection>scm:git:git@github.com:orientechnologies/orientdb.git</developerConnection>
         <url>scm:git:git@github.com:orientechnologies/orientdb.git</url>
-    </scm>
+      <tag>HEAD</tag>
+  </scm>
     <issueManagement>
         <system>GitHub Issues</system>
         <url>https://github.com/orientechnologies/orientdb/issues</url>
@@ -167,30 +142,36 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.build.resourceEncoding>UTF-8</project.build.resourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm:ssZ</maven.build.timestamp.format>
         <!--suppress UnresolvedMavenProperty -->
         <implementation.build>${scmBranch}@r${buildNumber}</implementation.build>
         <blueprints.version>2.6.0</blueprints.version>
         <!-- | Configuration properties for the OSGi maven-bundle-plugin -->
-        <osgi.fragment.host/>
+        <osgi.fragment.host />
         <osgi.export>${project.groupId}.*;version=${project.version};-noimport:=true</osgi.export>
         <osgi.import>*</osgi.import>
-        <osgi.dynamicImport/>
-        <osgi.private/>
+        <osgi.dynamicImport />
+        <osgi.private />
         <!-- | shared build/report plugins version -->
-        <surefire.version>2.21.0</surefire.version>
+        <surefire.version>3.0.0-M8</surefire.version>
         <sonatypeOssDistMgmtSnapshotsUrl>https://oss.sonatype.org/content/repositories/snapshots/
         </sonatypeOssDistMgmtSnapshotsUrl>
 
         <license.location>license.txt</license.location>
         <!--Override with the given url on external modules-->
         <!--<license.location>https://github.com/orientechnologies/orientdb/raw/develop/ODB-ASL-LICENSE.txt</license.location>-->
+<<<<<<< HEAD
         <heapSize>4096m</heapSize>
         <javaassist.version>3.23.1-GA</javaassist.version>
+=======
+        <heapSize>2048m</heapSize>
+        <javaassist.version>3.29.2-GA</javaassist.version>
+>>>>>>> develop
         <jaxb.api.version>2.3.0</jaxb.api.version>
         <project.rootdir>${project.basedir}/</project.rootdir>
+        <graalvm.version>21.3.5</graalvm.version>
     </properties>
 
     <build>
@@ -239,6 +220,7 @@
                             </property>
                         </properties>
 
+                        <useModulePath>false</useModulePath>
                     </configuration>
                 </plugin>
 
@@ -252,6 +234,7 @@
                         <systemPropertyVariables>
                             <security.userPasswordSaltIterations>1</security.userPasswordSaltIterations>
                         </systemPropertyVariables>
+                        <useModulePath>false</useModulePath>
                     </configuration>
                 </plugin>
 
@@ -317,18 +300,17 @@
                     <version>3.10.0</version>
                 </plugin>
 
-
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-release-plugin</artifactId>
-                    <version>2.5.3</version>
+                    <version>3.0.0-M5</version>
                     <configuration>
-                        <mavenExecutorId>forked-path</mavenExecutorId>
-                        <useReleaseProfile>false</useReleaseProfile>
-                        <localCheckout>true</localCheckout>
-                        <pushChanges>false</pushChanges>
+                        <autoResolveSnasphots>all</autoResolveSnasphots>
                         <allowTimestampedSnapshots>true</allowTimestampedSnapshots>
-                        <arguments>-Prelease</arguments>
+                        <pushChanges>false</pushChanges>
+                        <tagNameFormat>@{project.version}</tagNameFormat>
+                        <scmCommentPrefix>OrientDB</scmCommentPrefix>
+                        <localCheckout>true</localCheckout>
                     </configuration>
                 </plugin>
 
@@ -381,17 +363,22 @@
 
                     <configuration>
                         <licenseMerges>
-                            <licenseMerge>ASL 2.0|Apache License 2.0|Apache License, Version 2.0|Apache 2|ASL, version 2|The Apache
-                                Software License|Version 2.0,Apache License, Version 2.0| The Apache Software License, Version 2.0
+                            <licenseMerge>ASL 2.0|Apache License 2.0|Apache License, Version 2.0|Apache 2|ASL, version
+                                2|The Apache
+                                Software License|Version 2.0,Apache License, Version 2.0| The Apache Software License,
+                                Version 2.0
                             </licenseMerge>
                             <licenseMerge>BSD|BSD License|New BSD License</licenseMerge>
-                            <licenseMerge>LGPL 2.1|GNU Lesser General Public License (LGPL), Version 2.1|GNU Lesser General Public
+                            <licenseMerge>LGPL 2.1|GNU Lesser General Public License (LGPL), Version 2.1|GNU Lesser
+                                General Public
                                 License, Version 2.1
                             </licenseMerge>
-                            <licenseMerge>CDDL 1.0|COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0|Common Development
+                            <licenseMerge>CDDL 1.0|COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0|Common
+                                Development
                                 and Distribution License (CDDL) v1.0
                             </licenseMerge>
-                            <licenseMerge>LGPL 3|GNU LESSER GENERAL PUBLIC LICENSE|GNU Lesser Public License</licenseMerge>
+                            <licenseMerge>LGPL 3|GNU LESSER GENERAL PUBLIC LICENSE|GNU Lesser Public License
+                            </licenseMerge>
                         </licenseMerges>
                     </configuration>
                     <executions>
@@ -431,54 +418,11 @@
                 </configuration>
             </plugin>
 
-
-            <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-                <version>3.5.0</version>
-                <configuration>
-                    <!-- | dummy entry to stop bundle plugin from picking
-                        up jar config and reporting | WARNING: Duplicate name in Manifest | See http://markmail.org/message/mpkl24wk3jrjhhjg -->
-                    <archive>
-                        <forced>true</forced>
-                    </archive>
-                    <excludeDependencies>true</excludeDependencies>
-                    <manifestLocation>${project.build.directory}/osgi</manifestLocation>
-                    <instructions>
-                        <!-- | stops the "uses" clauses being added to "Export-Package"
-                            manifest entry -->
-                        <_nouses>true</_nouses>
-                        <!-- | Stop the JAVA_1_n_HOME variables from being
-                            treated as headers by Bnd -->
-                        <_removeheaders>JAVA_1_3_HOME,JAVA_1_4_HOME,JAVA_1_5_HOME,JAVA_1_6_HOME,JAVA_1_7_HOME,
-                            Bnd-LastModified,Built-By,Private-Package,Tool,Created-By,Build-Jdk,Include-Resource,
-                            Ignore-Package,Private-Package,Bundle-DocURL
-                        </_removeheaders>
-                        <Fragment-Host>${osgi.fragment.host}</Fragment-Host>
-                        <Export-Package>${osgi.export}</Export-Package>
-                        <Private-Package>${osgi.private}</Private-Package>
-                        <Import-Package>${project.groupId}.*;provide:=true,${osgi.import}</Import-Package>
-                        <DynamicImport-Package>${osgi.dynamicImport}</DynamicImport-Package>
-                        <Bundle-RequiredExecutionEnvironment>JavaSE-1.6</Bundle-RequiredExecutionEnvironment>
-                    </instructions>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>bundle-manifest</id>
-                        <phase>process-classes</phase>
-                        <goals>
-                            <goal>manifest</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <configuration>
                     <archive>
-                        <manifestFile>${project.build.directory}/osgi/MANIFEST.MF</manifestFile>
                         <manifest>
                             <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                             <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
@@ -489,6 +433,8 @@
                             <Implementation-Build-Date>${maven.build.timestamp}</Implementation-Build-Date>
                             <X-Compile-Source-JDK>${maven.compiler.source}</X-Compile-Source-JDK>
                             <X-Compile-Target-JDK>${maven.compiler.target}</X-Compile-Target-JDK>
+                            <Add-Opens>jdk.unsupported/sun.misc=ALL-UNNAMED java.base/sun.security.x509=ALL-UNNAMED
+                            </Add-Opens>
                         </manifestEntries>
                     </archive>
                 </configuration>
@@ -498,7 +444,9 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-site-plugin</artifactId>
                 <configuration>
-                    <moduleExcludes>distribution</moduleExcludes>
+                    <moduleExcludes>
+                        <distribution />
+                    </moduleExcludes>
                 </configuration>
             </plugin>
 
@@ -512,27 +460,6 @@
                         <phase>verify</phase>
                         <goals>
                             <goal>jar-no-fork</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.5</version>
-                <configuration>
-                    <excludes>
-                        <exclude>
-                            **/*OrientSqlTokenManager*
-                        </exclude>
-                    </excludes>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>prepare-agent</goal>
-                            <goal>report</goal>
                         </goals>
                     </execution>
                 </executions>
@@ -574,7 +501,9 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <!--suppress MavenModelInspection -->
                 <artifactId>maven-surefire-report-plugin</artifactId>
+                <!--suppress MavenModelInspection -->
                 <version>${surefire.version}</version>
             </plugin>
             <plugin>
@@ -625,6 +554,47 @@
                 </plugins>
             </build>
         </profile>
+        <profile>
+            <id>coverage</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <version>0.8.7</version>
+                        <configuration>
+                            <destFile>${project.basedir}/../target/jacoco.exec</destFile>
+                            <dataFile>${project.basedir}/../target/jacoco.exec</dataFile>
+                            <excludes>
+                                <exclude>
+                                    **/*OrientSqlTokenManager*
+                                </exclude>
+                            </excludes>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>prepare-agent</id>
+                                <goals>
+                                    <goal>prepare-agent</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>report</id>
+                                <phase>test</phase>
+                                <goals>
+                                    <goal>report</goal>
+                                    <goal>report-aggregate</goal>
+                                </goals>
+                                <configuration>
+                                    <dataFile>${project.basedir}/../target/jacoco.exec</dataFile>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                </plugins>
+            </build>
+        </profile>
 
         <profile>
             <id>travis</id>
@@ -634,7 +604,7 @@
                     <plugin>
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
-                        <version>0.8.5</version>
+                        <version>0.8.7</version>
                         <configuration>
                             <destFile>${project.basedir}/../target/jacoco.exec</destFile>
                             <dataFile>${project.basedir}/../target/jacoco.exec</dataFile>
@@ -659,10 +629,11 @@
                 </plugins>
             </build>
         </profile>
+
         <profile>
             <id>java8</id>
             <activation>
-                <jdk>1.8</jdk>
+                <jdk>[1.8,)</jdk>
             </activation>
             <build>
                 <plugins>
@@ -675,6 +646,36 @@
                             <showDeprecation>true</showDeprecation>
                             <showWarnings>true</showWarnings>
                             <optimize>true</optimize>
+                            <compilerArgs>
+                            </compilerArgs>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+            <properties>
+                <additionalparam>-Xdoclint:none</additionalparam>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>java11</id>
+            <activation>
+                <jdk>[11,)</jdk>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <configuration>
+                            <source>${maven.compiler.source}</source>
+                            <target>${maven.compiler.target}</target>
+                            <showDeprecation>true</showDeprecation>
+                            <showWarnings>true</showWarnings>
+                            <optimize>true</optimize>
+                            <compilerArgs>
+                                <!--                                <arg>&#45;&#45;add-exports</arg><arg>java.base/sun.security.x509=ALL-UNNAMED</arg>-->
+                            </compilerArgs>
                         </configuration>
                     </plugin>
                 </plugins>

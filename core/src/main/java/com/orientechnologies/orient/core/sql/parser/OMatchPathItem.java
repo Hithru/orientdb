@@ -7,6 +7,7 @@ import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.record.ORecord;
 import com.orientechnologies.orient.core.record.impl.ODocument;
+import com.orientechnologies.orient.core.record.impl.ODocumentInternal;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -23,6 +24,32 @@ public class OMatchPathItem extends SimpleNode {
 
   public OMatchPathItem(OrientSql p, int id) {
     super(p, id);
+  }
+
+  private void graphPath(OIdentifier edgeName, String direction) {
+    if (edgeName == null) {
+      edgeName = new OIdentifier(-1);
+      edgeName.value = "E";
+    }
+    this.method = new OMethodCall(-1);
+    this.method.methodName = new OIdentifier(-1);
+    this.method.methodName.value = direction;
+    OExpression exp = new OExpression(-1);
+    OBaseExpression sub = new OBaseExpression(edgeName.getStringValue());
+    exp.mathExpression = sub;
+    this.method.addParam(exp);
+  }
+
+  public void inPath(OIdentifier edgeName) {
+    graphPath(edgeName, "in");
+  }
+
+  public void bothPath(OIdentifier edgeName) {
+    graphPath(edgeName, "both");
+  }
+
+  public void outPath(OIdentifier edgeName) {
+    graphPath(edgeName, "out");
   }
 
   public boolean isBidirectional() {
@@ -45,6 +72,13 @@ public class OMatchPathItem extends SimpleNode {
     }
   }
 
+  public void toGenericStatement(StringBuilder builder) {
+    method.toGenericStatement(builder);
+    if (filter != null) {
+      filter.toGenericStatement(builder);
+    }
+  }
+
   public Iterable<OIdentifiable> executeTraversal(
       OMatchStatement.MatchContext matchContext,
       OCommandContext iCommandContext,
@@ -60,7 +94,7 @@ public class OMatchPathItem extends SimpleNode {
       whileCondition = this.filter.getWhileCondition();
       maxDepth = this.filter.getMaxDepth();
       String className = this.filter.getClassName(iCommandContext);
-      oClass = getDatabase().getMetadata().getSchema().getClass(className);
+      oClass = getDatabase().getMetadata().getImmutableSchemaSnapshot().getClass(className);
     }
 
     Set<OIdentifiable> result = new HashSet<OIdentifiable>();
@@ -129,7 +163,7 @@ public class OMatchPathItem extends SimpleNode {
       return false;
     }
     if (record instanceof ODocument) {
-      return ((ODocument) record).getSchemaClass().isSubClassOf(oClass);
+      return ODocumentInternal.getImmutableSchemaClass(((ODocument) record)).isSubClassOf(oClass);
     }
     return false;
   }

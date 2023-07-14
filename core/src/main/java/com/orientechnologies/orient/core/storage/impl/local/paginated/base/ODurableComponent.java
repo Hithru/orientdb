@@ -106,7 +106,6 @@ public abstract class ODurableComponent extends OSharedResourceAdaptive {
     if (atomicOperation == null) {
       return writeCache.getFilledUpTo(fileId);
     }
-
     return atomicOperation.filledUpTo(fileId);
   }
 
@@ -114,57 +113,49 @@ public abstract class ODurableComponent extends OSharedResourceAdaptive {
       final OAtomicOperation atomicOperation,
       final long fileId,
       final long pageIndex,
-      final boolean checkPinnedPages,
       final boolean verifyCheckSum)
       throws IOException {
-    return atomicOperation.loadPageForWrite(fileId, pageIndex, checkPinnedPages, 1, verifyCheckSum);
+    return atomicOperation.loadPageForWrite(fileId, pageIndex, 1, verifyCheckSum);
   }
 
-  protected OCacheEntry loadPageForRead(
+  protected OCacheEntry loadOrAddPageForWrite(
       final OAtomicOperation atomicOperation,
       final long fileId,
       final long pageIndex,
-      final boolean checkPinnedPages)
+      final boolean verifyCheckSum)
       throws IOException {
-    return loadPageForRead(atomicOperation, fileId, pageIndex, checkPinnedPages, 1);
+    OCacheEntry entry = atomicOperation.loadPageForWrite(fileId, pageIndex, 1, verifyCheckSum);
+    if (entry == null) {
+      entry = addPage(atomicOperation, fileId);
+    }
+    return entry;
   }
 
   protected OCacheEntry loadPageForRead(
-      final OAtomicOperation atomicOperation,
-      final long fileId,
-      final long pageIndex,
-      final boolean checkPinnedPages,
-      final int pageCount)
+      final OAtomicOperation atomicOperation, final long fileId, final long pageIndex)
       throws IOException {
     if (atomicOperation == null) {
-      return readCache.loadForRead(fileId, pageIndex, checkPinnedPages, writeCache, true);
+      return readCache.loadForRead(fileId, pageIndex, writeCache, true);
     }
-
-    return atomicOperation.loadPageForRead(fileId, pageIndex, checkPinnedPages, pageCount);
+    return atomicOperation.loadPageForRead(fileId, pageIndex);
   }
 
   protected OCacheEntry addPage(final OAtomicOperation atomicOperation, final long fileId)
       throws IOException {
-    if (atomicOperation == null) {
-      return readCache.allocateNewPage(fileId, writeCache, null);
-    }
-
+    assert atomicOperation != null;
     return atomicOperation.addPage(fileId);
   }
 
   protected void releasePageFromWrite(
       final OAtomicOperation atomicOperation, final OCacheEntry cacheEntry) throws IOException {
-    if (atomicOperation == null) {
-      readCache.releaseFromWrite(cacheEntry, writeCache, true);
-    } else {
-      atomicOperation.releasePageFromWrite(cacheEntry);
-    }
+    assert atomicOperation != null;
+    atomicOperation.releasePageFromWrite(cacheEntry);
   }
 
   protected void releasePageFromRead(
       final OAtomicOperation atomicOperation, final OCacheEntry cacheEntry) {
     if (atomicOperation == null) {
-      readCache.releaseFromRead(cacheEntry, writeCache);
+      readCache.releaseFromRead(cacheEntry);
     } else {
       atomicOperation.releasePageFromRead(cacheEntry);
     }
@@ -172,10 +163,7 @@ public abstract class ODurableComponent extends OSharedResourceAdaptive {
 
   protected long addFile(final OAtomicOperation atomicOperation, final String fileName)
       throws IOException {
-    if (atomicOperation == null) {
-      return readCache.addFile(fileName, writeCache);
-    }
-
+    assert atomicOperation != null;
     return atomicOperation.addFile(fileName);
   }
 
@@ -184,33 +172,25 @@ public abstract class ODurableComponent extends OSharedResourceAdaptive {
     if (atomicOperation == null) {
       return writeCache.loadFile(fileName);
     }
-
     return atomicOperation.loadFile(fileName);
   }
 
   protected void deleteFile(final OAtomicOperation atomicOperation, final long fileId)
       throws IOException {
-    if (atomicOperation == null) {
-      readCache.deleteFile(fileId, writeCache);
-    } else {
-      atomicOperation.deleteFile(fileId);
-    }
+    assert atomicOperation != null;
+    atomicOperation.deleteFile(fileId);
   }
 
   protected boolean isFileExists(final OAtomicOperation atomicOperation, final String fileName) {
     if (atomicOperation == null) {
       return writeCache.exists(fileName);
     }
-
     return atomicOperation.isFileExists(fileName);
   }
 
   protected void truncateFile(final OAtomicOperation atomicOperation, final long filedId)
       throws IOException {
-    if (atomicOperation == null) {
-      readCache.truncateFile(filedId, writeCache);
-    } else {
-      atomicOperation.truncateFile(filedId);
-    }
+    assert atomicOperation != null;
+    atomicOperation.truncateFile(filedId);
   }
 }

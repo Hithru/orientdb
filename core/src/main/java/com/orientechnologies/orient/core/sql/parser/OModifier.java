@@ -65,6 +65,33 @@ public class OModifier extends SimpleNode {
     }
   }
 
+  public void toGenericStatement(StringBuilder builder) {
+
+    if (squareBrackets) {
+      builder.append("[");
+
+      if (arrayRange != null) {
+        arrayRange.toGenericStatement(builder);
+      } else if (condition != null) {
+        condition.toGenericStatement(builder);
+      } else if (arraySingleValues != null) {
+        arraySingleValues.toGenericStatement(builder);
+      } else if (rightBinaryCondition != null) {
+        rightBinaryCondition.toGenericStatement(builder);
+      }
+
+      builder.append("]");
+    } else if (methodCall != null) {
+      methodCall.toGenericStatement(builder);
+    } else if (suffix != null) {
+      builder.append(".");
+      suffix.toGenericStatement(builder);
+    }
+    if (next != null) {
+      next.toGenericStatement(builder);
+    }
+  }
+
   public Object execute(OIdentifiable iCurrentRecord, Object result, OCommandContext ctx) {
     if (ctx.getVariable("$current") == null) {
       ctx.setVariable("$current", iCurrentRecord);
@@ -285,6 +312,7 @@ public class OModifier extends SimpleNode {
 
   private void doSetValue(OResult currentRecord, Object target, Object value, OCommandContext ctx) {
     value = OUpdateItem.convertResultToDocument(value);
+    value = OUpdateItem.cleanValue(value);
     if (methodCall != null) {
       // do nothing
     } else if (suffix != null) {

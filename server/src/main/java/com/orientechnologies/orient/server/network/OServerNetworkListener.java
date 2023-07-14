@@ -30,7 +30,6 @@ import com.orientechnologies.orient.enterprise.channel.binary.ONetworkProtocolEx
 import com.orientechnologies.orient.server.OServer;
 import com.orientechnologies.orient.server.config.OServerCommandConfiguration;
 import com.orientechnologies.orient.server.config.OServerParameterConfiguration;
-import com.orientechnologies.orient.server.network.protocol.OBeforeDatabaseOpenNetworkEventListener;
 import com.orientechnologies.orient.server.network.protocol.ONetworkProtocol;
 import com.orientechnologies.orient.server.network.protocol.http.command.OServerCommand;
 import java.io.IOException;
@@ -58,8 +57,6 @@ public class OServerNetworkListener extends Thread {
   private OContextConfiguration configuration;
   private OServer server;
   private int protocolVersion = -1;
-  private List<OBeforeDatabaseOpenNetworkEventListener> beforeDatabaseOpenNetworkEventListener =
-      new ArrayList<OBeforeDatabaseOpenNetworkEventListener>();
 
   public OServerNetworkListener(
       final OServer iServer,
@@ -239,6 +236,7 @@ public class OServerNetworkListener extends Thread {
           }
 
           socket.setPerformancePreferences(0, 2, 1);
+          socket.setKeepAlive(true);
           if (socketBufferSize > 0) {
             socket.setSendBufferSize(socketBufferSize);
             socket.setReceiveBufferSize(socketBufferSize);
@@ -262,16 +260,6 @@ public class OServerNetworkListener extends Thread {
       } catch (IOException ioe) {
       }
     }
-  }
-
-  public void registerBeforeConnectNetworkEventListener(
-      final OBeforeDatabaseOpenNetworkEventListener listener) {
-    beforeDatabaseOpenNetworkEventListener.add(listener);
-  }
-
-  public void unregisterBeforeConnectNetworkEventListener(
-      final OBeforeDatabaseOpenNetworkEventListener listener) {
-    beforeDatabaseOpenNetworkEventListener.remove(listener);
   }
 
   public Class<? extends ONetworkProtocol> getProtocolType() {
@@ -348,10 +336,6 @@ public class OServerNetworkListener extends Thread {
     }
 
     return null;
-  }
-
-  public List<OBeforeDatabaseOpenNetworkEventListener> getBeforeDatabaseOpenNetworkEventListener() {
-    return beforeDatabaseOpenNetworkEventListener;
   }
 
   /**
@@ -435,5 +419,9 @@ public class OServerNetworkListener extends Thread {
 
     socketBufferSize =
         configuration.getValueAsInteger(OGlobalConfiguration.NETWORK_SOCKET_BUFFER_SIZE);
+  }
+
+  public OServerSocketFactory getSocketFactory() {
+    return socketFactory;
   }
 }

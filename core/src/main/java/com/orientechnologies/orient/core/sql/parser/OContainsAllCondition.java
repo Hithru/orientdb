@@ -192,6 +192,19 @@ public class OContainsAllCondition extends OBooleanExpression {
     }
   }
 
+  @Override
+  public void toGenericStatement(StringBuilder builder) {
+    left.toGenericStatement(builder);
+    builder.append(" CONTAINSALL ");
+    if (right != null) {
+      right.toGenericStatement(builder);
+    } else if (rightBlock != null) {
+      builder.append("(");
+      rightBlock.toGenericStatement(builder);
+      builder.append(")");
+    }
+  }
+
   public OExpression getLeft() {
     return left;
   }

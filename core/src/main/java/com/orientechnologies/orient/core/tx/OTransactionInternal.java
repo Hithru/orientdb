@@ -22,22 +22,17 @@ package com.orientechnologies.orient.core.tx;
 import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
 import com.orientechnologies.orient.core.db.record.ORecordOperation;
 import com.orientechnologies.orient.core.id.ORID;
-import com.orientechnologies.orient.core.metadata.schema.OClass;
-import com.orientechnologies.orient.core.metadata.sequence.OSequence;
+import com.orientechnologies.orient.core.metadata.schema.OImmutableClass;
 import com.orientechnologies.orient.core.record.impl.ODocument;
-import com.orientechnologies.orient.core.storage.OBasicTransaction;
+import com.orientechnologies.orient.core.record.impl.ODocumentInternal;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Expose the api for extract the internal details needed by the storage for perform the transaction
  * commit
  */
-public interface OTransactionInternal extends OBasicTransaction {
+public interface OTransactionInternal extends OTransaction {
 
   /**
    * Extract all the record operations for the current transaction
@@ -97,8 +92,8 @@ public interface OTransactionInternal extends OBasicTransaction {
     for (ORecordOperation txEntry : getRecordOperations()) {
       if (txEntry.record != null && txEntry.record.getRecord() instanceof ODocument) {
         ODocument doc = txEntry.record.getRecord();
-        OClass docClass = doc.getSchemaClass();
-        if (docClass != null && (!docClass.isSubClassOf(OSequence.CLASS_NAME))) {
+        OImmutableClass docClass = ODocumentInternal.getImmutableSchemaClass(doc);
+        if (docClass != null && !docClass.isSequence()) {
           return false;
         }
       }

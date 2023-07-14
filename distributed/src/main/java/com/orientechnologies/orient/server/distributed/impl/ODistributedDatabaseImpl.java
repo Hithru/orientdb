@@ -25,39 +25,45 @@ import static com.orientechnologies.orient.server.distributed.ODistributedServer
 
 import com.orientechnologies.common.concur.OOfflineNodeException;
 import com.orientechnologies.common.concur.lock.OInterruptedException;
+<<<<<<< HEAD
 import com.orientechnologies.common.concur.lock.OSimpleLockManager;
 import com.orientechnologies.common.concur.lock.OSimpleLockManagerImpl;
 import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.common.log.OLogManager;
+=======
+>>>>>>> develop
 import com.orientechnologies.common.profiler.OAbstractProfiler;
 import com.orientechnologies.common.profiler.OProfiler;
-import com.orientechnologies.common.util.OCallable;
+import com.orientechnologies.common.thread.OThreadPoolExecutors;
 import com.orientechnologies.orient.core.Orient;
-import com.orientechnologies.orient.core.command.OCommandDistributedReplicateRequest;
 import com.orientechnologies.orient.core.config.OGlobalConfiguration;
 import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
-import com.orientechnologies.orient.core.exception.OSecurityAccessException;
+import com.orientechnologies.orient.core.db.ODatabaseSession;
+import com.orientechnologies.orient.core.db.OSharedContext;
+import com.orientechnologies.orient.core.db.OSystemDatabase;
+import com.orientechnologies.orient.core.db.OrientDBInternal;
 import com.orientechnologies.orient.core.id.ORID;
 import com.orientechnologies.orient.core.storage.impl.local.OAbstractPaginatedStorage;
-import com.orientechnologies.orient.core.storage.impl.local.paginated.wal.OLogSequenceNumber;
+import com.orientechnologies.orient.core.storage.impl.local.OSyncSource;
 import com.orientechnologies.orient.core.tx.OTransactionId;
 import com.orientechnologies.orient.core.tx.OTransactionSequenceStatus;
 import com.orientechnologies.orient.core.tx.OTxMetadataHolder;
 import com.orientechnologies.orient.core.tx.ValidationResult;
+<<<<<<< HEAD
+=======
+import com.orientechnologies.orient.distributed.db.OrientDBDistributed;
+>>>>>>> develop
 import com.orientechnologies.orient.server.OServer;
-import com.orientechnologies.orient.server.OSystemDatabase;
 import com.orientechnologies.orient.server.distributed.ODistributedConfiguration;
 import com.orientechnologies.orient.server.distributed.ODistributedDatabase;
 import com.orientechnologies.orient.server.distributed.ODistributedException;
 import com.orientechnologies.orient.server.distributed.ODistributedRequest;
 import com.orientechnologies.orient.server.distributed.ODistributedRequestId;
 import com.orientechnologies.orient.server.distributed.ODistributedResponse;
-import com.orientechnologies.orient.server.distributed.ODistributedResponseManager;
-import com.orientechnologies.orient.server.distributed.ODistributedResponseManagerImpl;
 import com.orientechnologies.orient.server.distributed.ODistributedServerLog;
 import com.orientechnologies.orient.server.distributed.ODistributedServerLog.DIRECTION;
 import com.orientechnologies.orient.server.distributed.ODistributedServerManager;
-import com.orientechnologies.orient.server.distributed.ODistributedSyncConfiguration;
+import com.orientechnologies.orient.server.distributed.ODistributedServerManager.DB_STATUS;
 import com.orientechnologies.orient.server.distributed.ODistributedTxContext;
 import com.orientechnologies.orient.server.distributed.OModifiableDistributedConfiguration;
 import com.orientechnologies.orient.server.distributed.ORemoteServerController;
@@ -65,10 +71,15 @@ import com.orientechnologies.orient.server.distributed.impl.lock.OFreezeGuard;
 import com.orientechnologies.orient.server.distributed.impl.lock.OLockGuard;
 import com.orientechnologies.orient.server.distributed.impl.lock.OLockManager;
 import com.orientechnologies.orient.server.distributed.impl.lock.OLockManagerImpl;
+<<<<<<< HEAD
+=======
+import com.orientechnologies.orient.server.distributed.impl.lock.OTxPromiseManager;
+>>>>>>> develop
 import com.orientechnologies.orient.server.distributed.impl.lock.OnLocksAcquired;
 import com.orientechnologies.orient.server.distributed.impl.task.OLockKeySource;
 import com.orientechnologies.orient.server.distributed.impl.task.OUnreachableServerLocalTask;
 import com.orientechnologies.orient.server.distributed.impl.task.transaction.OTransactionUniqueKey;
+<<<<<<< HEAD
 import com.orientechnologies.orient.server.distributed.task.OAbstractRemoteTask;
 import com.orientechnologies.orient.server.distributed.task.ORemoteTask;
 import com.orientechnologies.orient.server.hazelcast.OHazelcastPlugin;
@@ -76,6 +87,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+=======
+import com.orientechnologies.orient.server.distributed.task.ORemoteTask;
+>>>>>>> develop
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -87,11 +101,13 @@ import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
+<<<<<<< HEAD
 import java.util.concurrent.ThreadFactory;
+=======
+>>>>>>> develop
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
 
 /**
  * Distributed database implementation. There is one instance per database. Each node creates own
@@ -101,11 +117,21 @@ import java.util.stream.Collectors;
  */
 public class ODistributedDatabaseImpl implements ODistributedDatabase {
   public static final String DISTRIBUTED_SYNC_JSON_FILENAME = "distributed-sync.json";
+<<<<<<< HEAD
   protected final ODistributedAbstractPlugin manager;
   protected final ODistributedMessageServiceImpl msgService;
   protected final String databaseName;
   protected ODistributedSyncConfiguration syncConfiguration;
 
+=======
+  protected final ODistributedPlugin manager;
+  protected final ODistributedMessageServiceImpl msgService;
+  protected final String databaseName;
+  private final String localNodeName;
+  private final OTxPromiseManager<ORID> recordPromiseManager;
+  private final OTxPromiseManager<Object> indexKeyPromiseManager;
+  private final ODistributedConfigurationManager configurationManager;
+>>>>>>> develop
   protected Map<ODistributedRequestId, ODistributedTxContext> activeTxContexts =
       new ConcurrentHashMap<>(64);
   private AtomicLong totalSentRequests = new AtomicLong();
@@ -113,6 +139,7 @@ public class ODistributedDatabaseImpl implements ODistributedDatabase {
   private TimerTask txTimeoutTask = null;
   private volatile boolean running = true;
   private volatile boolean parsing = true;
+<<<<<<< HEAD
 
   private final String localNodeName;
   private final OSimpleLockManager<ORID> recordLockManager;
@@ -185,17 +212,27 @@ public class ODistributedDatabaseImpl implements ODistributedDatabase {
   public void endOperation() {
     operationsRunnig.decrementAndGet();
   }
+=======
+  private AtomicLong operationsRunnig = new AtomicLong(0);
+  private ODistributedSynchronizedSequence sequenceManager;
+  private ThreadPoolExecutor requestExecutor;
+  private OLockManager lockManager = new OLockManagerImpl();
+  private Set<OTransactionId> inQueue = Collections.newSetFromMap(new ConcurrentHashMap<>());
+  private OSyncSource lastValidBackup;
+  private volatile DB_STATUS freezePrevStatus;
+  private OFreezeGuard freezeGuard;
+>>>>>>> develop
 
   public ODistributedDatabaseImpl(
-      final OHazelcastPlugin manager,
+      final ODistributedPlugin manager,
       final ODistributedMessageServiceImpl msgService,
       final String iDatabaseName,
-      final ODistributedConfiguration cfg,
       OServer server) {
     this.manager = manager;
     this.msgService = msgService;
     this.databaseName = iDatabaseName;
     this.localNodeName = manager.getLocalNodeName();
+    this.configurationManager = new ODistributedConfigurationManager(manager, iDatabaseName);
 
     // SELF REGISTERING ITSELF HERE BECAUSE IT'S NEEDED FURTHER IN THE CALL CHAIN
     final ODistributedDatabaseImpl prev = msgService.databases.put(iDatabaseName, this);
@@ -207,8 +244,8 @@ public class ODistributedDatabaseImpl implements ODistributedDatabase {
     startAcceptingRequests();
 
     if (iDatabaseName.equals(OSystemDatabase.SYSTEM_DB_NAME)) {
-      recordLockManager = null;
-      indexKeyLockManager = null;
+      recordPromiseManager = null;
+      indexKeyPromiseManager = null;
       return;
     }
 
@@ -274,12 +311,12 @@ public class ODistributedDatabaseImpl implements ODistributedDatabase {
         .getProfiler()
         .registerHookValue(
             "distributed.db." + databaseName + ".recordLocks",
-            "Number of record locked",
+            "Number of records locked",
             OProfiler.METRIC_TYPE.COUNTER,
             new OAbstractProfiler.OProfilerHookValue() {
               @Override
               public Object getValue() {
-                return (long) recordLockManager.size() + indexKeyLockManager.size();
+                return recordPromiseManager.size() + indexKeyPromiseManager.size();
               }
             },
             "distributed.db.*.recordLocks");
@@ -294,9 +331,77 @@ public class ODistributedDatabaseImpl implements ODistributedDatabase {
             .getServerInstance()
             .getContextConfiguration()
             .getValueAsInteger(DISTRIBUTED_TRANSACTION_SEQUENCE_SET_SIZE);
-    recordLockManager = new OSimpleLockManagerImpl<>(timeout);
-    indexKeyLockManager = new OSimpleLockManagerImpl<>(timeout);
+    recordPromiseManager = new OTxPromiseManager<>();
+    indexKeyPromiseManager = new OTxPromiseManager<>();
     sequenceManager = new ODistributedSynchronizedSequence(localNodeName, sequenceSize);
+  }
+
+  public static boolean sendResponseBack(
+      final Object current,
+      final ODistributedServerManager manager,
+      final ODistributedRequestId iRequestId,
+      Object responsePayload) {
+
+    if (iRequestId.getMessageId() < 0)
+      // INTERNAL MSG
+      return true;
+
+    final String local = manager.getLocalNodeName();
+
+    final String sender = manager.getNodeNameById(iRequestId.getNodeId());
+
+    final ODistributedResponse response =
+        new ODistributedResponse(null, iRequestId, local, sender, responsePayload);
+
+    // TODO: check if using remote channel for local node still makes sense
+    //    if (!senderNodeName.equalsIgnoreCase(manager.getLocalNodeName()))
+    try {
+      // GET THE SENDER'S RESPONSE QUEUE
+      final ORemoteServerController remoteSenderServer = manager.getRemoteServer(sender);
+
+      ODistributedServerLog.debug(
+          current,
+          local,
+          sender,
+          DIRECTION.OUT,
+          "Sending response %s back (reqId=%s)",
+          response,
+          iRequestId);
+
+      remoteSenderServer.sendResponse(response);
+
+    } catch (Exception e) {
+      ODistributedServerLog.debug(
+          current,
+          local,
+          sender,
+          DIRECTION.OUT,
+          "Error on sending response '%s' back (reqId=%s err=%s)",
+          e,
+          response,
+          iRequestId,
+          e.toString());
+      return false;
+    }
+
+    return true;
+  }
+
+  public OTxPromiseManager<ORID> getRecordPromiseManager() {
+    return recordPromiseManager;
+  }
+
+  public OTxPromiseManager<Object> getIndexKeyPromiseManager() {
+    return indexKeyPromiseManager;
+  }
+
+  public void startOperation() {
+    waitDistributedIsReady();
+    operationsRunnig.incrementAndGet();
+  }
+
+  public void endOperation() {
+    operationsRunnig.decrementAndGet();
   }
 
   @Override
@@ -323,21 +428,19 @@ public class ODistributedDatabaseImpl implements ODistributedDatabase {
       final ORemoteTask payload,
       int retryCount,
       int autoRetryDelay) {
-    pending.incrementAndGet();
-    Orient.instance()
-        .scheduleTask(
-            () -> {
-              try {
-                processRequest(
-                    new ODistributedRequest(
-                        getManager(), senderNodeId, msgSequence, databaseName, payload),
-                    false);
-              } finally {
-                pending.decrementAndGet();
-              }
-            },
-            autoRetryDelay * retryCount,
-            0);
+    OrientDBInternal context = manager.getServerInstance().getDatabases();
+    context.scheduleOnce(
+        new TimerTask() {
+
+          @Override
+          public void run() {
+            processRequest(
+                new ODistributedRequest(
+                    getManager(), senderNodeId, msgSequence, databaseName, payload),
+                false);
+          }
+        },
+        autoRetryDelay * retryCount);
   }
 
   /**
@@ -455,6 +558,7 @@ public class ODistributedDatabaseImpl implements ODistributedDatabase {
             this.wait(1000);
           } catch (InterruptedException e) {
             break;
+<<<<<<< HEAD
           }
         }
       }
@@ -719,6 +823,14 @@ public class ODistributedDatabaseImpl implements ODistributedDatabase {
     return timeout + delta;
   }
 
+=======
+          }
+        }
+      }
+    }
+  }
+
+>>>>>>> develop
   @Override
   public void setOnline() {
     fillStatus();
@@ -739,7 +851,14 @@ public class ODistributedDatabaseImpl implements ODistributedDatabase {
 
   public void fillStatus() {
     OAbstractPaginatedStorage storage =
+<<<<<<< HEAD
         ((OAbstractPaginatedStorage) manager.getStorage(databaseName).getUnderlying());
+=======
+        (OAbstractPaginatedStorage)
+            ((OrientDBDistributed) manager.getServerInstance().getDatabases())
+                .getStorage(databaseName);
+
+>>>>>>> develop
     if (storage != null) {
       sequenceManager.fill(storage.getLastMetadata());
     }
@@ -855,27 +974,6 @@ public class ODistributedDatabaseImpl implements ODistributedDatabase {
     return manager.getServerInstance().existsDatabase(databaseName);
   }
 
-  public ODistributedSyncConfiguration getSyncConfiguration() {
-    if (syncConfiguration == null) {
-      final String path =
-          manager.getServerInstance().getDatabaseDirectory()
-              + databaseName
-              + "/"
-              + DISTRIBUTED_SYNC_JSON_FILENAME;
-      final File cfgFile = new File(path);
-      try {
-        syncConfiguration = new ODistributedSyncConfiguration(manager, databaseName, cfgFile);
-      } catch (IOException e) {
-        throw OException.wrapException(
-            new ODistributedException(
-                "Cannot open database distributed sync configuration file: " + cfgFile),
-            e);
-      }
-    }
-
-    return syncConfiguration;
-  }
-
   @Override
   public void handleUnreachableNode(final String nodeName) {
     if (!running) {
@@ -903,9 +1001,7 @@ public class ODistributedDatabaseImpl implements ODistributedDatabase {
 
   @Override
   public ODatabaseDocumentInternal getDatabaseInstance() {
-    return manager
-        .getServerInstance()
-        .openDatabase(databaseName, "internal", "internal", null, true);
+    return manager.getServerInstance().getDatabases().openNoAuthorization(databaseName);
   }
 
   @Override
@@ -927,8 +1023,15 @@ public class ODistributedDatabaseImpl implements ODistributedDatabase {
     shutdown(true);
   }
 
+<<<<<<< HEAD
   public void shutdown(boolean wait) {
     waitPending();
+=======
+  public synchronized void shutdown(boolean wait) {
+    if (!running) {
+      return;
+    }
+>>>>>>> develop
     running = false;
 
     try {
@@ -940,6 +1043,7 @@ public class ODistributedDatabaseImpl implements ODistributedDatabase {
         } catch (InterruptedException e) {
         }
       }
+<<<<<<< HEAD
 
       // SAVE SYNC CONFIGURATION
       try {
@@ -954,6 +1058,8 @@ public class ODistributedDatabaseImpl implements ODistributedDatabase {
             databaseName);
       }
       syncConfiguration = null;
+=======
+>>>>>>> develop
 
       activeTxContexts.clear();
 
@@ -992,6 +1098,7 @@ public class ODistributedDatabaseImpl implements ODistributedDatabase {
     }
   }
 
+<<<<<<< HEAD
   private void waitPending() {
     while (pending.get() > 0) {
       try {
@@ -1135,30 +1242,37 @@ public class ODistributedDatabaseImpl implements ODistributedDatabase {
   @Override
   public void checkNodeInConfiguration(
       final ODistributedConfiguration cfg, final String serverName) {
+=======
+  public void checkNodeInConfiguration(final String serverName, ODistributedConfiguration cfg) {
+>>>>>>> develop
     manager.executeInDistributedDatabaseLock(
         databaseName,
         20000,
         cfg != null ? cfg.modify() : null,
-        new OCallable<Void, OModifiableDistributedConfiguration>() {
-          @Override
-          public Void call(final OModifiableDistributedConfiguration lastCfg) {
-            // GET LAST VERSION IN LOCK
-            final List<String> foundPartition = lastCfg.addNewNodeInServerList(serverName);
-            if (foundPartition != null) {
-              ODistributedServerLog.info(
-                  this,
-                  localNodeName,
-                  null,
-                  DIRECTION.NONE,
-                  "Adding node '%s' in partition: %s db=%s v=%d",
-                  serverName,
-                  foundPartition,
-                  databaseName,
-                  lastCfg.getVersion());
-            }
-            return null;
+        lastCfg -> {
+          // GET LAST VERSION IN LOCK
+          final List<String> foundPartition = lastCfg.addNewNodeInServerList(serverName);
+          if (foundPartition != null) {
+            ODistributedServerLog.info(
+                this,
+                localNodeName,
+                null,
+                DIRECTION.NONE,
+                "Adding node '%s' in partition: %s db=%s v=%d",
+                serverName,
+                foundPartition,
+                databaseName,
+                lastCfg.getVersion());
           }
+          return null;
         });
+  }
+
+  public void initFirstOpen(ODatabaseDocumentInternal session, OSharedContext context) {
+    ODistributedConfiguration cfg = configurationManager.getDistributedConfiguration(session);
+    checkNodeInConfiguration(getLocalNodeName(), cfg);
+    resume();
+    setOnline();
   }
 
   protected String getLocalNodeName() {
@@ -1184,6 +1298,7 @@ public class ODistributedDatabaseImpl implements ODistributedDatabase {
 
     synchronized (this) {
       this.requestExecutor =
+<<<<<<< HEAD
           new ThreadPoolExecutor(
               0,
               totalWorkers,
@@ -1209,19 +1324,18 @@ public class ODistributedDatabaseImpl implements ODistributedDatabase {
                   return thread;
                 }
               });
+=======
+          (ThreadPoolExecutor)
+              OThreadPoolExecutors.newScalingThreadPool(
+                  String.format(
+                      "OrientDB DistributedWorker node=%s db=%s", getLocalNodeName(), databaseName),
+                  0,
+                  totalWorkers,
+                  0,
+                  1,
+                  TimeUnit.HOURS);
+>>>>>>> develop
     }
-  }
-
-  @Override
-  public void setLSN(
-      final String sourceNodeName,
-      final OLogSequenceNumber taskLastLSN,
-      final boolean updateLastOperationTimestamp)
-      throws IOException {
-    if (taskLastLSN == null) return;
-
-    final ODistributedSyncConfiguration cfg = getSyncConfiguration();
-    cfg.setLastLSN(sourceNodeName, taskLastLSN, updateLastOperationTimestamp);
   }
 
   private void startTxTimeoutTimerTask() {
@@ -1325,8 +1439,22 @@ public class ODistributedDatabaseImpl implements ODistributedDatabase {
         }
       }
 
-      recordLockManager.reset();
-      indexKeyLockManager.reset();
+      recordPromiseManager.reset();
+      indexKeyPromiseManager.reset();
+    }
+    LinkedBlockingQueue<OFreezeGuard> latch = new LinkedBlockingQueue<OFreezeGuard>(1);
+    this.lockManager.freeze(
+        (guards) -> {
+          try {
+            latch.put(guards);
+          } catch (InterruptedException e) {
+            throw new OInterruptedException(e.getMessage());
+          }
+        });
+    try {
+      this.freezeGuard = latch.take();
+    } catch (InterruptedException e) {
+      throw new OInterruptedException(e.getMessage());
     }
     LinkedBlockingQueue<OFreezeGuard> latch = new LinkedBlockingQueue<OFreezeGuard>(1);
     this.lockManager.freeze(
@@ -1376,8 +1504,15 @@ public class ODistributedDatabaseImpl implements ODistributedDatabase {
     List<OTransactionId> res = sequenceManager.checkSelfStatus(status);
     res.removeAll(this.inQueue);
     if (!res.isEmpty()) {
+<<<<<<< HEAD
       Orient.instance()
           .submit(
+=======
+      this.manager
+          .getServerInstance()
+          .getDatabases()
+          .execute(
+>>>>>>> develop
               () -> {
                 manager.installDatabase(false, databaseName, true, true);
               });
@@ -1431,4 +1566,73 @@ public class ODistributedDatabaseImpl implements ODistributedDatabase {
   public void localUnlock(List<OLockGuard> guards) {
     this.lockManager.unlock(guards);
   }
+<<<<<<< HEAD
+=======
+
+  public ODistributedConfiguration getDistributedConfiguration() {
+    return configurationManager.getDistributedConfiguration();
+  }
+
+  public ODistributedConfiguration getDistributedConfiguration(ODatabaseSession session) {
+    return configurationManager.getDistributedConfiguration(session);
+  }
+
+  public void setDistributedConfiguration(
+      final OModifiableDistributedConfiguration distributedConfiguration) {
+    configurationManager.setDistributedConfiguration(distributedConfiguration);
+  }
+
+  public OSyncSource getLastValidBackup() {
+    return lastValidBackup;
+  }
+
+  public void setLastValidBackup(final OSyncSource lastValidBackup) {
+    this.lastValidBackup = lastValidBackup;
+  }
+
+  public void resetLastValidBackup() {
+    if (lastValidBackup != null) {
+      lastValidBackup.invalidate();
+    }
+  }
+
+  public void clearLastValidBackup() {
+    if (lastValidBackup != null) {
+      lastValidBackup = null;
+    }
+  }
+
+  public void saveDatabaseConfiguration() {
+    configurationManager.saveDatabaseConfiguration();
+  }
+
+  public synchronized void freezeStatus() {
+    final String localNode = manager.getLocalNodeName();
+    freezePrevStatus = manager.getDatabaseStatus(localNode, databaseName);
+    if (freezePrevStatus == ODistributedServerManager.DB_STATUS.ONLINE)
+      // SET STATUS = BACKUP
+      manager.setDatabaseStatus(
+          localNode, databaseName, ODistributedServerManager.DB_STATUS.BACKUP);
+  }
+
+  public synchronized void releaseStatus() {
+    if (freezePrevStatus != null) {
+      final String localNode = manager.getLocalNodeName();
+      manager.setDatabaseStatus(localNode, databaseName, freezePrevStatus);
+    }
+  }
+
+  public void incSentRequest() {
+    this.totalSentRequests.incrementAndGet();
+  }
+
+  public Set<String> getAvailableNodesButLocal(
+      ODatabaseSession database, Set<String> involvedClusters) {
+    final Set<String> nodes = getDistributedConfiguration(database).getServers(involvedClusters);
+
+    // REMOVE CURRENT NODE BECAUSE IT HAS BEEN ALREADY EXECUTED LOCALLY
+    nodes.remove(localNodeName);
+    return nodes;
+  }
+>>>>>>> develop
 }

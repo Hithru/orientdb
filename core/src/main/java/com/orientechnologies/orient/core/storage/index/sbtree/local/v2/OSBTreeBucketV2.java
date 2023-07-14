@@ -167,9 +167,6 @@ public final class OSBTreeBucketV2<K, V> extends ODurablePage {
         getIntValue(POSITIONS_ARRAY_OFFSET + entryIndex * OIntegerSerializer.INT_SIZE);
     final int entrySize = key.length + 2 * OLongSerializer.LONG_SIZE;
 
-    final int leftChild = (int) getLongValue(entryPosition);
-    final int rightChild = (int) getLongValue(entryPosition + OLongSerializer.LONG_SIZE);
-
     int size = getIntValue(SIZE_OFFSET);
     if (entryIndex < size - 1) {
       moveData(
@@ -491,19 +488,16 @@ public final class OSBTreeBucketV2<K, V> extends ODurablePage {
 
     size++;
 
-    int prevChild = -1;
     if (updateNeighbours && size > 1) {
       if (index < size - 1) {
         final int nextEntryPosition =
             getIntValue(POSITIONS_ARRAY_OFFSET + (index + 1) * OIntegerSerializer.INT_SIZE);
-        prevChild = (int) getLongValue(nextEntryPosition);
         setLongValue(nextEntryPosition, rightChild);
       }
 
       if (index > 0) {
         final int prevEntryPosition =
             getIntValue(POSITIONS_ARRAY_OFFSET + (index - 1) * OIntegerSerializer.INT_SIZE);
-        prevChild = (int) getLongValue(prevEntryPosition + OLongSerializer.LONG_SIZE);
         setLongValue(prevEntryPosition + OLongSerializer.LONG_SIZE, leftChild);
       }
     }

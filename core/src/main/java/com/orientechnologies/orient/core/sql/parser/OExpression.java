@@ -188,20 +188,6 @@ public class OExpression extends SimpleNode {
   }
 
   public void toString(Map<Object, Object> params, StringBuilder builder) {
-    //    if (value == null) {
-    //      builder.append("null");
-    //    } else if (value instanceof SimpleNode) {
-    //      ((SimpleNode) value).toString(params, builder);
-    //    } else if (value instanceof String) {
-    //      if (Boolean.TRUE.equals(singleQuotes)) {
-    //        builder.append("'" + value + "'");
-    //      } else {
-    //        builder.append("\"" + value + "\"");
-    //      }
-    //    } else {
-    //      builder.append("" + value);
-    //    }
-
     if (isNull) {
       builder.append("null");
     } else if (rid != null) {
@@ -229,6 +215,29 @@ public class OExpression extends SimpleNode {
     } else {
       builder.append(
           "" + value); // only for translated input params, will disappear with new executor
+    }
+  }
+
+  @Override
+  public void toGenericStatement(StringBuilder builder) {
+    if (isNull) {
+      builder.append("null");
+    } else if (rid != null) {
+      rid.toGenericStatement(builder);
+    } else if (mathExpression != null) {
+      mathExpression.toGenericStatement(builder);
+    } else if (arrayConcatExpression != null) {
+      arrayConcatExpression.toGenericStatement(builder);
+    } else if (json != null) {
+      json.toGenericStatement(builder);
+    } else if (booleanValue != null) {
+      builder.append(PARAMETER_PLACEHOLDER);
+    } else if (value instanceof SimpleNode) {
+      ((SimpleNode) value).toGenericStatement(builder);
+    } else if (value instanceof String) {
+      builder.append(PARAMETER_PLACEHOLDER);
+    } else {
+      builder.append(PARAMETER_PLACEHOLDER);
     }
   }
 

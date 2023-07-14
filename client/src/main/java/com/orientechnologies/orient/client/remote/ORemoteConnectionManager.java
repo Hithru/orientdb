@@ -85,17 +85,12 @@ public class ORemoteConnectionManager {
 
   public OChannelBinaryAsynchClient acquire(
       String iServerURL, final OContextConfiguration clientConfiguration) {
-    if (iServerURL.startsWith(OEngineRemote.PREFIX))
-      iServerURL = iServerURL.substring(OEngineRemote.PREFIX.length());
-
-    if (iServerURL.endsWith("/")) iServerURL = iServerURL.substring(0, iServerURL.length() - 1);
 
     long localTimeout = timeout;
 
     ORemoteConnectionPool pool = connections.get(iServerURL);
     if (pool == null) {
-      int maxPool =
-          clientConfiguration.getValueAsInteger(OGlobalConfiguration.CLIENT_CHANNEL_MAX_POOL);
+      int maxPool = 8;
 
       if (clientConfiguration != null) {
         final Object max =

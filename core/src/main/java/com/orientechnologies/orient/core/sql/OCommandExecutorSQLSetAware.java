@@ -91,10 +91,10 @@ public abstract class OCommandExecutorSQLSetAware extends OCommandExecutorSQLAbs
       if (iTarget.charAt(0) == ORID.PREFIX)
         return getDatabase()
             .getMetadata()
-            .getSchema()
+            .getImmutableSchemaSnapshot()
             .getClassByClusterId(new ORecordId(iTarget).getClusterId());
 
-      return getDatabase().getMetadata().getSchema().getClass(iTarget);
+      return getDatabase().getMetadata().getImmutableSchemaSnapshot().getClass(iTarget);
     }
     // CLUSTER
     if (iTarget
@@ -107,11 +107,12 @@ public abstract class OCommandExecutorSQLSetAware extends OCommandExecutorSQLAbs
         String[] clusterNames = clusterName.substring(1, clusterName.length() - 1).split(",");
         OClass candidateClass = null;
         for (String cName : clusterNames) {
-          final int clusterId = db.getStorage().getClusterIdByName(cName.trim());
+          final int clusterId = db.getClusterIdByName(cName.trim());
           if (clusterId < 0) {
             return null;
           }
-          OClass aClass = db.getMetadata().getSchema().getClassByClusterId(clusterId);
+          OClass aClass =
+              db.getMetadata().getImmutableSchemaSnapshot().getClassByClusterId(clusterId);
           if (aClass == null) {
             return null;
           }
@@ -125,9 +126,9 @@ public abstract class OCommandExecutorSQLSetAware extends OCommandExecutorSQLAbs
         }
         return candidateClass;
       } else {
-        final int clusterId = db.getStorage().getClusterIdByName(clusterName);
+        final int clusterId = db.getClusterIdByName(clusterName);
         if (clusterId >= 0) {
-          return db.getMetadata().getSchema().getClassByClusterId(clusterId);
+          return db.getMetadata().getImmutableSchemaSnapshot().getClassByClusterId(clusterId);
         }
       }
     }

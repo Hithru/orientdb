@@ -4,7 +4,10 @@ import static org.junit.Assert.assertEquals;
 
 import com.orientechnologies.orient.core.index.OCompositeKey;
 import com.orientechnologies.orient.core.serialization.serializer.record.binary.ORecordSerializerNetworkDistributed;
+<<<<<<< HEAD
 import com.orientechnologies.orient.core.storage.impl.local.paginated.wal.OLogSequenceNumber;
+=======
+>>>>>>> develop
 import com.orientechnologies.orient.core.tx.OTransactionId;
 import com.orientechnologies.orient.server.distributed.impl.task.OTransactionPhase1Task;
 import com.orientechnologies.orient.server.distributed.impl.task.transaction.OTransactionUniqueKey;
@@ -28,8 +31,11 @@ public class OTransactionPhase1TaskSerializationTest {
 
     txId.write(out);
     out.writeInt(0);
+<<<<<<< HEAD
     new OLogSequenceNumber(-1, -1).toStream(out);
 
+=======
+>>>>>>> develop
     OTransactionUniqueKey keyChange1 = new OTransactionUniqueKey("idx1", null, 0);
     OTransactionUniqueKey keyChange2 = new OTransactionUniqueKey("idx2", "k2", 0);
     OTransactionUniqueKey keyChange3 = new OTransactionUniqueKey("idx3", 5, 0);

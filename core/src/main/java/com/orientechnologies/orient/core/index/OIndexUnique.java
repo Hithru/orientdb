@@ -19,7 +19,6 @@
  */
 package com.orientechnologies.orient.core.index;
 
-import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.exception.OInvalidIndexEngineIdException;
 import com.orientechnologies.orient.core.id.ORID;
 import com.orientechnologies.orient.core.index.engine.OBaseIndexEngine;
@@ -57,7 +56,7 @@ public class OIndexUnique extends OIndexOneValue {
         }
 
         if (!newValue.getIdentity().isPersistent()) {
-          newValue = newValue.getRecord();
+          newValue = newValue.getRecord().getIdentity();
         }
         return newValue.getIdentity();
       };
@@ -80,26 +79,6 @@ public class OIndexUnique extends OIndexOneValue {
         valueContainerAlgorithm,
         metadata,
         binaryFormatVersion);
-  }
-
-  @Override
-  public OIndexOneValue put(Object key, final OIdentifiable value) {
-    key = getCollatingValue(key);
-
-    acquireSharedLock();
-    try {
-      while (true) {
-        try {
-          doPut(storage, key, value.getIdentity());
-          break;
-        } catch (OInvalidIndexEngineIdException ignore) {
-          doReloadIndexEngine();
-        }
-      }
-      return this;
-    } finally {
-      releaseSharedLock();
-    }
   }
 
   @Override

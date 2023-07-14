@@ -449,7 +449,10 @@ public final class CellBTreeBucketSingleValueV1<K> extends ODurablePage {
 
     setBinaryValue(freePointer, serializedKey);
     setBinaryValue(freePointer + serializedKey.length, serializedValue);
+<<<<<<< HEAD
 
+=======
+>>>>>>> develop
     return true;
   }
 

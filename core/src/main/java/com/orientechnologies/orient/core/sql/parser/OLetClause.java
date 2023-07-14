@@ -33,6 +33,18 @@ public class OLetClause extends SimpleNode {
     }
   }
 
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append("LET ");
+    boolean first = true;
+    for (OLetItem item : items) {
+      if (!first) {
+        builder.append(", ");
+      }
+      item.toGenericStatement(builder);
+      first = false;
+    }
+  }
+
   public void addItem(OLetItem item) {
     this.items.add(item);
   }

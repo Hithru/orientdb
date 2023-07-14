@@ -62,6 +62,21 @@ public class OMethodCall extends SimpleNode {
     builder.append(")");
   }
 
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append(".");
+    methodName.toGenericStatement(builder);
+    builder.append("(");
+    boolean first = true;
+    for (OExpression param : this.params) {
+      if (!first) {
+        builder.append(", ");
+      }
+      param.toGenericStatement(builder);
+      first = false;
+    }
+    builder.append(")");
+  }
+
   public boolean isBidirectional() {
     return bidirectionalMethods.contains(methodName.getStringValue().toLowerCase(Locale.ENGLISH));
   }
@@ -295,6 +310,10 @@ public class OMethodCall extends SimpleNode {
       calculatedIsGraph = false;
     }
     return calculatedIsGraph;
+  }
+
+  public void addParam(OExpression param) {
+    this.params.add(param);
   }
 }
 /* JavaCC - OriginalChecksum=da95662da21ceb8dee3ad88c0d980413 (do not edit this line) */

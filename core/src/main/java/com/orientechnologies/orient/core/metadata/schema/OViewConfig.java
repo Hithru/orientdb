@@ -1,8 +1,10 @@
 package com.orientechnologies.orient.core.metadata.schema;
 
-import com.orientechnologies.common.util.OPair;
+import com.orientechnologies.orient.core.collate.OCollate;
+import com.orientechnologies.orient.core.index.OPropertyMapIndexDefinition.INDEX_BY;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class OViewConfig {
   /** default */
@@ -14,18 +16,62 @@ public class OViewConfig {
 
     protected final String type;
     protected final String engine;
-    protected List<OPair<String, OType>> props = new ArrayList<>();
+
+    public static class OIndexConfigProperty {
+      protected final String name;
+      protected final OType type;
+      protected final OType linkedType;
+      protected final OCollate collate;
+      protected final INDEX_BY index_by;
+
+      public OIndexConfigProperty(
+          String name, OType type, OType linkedType, OCollate collate, INDEX_BY index_by) {
+        this.name = name;
+        this.type = type;
+        this.linkedType = linkedType;
+        this.collate = collate;
+        this.index_by = index_by;
+      }
+
+      public OCollate getCollate() {
+        return collate;
+      }
+
+      public OType getLinkedType() {
+        return linkedType;
+      }
+
+      public String getName() {
+        return name;
+      }
+
+      public OType getType() {
+        return type;
+      }
+
+      public INDEX_BY getIndexBy() {
+        return index_by;
+      }
+
+      public OIndexConfigProperty copy() {
+        return new OIndexConfigProperty(
+            this.name, this.type, this.linkedType, this.collate, this.index_by);
+      }
+    }
+
+    protected List<OIndexConfigProperty> props = new ArrayList<>();
 
     OViewIndexConfig(String type, String engine) {
       this.type = type;
       this.engine = engine;
     }
 
-    public void addProperty(String name, OType type) {
-      this.props.add(new OPair<>(name, type));
+    public void addProperty(
+        String name, OType type, OType linkedType, OCollate collate, INDEX_BY indexBy) {
+      this.props.add(new OIndexConfigProperty(name, type, linkedType, collate, indexBy));
     }
 
-    public List<OPair<String, OType>> getProperties() {
+    public List<OIndexConfigProperty> getProperties() {
       return props;
     }
 
@@ -58,7 +104,7 @@ public class OViewConfig {
     result.updatable = this.updatable;
     for (OViewIndexConfig index : indexes) {
       OViewIndexConfig idx = result.addIndex(index.type, index.engine);
-      index.props.forEach(x -> idx.addProperty(x.key, x.value));
+      idx.props = index.props.stream().map(v -> v.copy()).collect(Collectors.toList());
     }
     result.updateStrategy = this.updateStrategy;
     result.watchClasses = this.watchClasses == null ? null : new ArrayList<>(this.watchClasses);

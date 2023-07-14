@@ -16,6 +16,10 @@
 package com.orientechnologies.orient.server.distributed;
 
 import com.orientechnologies.orient.core.exception.OStorageDoesNotExistException;
+<<<<<<< HEAD
+=======
+import com.orientechnologies.orient.setup.ServerRun;
+>>>>>>> develop
 import org.junit.Assert;
 import org.junit.Test;
 

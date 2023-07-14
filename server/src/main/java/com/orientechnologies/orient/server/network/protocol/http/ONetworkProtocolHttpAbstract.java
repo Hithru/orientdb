@@ -74,18 +74,7 @@ import com.orientechnologies.orient.server.network.protocol.http.command.get.OSe
 import com.orientechnologies.orient.server.network.protocol.http.command.get.OServerCommandIsEnterprise;
 import com.orientechnologies.orient.server.network.protocol.http.command.options.OServerCommandOptions;
 import com.orientechnologies.orient.server.network.protocol.http.command.patch.OServerCommandPatchDocument;
-import com.orientechnologies.orient.server.network.protocol.http.command.post.OServerCommandPostAuthToken;
-import com.orientechnologies.orient.server.network.protocol.http.command.post.OServerCommandPostBatch;
-import com.orientechnologies.orient.server.network.protocol.http.command.post.OServerCommandPostClass;
-import com.orientechnologies.orient.server.network.protocol.http.command.post.OServerCommandPostCommandGraph;
-import com.orientechnologies.orient.server.network.protocol.http.command.post.OServerCommandPostDatabase;
-import com.orientechnologies.orient.server.network.protocol.http.command.post.OServerCommandPostDocument;
-import com.orientechnologies.orient.server.network.protocol.http.command.post.OServerCommandPostImportRecords;
-import com.orientechnologies.orient.server.network.protocol.http.command.post.OServerCommandPostInstallDatabase;
-import com.orientechnologies.orient.server.network.protocol.http.command.post.OServerCommandPostKillDbConnection;
-import com.orientechnologies.orient.server.network.protocol.http.command.post.OServerCommandPostProperty;
-import com.orientechnologies.orient.server.network.protocol.http.command.post.OServerCommandPostServer;
-import com.orientechnologies.orient.server.network.protocol.http.command.post.OServerCommandPostStudio;
+import com.orientechnologies.orient.server.network.protocol.http.command.post.*;
 import com.orientechnologies.orient.server.network.protocol.http.command.put.OServerCommandPostConnection;
 import com.orientechnologies.orient.server.network.protocol.http.command.put.OServerCommandPutDocument;
 import com.orientechnologies.orient.server.network.protocol.http.command.put.OServerCommandPutIndex;
@@ -202,7 +191,7 @@ public abstract class ONetworkProtocolHttpAbstract extends ONetworkProtocol
             request.getHttpVersion(),
             additionalResponseHeaders,
             responseCharSet,
-            connection.getData().serverInfo,
+            "OrientDB",
             request.getSessionId(),
             callbackF,
             request.isKeepAlive(),
@@ -210,13 +199,13 @@ public abstract class ONetworkProtocolHttpAbstract extends ONetworkProtocol
             server.getContextConfiguration());
     response.setJsonErrorResponse(jsonResponseError);
     response.setSameSiteCookie(sameSiteCookie);
-    if (request.getContentEncoding() != null
-        && request.getContentEncoding().equals(OHttpUtils.CONTENT_ACCEPT_GZIP_ENCODED)) {
+    if (request.getAcceptEncoding() != null
+        && request.getAcceptEncoding().equals(OHttpUtils.CONTENT_ACCEPT_GZIP_ENCODED)) {
       response.setContentEncoding(OHttpUtils.CONTENT_ACCEPT_GZIP_ENCODED);
     }
     // only for static resources
-    if (request.getContentEncoding() != null
-        && request.getContentEncoding().contains(OHttpUtils.CONTENT_ACCEPT_GZIP_ENCODED)) {
+    if (request.getAcceptEncoding() != null
+        && request.getAcceptEncoding().contains(OHttpUtils.CONTENT_ACCEPT_GZIP_ENCODED)) {
       response.setStaticEncoding(OHttpUtils.CONTENT_ACCEPT_GZIP_ENCODED);
     }
 
@@ -561,7 +550,7 @@ public abstract class ONetworkProtocolHttpAbstract extends ONetworkProtocol
     writeLine("Pragma: no-cache");
     writeLine("Date: " + new Date());
     writeLine("Content-Type: " + iContentType + "; charset=" + responseCharSet);
-    writeLine("Server: " + connection.getData().serverInfo);
+    writeLine("Server: OrientDB");
     writeLine("Connection: " + (iKeepAlive ? "Keep-Alive" : "close"));
     if (getAdditionalResponseHeaders() != null)
       for (String h : getAdditionalResponseHeaders()) writeLine(h);
@@ -977,6 +966,7 @@ public abstract class ONetworkProtocolHttpAbstract extends ONetworkProtocol
     cmdManager.registerCommand(new OServerCommandPostProperty());
     cmdManager.registerCommand(new OServerCommandPostConnection());
     cmdManager.registerCommand(new OServerCommandPostServer());
+    cmdManager.registerCommand(new OServerCommandPostServerCommand());
     cmdManager.registerCommand(new OServerCommandPostStudio());
     cmdManager.registerCommand(new OServerCommandPutDocument());
     cmdManager.registerCommand(new OServerCommandPutIndex());

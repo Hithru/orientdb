@@ -97,6 +97,70 @@ public class OFromItem extends SimpleNode {
     }
   }
 
+  public void toGenericStatement(StringBuilder builder) {
+    if (rids != null && rids.size() > 0) {
+      if (rids.size() == 1) {
+        rids.get(0).toGenericStatement(builder);
+        return;
+      } else {
+        builder.append("[");
+        boolean first = true;
+        for (ORid rid : rids) {
+          if (!first) {
+            builder.append(", ");
+          }
+          rid.toGenericStatement(builder);
+          first = false;
+        }
+        builder.append("]");
+        return;
+      }
+    } else if (inputParams != null && inputParams.size() > 0) {
+      if (inputParams.size() == 1) {
+        inputParams.get(0).toGenericStatement(builder);
+        return;
+      } else {
+        builder.append("[");
+        boolean first = true;
+        for (OInputParameter rid : inputParams) {
+          if (!first) {
+            builder.append(", ");
+          }
+          rid.toGenericStatement(builder);
+          first = false;
+        }
+        builder.append("]");
+        return;
+      }
+    } else if (cluster != null) {
+      cluster.toGenericStatement(builder);
+      return;
+    } else if (clusterList != null) {
+      clusterList.toGenericStatement(builder);
+      return;
+    } else if (metadata != null) {
+      metadata.toGenericStatement(builder);
+      return;
+    } else if (statement != null) {
+      builder.append("(");
+      statement.toGenericStatement(builder);
+      builder.append(")");
+      return;
+    } else if (index != null) {
+      index.toGenericStatement(builder);
+      return;
+    } else if (inputParam != null) {
+      inputParam.toGenericStatement(builder);
+    } else if (functionCall != null) {
+      functionCall.toGenericStatement(builder);
+    } else if (identifier != null) {
+      identifier.toGenericStatement(builder);
+    }
+    if (modifier != null) {
+      modifier.toGenericStatement(builder);
+    }
+  }
+
   public OIdentifier getIdentifier() {
     return identifier;
   }
@@ -385,6 +449,14 @@ public class OFromItem extends SimpleNode {
       return true;
     }
     return false;
+  }
+
+  public void addRid(ORid rid) {
+    this.rids.add(rid);
+  }
+
+  public void addInputParam(OInputParameter par) {
+    this.inputParams.add(par);
   }
 }
 /* JavaCC - OriginalChecksum=f64e3b4d2a2627a1b5d04a7dcb95fa94 (do not edit this line) */

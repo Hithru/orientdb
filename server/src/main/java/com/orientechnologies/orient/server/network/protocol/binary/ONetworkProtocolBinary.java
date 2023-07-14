@@ -326,7 +326,7 @@ public class ONetworkProtocolBinary extends ONetworkProtocol {
                   this, "I/O Error on client clientId=%d reqType=%d", clientTxId, requestType, e);
           sendShutdown();
           return;
-        } catch (Exception | Error e) {
+        } catch (Throwable e) {
           if (connection != null) {
             connection.endOperation();
           }
@@ -361,7 +361,7 @@ public class ONetworkProtocolBinary extends ONetworkProtocol {
               if (collectionManager != null) collectionManager.clearChangedIds();
             }
             exception = t;
-          } catch (Error err) {
+          } catch (Throwable err) {
             sendShutdown();
             if (connection != null) {
               connection.release();
@@ -460,15 +460,14 @@ public class ONetworkProtocolBinary extends ONetworkProtocol {
         connection.validateSession(tokenBytes, server.getTokenHandler(), this);
         server.getClientConnectionManager().disconnect(clientTxId);
         connection =
-            server
-                .getClientConnectionManager()
-                .reConnect(this, connection.getTokenBytes(), connection.getToken());
+            server.getClientConnectionManager().reConnect(this, connection.getTokenBytes());
         connection.acquire();
         waitDistribuedIsOnline(connection);
         connection.init(server);
 
         if (connection.getData().serverUser) {
-          connection.setServerUser(server.getUser(connection.getData().serverUsername));
+          connection.setServerUser(
+              server.getSecurity().getUser(connection.getData().serverUsername));
         }
       }
     } catch (RuntimeException e) {
@@ -543,7 +542,8 @@ public class ONetworkProtocolBinary extends ONetworkProtocol {
         waitDistribuedIsOnline(connection);
         connection.init(server);
         if (connection.getData().serverUser) {
-          connection.setServerUser(server.getUser(connection.getData().serverUsername));
+          connection.setServerUser(
+              server.getSecurity().getUser(connection.getData().serverUsername));
         }
       } else {
         if (connection != null && !Boolean.TRUE.equals(connection.getTokenBased())) {
@@ -569,7 +569,8 @@ public class ONetworkProtocolBinary extends ONetworkProtocol {
           waitDistribuedIsOnline(connection);
           connection.init(server);
           if (connection.getData().serverUser) {
-            connection.setServerUser(server.getUser(connection.getData().serverUsername));
+            connection.setServerUser(
+                server.getSecurity().getUser(connection.getData().serverUsername));
           }
         }
       }
@@ -577,7 +578,7 @@ public class ONetworkProtocolBinary extends ONetworkProtocol {
       connection.statsUpdate();
       OServerPluginHelper.invokeHandlerCallbackOnBeforeClientRequest(
           server, connection, (byte) requestType);
-    } catch (RuntimeException e) {
+    } catch (Throwable e) {
       if (connection != null) {
         connection.endOperation();
         server.getClientConnectionManager().disconnect(connection);
@@ -595,8 +596,12 @@ public class ONetworkProtocolBinary extends ONetworkProtocol {
         try {
           if (manager.getMessageService() != null) {
             String databaseName = connection.getDatabaseName();
+<<<<<<< HEAD
             final ODistributedDatabase dDatabase =
                 manager.getMessageService().getDatabase(databaseName);
+=======
+            final ODistributedDatabase dDatabase = manager.getDatabase(databaseName);
+>>>>>>> develop
             if (dDatabase != null) {
               dDatabase.waitForOnline();
             } else manager.waitUntilNodeOnline(manager.getLocalNodeName(), databaseName);
@@ -627,10 +632,10 @@ public class ONetworkProtocolBinary extends ONetworkProtocol {
       if (connection.getServerUser() == null)
         throw new OSecurityAccessException("Server user not authenticated");
 
-      if (!server.isAllowed(connection.getServerUser().name, iResource))
+      if (!server.getSecurity().isAuthorized(connection.getServerUser().getName(), iResource))
         throw new OSecurityAccessException(
             "User '"
-                + connection.getServerUser().name
+                + connection.getServerUser().getName()
                 + "' cannot access to the resource ["
                 + iResource
                 + "]. Use another server user or change permission in the file config/orientdb-server-config.xml");
@@ -638,7 +643,7 @@ public class ONetworkProtocolBinary extends ONetworkProtocol {
       if (!connection.getData().serverUser)
         throw new OSecurityAccessException("Server user not authenticated");
 
-      if (!server.isAllowed(connection.getData().serverUsername, iResource))
+      if (!server.getSecurity().isAuthorized(connection.getData().serverUsername, iResource))
         throw new OSecurityAccessException(
             "User '"
                 + connection.getData().serverUsername
@@ -661,7 +666,7 @@ public class ONetworkProtocolBinary extends ONetworkProtocol {
     final String dbName = req.getDatabaseName();
     ODistributedDatabase ddb = null;
     if (dbName != null) {
-      ddb = manager.getMessageService().getDatabase(dbName);
+      ddb = manager.getDatabase(dbName);
       if (ddb == null && req.getTask().isNodeOnlineRequired())
         throw new ODistributedException(
             "Database configuration not found for database '" + req.getDatabaseName() + "'");

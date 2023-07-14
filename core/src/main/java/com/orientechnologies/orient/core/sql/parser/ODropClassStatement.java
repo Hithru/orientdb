@@ -78,6 +78,25 @@ public class ODropClassStatement extends ODDLStatement {
     } else {
       nameParam.toString(params, builder);
     }
+<<<<<<< HEAD
+=======
+    if (ifExists) {
+      builder.append(" IF EXISTS");
+    }
+    if (unsafe) {
+      builder.append(" UNSAFE");
+    }
+  }
+
+  @Override
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append("DROP CLASS ");
+    if (name != null) {
+      name.toGenericStatement(builder);
+    } else {
+      nameParam.toGenericStatement(builder);
+    }
+>>>>>>> develop
     if (ifExists) {
       builder.append(" IF EXISTS");
     }

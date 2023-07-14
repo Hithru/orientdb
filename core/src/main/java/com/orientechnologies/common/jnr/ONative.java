@@ -19,7 +19,7 @@
  */
 package com.orientechnologies.common.jnr;
 
-import com.kenai.jffi.Platform;
+import com.orientechnologies.common.io.OIOUtils;
 import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.common.util.OMemory;
 import java.io.BufferedReader;
@@ -27,8 +27,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.lang.management.ManagementFactory;
-import java.nio.ByteBuffer;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.management.AttributeNotFoundException;
@@ -38,53 +38,16 @@ import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 import javax.management.ReflectionException;
-import jnr.ffi.LibraryLoader;
-import jnr.ffi.NativeLong;
-import jnr.ffi.byref.PointerByReference;
+import jnr.constants.platform.Sysconf;
 import jnr.posix.POSIX;
 import jnr.posix.POSIXFactory;
 import jnr.posix.RLimit;
 
 public class ONative {
-  private static volatile OCLibrary C_LIBRARY;
   private static final String DEFAULT_MEMORY_CGROUP_PATH = "/sys/fs/cgroup/memory";
 
   private static volatile ONative instance = null;
   private static final Lock initLock = new ReentrantLock();
-
-  @SuppressWarnings("OctalInteger")
-  public static final int O_RDONLY = 00;
-
-  @SuppressWarnings("OctalInteger")
-  public static final int O_WRONLY = 01;
-
-  @SuppressWarnings("OctalInteger")
-  public static final int O_RDWR = 02;
-
-  @SuppressWarnings("OctalInteger")
-  public static final int O_CREAT = 0100;
-
-  @SuppressWarnings("OctalInteger")
-  public static final int O_EXCL = 0200;
-
-  @SuppressWarnings("OctalInteger")
-  public static final int O_APPEND = 02000;
-
-  @SuppressWarnings("OctalInteger")
-  public static final int O_TRUNC = 01000;
-
-  @SuppressWarnings("OctalInteger")
-  public static final int O_DIRECT = 040000;
-
-  @SuppressWarnings("OctalInteger")
-  public static final int O_SYNC = 04000000;
-
-  public static final int SEEK_SET = 0;
-  public static final int SEEK_CUR = 1;
-  public static final int SEEK_END = 2;
-
-  public static final int MCL_CURRENT = 1;
-  public static final int MCL_FUTURE = 2;
 
   private static volatile POSIX posix;
 
@@ -95,11 +58,8 @@ public class ONative {
     try {
       if (instance != null) return instance;
 
-      if (Platform.getPlatform().getOS() == Platform.OS.LINUX) {
+      if (OIOUtils.isOsLinux()) {
         posix = POSIXFactory.getPOSIX();
-        C_LIBRARY = LibraryLoader.create(OCLibrary.class).load("c");
-      } else {
-        C_LIBRARY = null;
       }
 
       instance = new ONative();
@@ -109,6 +69,11 @@ public class ONative {
 
     return instance;
   }
+
+  /** Address space limit. */
+  public static final int RLIMIT_AS = 9;
+
+  public static final int RLIMIT_NOFILE = 7;
 
   /** Prevent initialization outside singleton */
   private ONative() {}
@@ -121,11 +86,17 @@ public class ONative {
    * @return limit of open files, available for the system.
    */
   public int getOpenFilesLimit(boolean verbose, int recommended, int defLimit) {
+<<<<<<< HEAD
     final Platform.OS os = Platform.getPlatform().getOS();
     if (os == Platform.OS.LINUX) {
       try {
         final RLimit rLimit = posix.getrlimit(OCLibrary.RLIMIT_NOFILE);
 
+=======
+    if (OIOUtils.isOsLinux()) {
+      try {
+        final RLimit rLimit = posix.getrlimit(ONative.RLIMIT_NOFILE);
+>>>>>>> develop
         if (rLimit.rlimCur() > 0) {
           if (verbose) {
             OLogManager.instance()
@@ -136,7 +107,10 @@ public class ONative {
                     rLimit.rlimCur(),
                     rLimit.rlimCur() / 2 - 512);
           }
+<<<<<<< HEAD
 
+=======
+>>>>>>> develop
           if (rLimit.rlimCur() < recommended) {
             OLogManager.instance()
                 .warnNoDb(
@@ -144,7 +118,10 @@ public class ONative {
                     "Value of limit of simultaneously open files is too small, recommended value is %d",
                     recommended);
           }
+<<<<<<< HEAD
 
+=======
+>>>>>>> develop
           return (int) rLimit.rlimCur() / 2 - 512;
         } else {
           if (verbose) {
@@ -156,7 +133,7 @@ public class ONative {
           OLogManager.instance().infoNoDb(this, "Can not detect value of limit of open files.", e);
         }
       }
-    } else if (os == Platform.OS.WINDOWS) {
+    } else if (OIOUtils.isOsWindows()) {
       if (verbose) {
         OLogManager.instance()
             .infoNoDb(
@@ -164,7 +141,6 @@ public class ONative {
                 "Windows OS is detected, %d limit of open files will be set for the disk cache.",
                 recommended);
       }
-
       return recommended;
     }
 
@@ -172,7 +148,6 @@ public class ONative {
       OLogManager.instance()
           .infoNoDb(this, "Default limit of open files (%d) will be used.", defLimit);
     }
-
     return defLimit;
   }
 
@@ -204,11 +179,18 @@ public class ONative {
               convertToGB(memoryLimit));
     }
 
+<<<<<<< HEAD
     final Platform.OS os = Platform.getPlatform().getOS();
     if (os == Platform.OS.LINUX) {
       try {
         final RLimit rLimit = posix.getrlimit(OCLibrary.RLIMIT_AS);
         if (printSteps)
+=======
+    if (OIOUtils.isOsLinux()) {
+      try {
+        final RLimit rLimit = posix.getrlimit(ONative.RLIMIT_AS);
+        if (printSteps) {
+>>>>>>> develop
           OLogManager.instance()
               .infoNoDb(
                   this,
@@ -216,10 +198,17 @@ public class ONative {
                   rLimit.rlimCur(),
                   convertToMB(rLimit.rlimCur()),
                   convertToGB(rLimit.rlimCur()));
+<<<<<<< HEAD
 
         memoryLimit = updateMemoryLimit(memoryLimit, rLimit.rlimCur());
 
         if (printSteps)
+=======
+        }
+        memoryLimit = updateMemoryLimit(memoryLimit, rLimit.rlimCur());
+
+        if (printSteps) {
+>>>>>>> develop
           OLogManager.instance()
               .infoNoDb(
                   this,
@@ -227,7 +216,11 @@ public class ONative {
                   rLimit.rlimMax(),
                   convertToMB(rLimit.rlimMax()),
                   convertToGB(rLimit.rlimMax()));
+<<<<<<< HEAD
 
+=======
+        }
+>>>>>>> develop
         memoryLimit = updateMemoryLimit(memoryLimit, rLimit.rlimMax());
       } catch (final Exception e) {
         if (printSteps) {
@@ -237,20 +230,21 @@ public class ONative {
 
       final String memoryCGroupPath = findMemoryGCGroupPath();
       if (memoryCGroupPath != null) {
-        if (printSteps)
+        if (printSteps) {
           OLogManager.instance()
               .infoNoDb(this, "Path to 'memory' cgroup is '%s'", memoryCGroupPath);
-
+        }
         final String memoryCGroupRoot = findMemoryGCRoot();
 
-        if (printSteps)
+        if (printSteps) {
           OLogManager.instance()
               .infoNoDb(
                   this, "Mounting path for memory cgroup controller is '%s'", memoryCGroupRoot);
+        }
 
         File memoryCGroup = new File(memoryCGroupRoot, memoryCGroupPath);
         if (!memoryCGroup.exists()) {
-          if (printSteps)
+          if (printSteps) {
             OLogManager.instance()
                 .infoNoDb(
                     this,
@@ -258,7 +252,7 @@ public class ONative {
                         + "process is running in container, will try to read root '%s' memory cgroup data",
                     memoryCGroup,
                     memoryCGroupRoot);
-
+          }
           memoryCGroup = new File(memoryCGroupRoot);
           insideContainer = true;
         }
@@ -282,98 +276,14 @@ public class ONative {
                 convertToGB(memoryLimit));
       else OLogManager.instance().infoNoDb(this, "Memory limit for current process is not set");
     }
-
-    if (memoryLimit <= 0) return null;
-
+    if (memoryLimit <= 0) {
+      return null;
+    }
     return new MemoryLimitResult(memoryLimit, insideContainer);
   }
 
-  public int open(String path, int flags) throws LastErrorException {
-    final int fId = posix.open(path, flags, 0000400 | 0000200); // rw mask
-    if (fId == -1) {
-      checkLastError();
-    }
-
-    return fId;
-  }
-
-  public void fallocate(int fd, long offset, long len) throws LastErrorException {
-    final int res = C_LIBRARY.fallocate(fd, 0, offset, len);
-    if (res == -1) {
-      checkLastError();
-    }
-  }
-
-  public long read(int fd, ByteBuffer buffer, int count) throws LastErrorException {
-    final long bytesRead = posix.read(fd, buffer, count);
-    if (bytesRead == -1) {
-      checkLastError();
-    }
-
-    return bytesRead;
-  }
-
-  public long write(int fd, ByteBuffer buffer, int count) throws LastErrorException {
-    final long bytesWritten = posix.write(fd, buffer, count);
-    if (bytesWritten == -1) {
-      checkLastError();
-    }
-
-    return bytesWritten;
-  }
-
-  private void checkLastError() {
-    final int errno = posix.errno();
-    if (errno != 0) {
-      throw new LastErrorException(errno);
-    }
-  }
-
-  public void posix_memalign(PointerByReference memptr, NativeLong alignment, NativeLong size)
-      throws LastErrorException {
-    final int res = C_LIBRARY.posix_memalign(memptr, alignment, size);
-    if (res != 0) {
-      throw new LastErrorException(res);
-    }
-  }
-
   public int getpagesize() throws LastErrorException {
-    return C_LIBRARY.getpagesize();
-  }
-
-  public int pathconf(String path, int name) throws LastErrorException {
-    final int limit = C_LIBRARY.pathconf(path, name);
-    if (limit == -1) {
-      checkLastError();
-    }
-    return limit;
-  }
-
-  public void fsync(int fd) throws IOException {
-    try {
-      final int res = posix.fsync(fd);
-      if (res == -1) {
-        checkLastError();
-      }
-    } catch (LastErrorException e) {
-      throw new IOException("Can not fsync file", e);
-    }
-  }
-
-  public long lseek(int fd, long offset, int whence) throws LastErrorException {
-    final long fileOffset = posix.lseekLong(fd, offset, whence);
-    if (fileOffset == -1) {
-      checkLastError();
-    }
-
-    return fileOffset;
-  }
-
-  public void close(int fd) throws LastErrorException {
-    final int res = posix.close(fd);
-    if (res == -1) {
-      checkLastError();
-    }
+    return (int) posix.sysconf(Sysconf._SC_PAGE_SIZE);
   }
 
   private long updateMemoryLimit(long memoryLimit, final long newMemoryLimit) {
@@ -673,6 +583,16 @@ public class ONative {
     MemoryLimitResult(final long memoryLimit, final boolean insideContainer) {
       this.memoryLimit = memoryLimit;
       this.insideContainer = insideContainer;
+    }
+  }
+
+  public long blockSize(String path) {
+    // TODO:When upgrading to java 11 use FileStore.getBlockSize()
+    try (RandomAccessFile file = new RandomAccessFile(path, "r")) {
+      return posix.fstat(file.getFD()).blockSize();
+    } catch (Exception e) {
+      OLogManager.instance().warn(this, "Error detecting block size ignoring", e);
+      return 4096;
     }
   }
 }

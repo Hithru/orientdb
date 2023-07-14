@@ -26,8 +26,6 @@ import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.common.function.TxConsumer;
 import com.orientechnologies.common.function.TxFunction;
 import com.orientechnologies.common.log.OLogManager;
-import com.orientechnologies.orient.core.OOrientListenerAbstract;
-import com.orientechnologies.orient.core.Orient;
 import com.orientechnologies.orient.core.config.OGlobalConfiguration;
 import com.orientechnologies.orient.core.exception.ODatabaseException;
 import com.orientechnologies.orient.core.exception.OStorageException;
@@ -48,6 +46,7 @@ import java.util.Objects;
  * @since 12/3/13
  */
 public class OAtomicOperationsManager {
+<<<<<<< HEAD
 
   private static volatile ThreadLocal<OAtomicOperation> currentOperation = new ThreadLocal<>();
 
@@ -68,6 +67,9 @@ public class OAtomicOperationsManager {
               }
             });
   }
+=======
+  private final ThreadLocal<OAtomicOperation> currentOperation = new ThreadLocal<>();
+>>>>>>> develop
 
   private final OAbstractPaginatedStorage storage;
   private final OWriteAheadLog writeAheadLog;
@@ -80,17 +82,32 @@ public class OAtomicOperationsManager {
   private final Object segmentLock = new Object();
   private final AtomicOperationIdGen idGen;
 
+<<<<<<< HEAD
+=======
+  private final int operationsCacheLimit;
+
+>>>>>>> develop
   private final OperationsFreezer atomicOperationsFreezer = new OperationsFreezer();
   private final OperationsFreezer componentOperationsFreezer = new OperationsFreezer();
   private final AtomicOperationsTable atomicOperationsTable;
 
   public OAtomicOperationsManager(
+<<<<<<< HEAD
       OAbstractPaginatedStorage storage, AtomicOperationsTable atomicOperationsTable) {
+=======
+      OAbstractPaginatedStorage storage,
+      int operationsCacheLimit,
+      AtomicOperationsTable atomicOperationsTable) {
+>>>>>>> develop
     this.storage = storage;
     this.writeAheadLog = storage.getWALInstance();
     this.readCache = storage.getReadCache();
     this.writeCache = storage.getWriteCache();
 
+<<<<<<< HEAD
+=======
+    this.operationsCacheLimit = operationsCacheLimit;
+>>>>>>> develop
     this.idGen = storage.getIdGen();
     this.atomicOperationsTable = atomicOperationsTable;
   }
@@ -296,7 +313,7 @@ public class OAtomicOperationsManager {
     return true;
   }
 
-  public static void alarmClearOfAtomicOperation() {
+  public void alarmClearOfAtomicOperation() {
     final OAtomicOperation current = currentOperation.get();
 
     if (current != null) {
@@ -312,7 +329,7 @@ public class OAtomicOperationsManager {
     atomicOperationsFreezer.releaseOperations(id);
   }
 
-  public static OAtomicOperation getCurrentOperation() {
+  public final OAtomicOperation getCurrentOperation() {
     return currentOperation.get();
   }
 
@@ -351,14 +368,16 @@ public class OAtomicOperationsManager {
       } finally {
         final Iterator<String> lockedObjectIterator = operation.lockedObjects().iterator();
 
-        while (lockedObjectIterator.hasNext()) {
-          final String lockedObject = lockedObjectIterator.next();
-          lockedObjectIterator.remove();
+        try {
+          while (lockedObjectIterator.hasNext()) {
+            final String lockedObject = lockedObjectIterator.next();
+            lockedObjectIterator.remove();
 
-          lockManager.releaseLock(this, lockedObject, OOneEntryPerKeyLockManager.LOCK.EXCLUSIVE);
+            lockManager.releaseLock(this, lockedObject, OOneEntryPerKeyLockManager.LOCK.EXCLUSIVE);
+          }
+        } finally {
+          currentOperation.set(null);
         }
-
-        currentOperation.set(null);
       }
 
     } finally {

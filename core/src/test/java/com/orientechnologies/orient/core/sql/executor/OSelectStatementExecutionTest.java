@@ -21,7 +21,10 @@ import com.orientechnologies.orient.core.metadata.schema.OViewConfig;
 import com.orientechnologies.orient.core.record.OElement;
 import com.orientechnologies.orient.core.record.OVertex;
 import com.orientechnologies.orient.core.record.impl.ODocument;
+<<<<<<< HEAD
 import com.orientechnologies.orient.core.sql.OCommandSQL;
+=======
+>>>>>>> develop
 import com.orientechnologies.orient.core.sql.OSQLEngine;
 import com.orientechnologies.orient.core.sql.functions.OSQLFunction;
 import java.lang.reflect.Array;
@@ -33,6 +36,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -45,7 +50,6 @@ public class OSelectStatementExecutionTest {
 
   @BeforeClass
   public static void beforeClass() {
-
     db = new ODatabaseDocumentTx("memory:OSelectStatementExecutionTest");
     db.create();
   }
@@ -66,6 +70,32 @@ public class OSelectStatementExecutionTest {
     Assert.assertEquals(5, item.<Object>getProperty("2 + 3"));
     printExecutionPlan(result);
 
+    result.close();
+  }
+
+  @Test
+  public void testGroupByCount() {
+    db.getMetadata().getSchema().createClass("InputTx");
+
+    for (int i = 0; i < 100; i++) {
+      final String hash = UUID.randomUUID().toString();
+      db.command("insert into InputTx set address = '" + hash + "'");
+
+      // CREATE RANDOM NUMBER OF COPIES final int random = new Random().nextInt(10);
+      final int random = new Random().nextInt(10);
+      for (int j = 0; j < random; j++) {
+        db.command("insert into InputTx set address = '" + hash + "'");
+      }
+    }
+
+    final OResultSet result =
+        db.query(
+            "select address, count(*) as occurrencies from InputTx where address is not null group by address limit 10");
+    while (result.hasNext()) {
+      final OResult row = result.next();
+      Assert.assertNotNull(row.getProperty("address")); // <== FALSE!
+      Assert.assertNotNull(row.getProperty("occurrencies"));
+    }
     result.close();
   }
 
@@ -316,7 +346,6 @@ public class OSelectStatementExecutionTest {
     }
     long begin = System.nanoTime();
     OResultSet result = db.query("select from " + className + " order by surname asc limit 100");
-    //    System.out.println("elapsed: " + (System.nanoTime() - begin));
     printExecutionPlan(result);
 
     for (int i = 0; i < 100; i++) {
@@ -341,7 +370,6 @@ public class OSelectStatementExecutionTest {
     }
     long begin = System.nanoTime();
     OResultSet result = db.query("select name from " + className + " order by surname asc");
-    //    System.out.println("elapsed: " + (System.nanoTime() - begin));
     printExecutionPlan(result);
 
     String lastName = null;
@@ -373,7 +401,6 @@ public class OSelectStatementExecutionTest {
     long begin = System.nanoTime();
     OResultSet result =
         db.query("select name from " + className + " order by name asc, surname asc");
-    //    System.out.println("elapsed: " + (System.nanoTime() - begin));
     printExecutionPlan(result);
 
     String lastName = null;
@@ -2016,6 +2043,42 @@ public class OSelectStatementExecutionTest {
   }
 
   @Test
+  public void testLetVariableSubqueryProjectionFetchFromClassTarget_9695() {
+    String className = "testLetVariableSubqueryProjectionFetchFromClassTarget_9695";
+    db.getMetadata().getSchema().createClass(className);
+
+    for (int i = 0; i < 10; i++) {
+      ODocument doc = db.newInstance(className);
+      doc.setProperty("i", i);
+      doc.setProperty("iSeq", new int[] {i, 2 * i, 4 * i});
+      doc.save();
+    }
+    OResultSet result =
+        db.query(
+            "select $current.*, $b.*, $b.@class from (select 1 as sqa, @class as sqc from "
+                + className
+                + " LIMIT 2)\n"
+                + "let $b = $current");
+    printExecutionPlan(result);
+    Assert.assertTrue(result.hasNext());
+    OResult item = result.next();
+    Assert.assertNotNull(item);
+    Object currentProperty = item.getProperty("$current.*");
+    Assert.assertTrue(currentProperty instanceof OResult);
+    final OResult currentResult = (OResult) currentProperty;
+    Assert.assertTrue(currentResult.isProjection());
+    Assert.assertEquals(Integer.valueOf(1), currentResult.<Integer>getProperty("sqa"));
+    Assert.assertEquals(className, currentResult.getProperty("sqc"));
+    Object bProperty = item.getProperty("$b.*");
+    Assert.assertTrue(bProperty instanceof OResult);
+    final OResult bResult = (OResult) bProperty;
+    Assert.assertTrue(bResult.isProjection());
+    Assert.assertEquals(Integer.valueOf(1), bResult.<Integer>getProperty("sqa"));
+    Assert.assertEquals(className, bResult.getProperty("sqc"));
+    result.close();
+  }
+
+  @Test
   public void testUnwind1() {
     String className = "testUnwind1";
     db.getMetadata().getSchema().createClass(className);
@@ -2355,13 +2418,12 @@ public class OSelectStatementExecutionTest {
     clazz.createProperty("name", OType.STRING);
     clazz.createProperty("surname", OType.STRING);
     db.command(
-            new OCommandSQL(
-                "create index "
-                    + className
-                    + ".name_surname on "
-                    + className
-                    + " (name, surname) NOTUNIQUE"))
-        .execute();
+            "create index "
+                + className
+                + ".name_surname on "
+                + className
+                + " (name, surname) NOTUNIQUE")
+        .close();
 
     for (int i = 0; i < 10; i++) {
       ODocument doc = db.newInstance(className);
@@ -2402,13 +2464,12 @@ public class OSelectStatementExecutionTest {
     clazz.createProperty("name", OType.STRING);
     clazz.createProperty("surname", OType.STRING);
     db.command(
-            new OCommandSQL(
-                "create index "
-                    + className
-                    + ".name_surname on "
-                    + className
-                    + " (name, surname) NOTUNIQUE"))
-        .execute();
+            "create index "
+                + className
+                + ".name_surname on "
+                + className
+                + " (name, surname) NOTUNIQUE")
+        .close();
 
     for (int i = 0; i < 10; i++) {
       ODocument doc = db.newInstance(className);
@@ -2449,13 +2510,12 @@ public class OSelectStatementExecutionTest {
     clazz.createProperty("name", OType.STRING);
     clazz.createProperty("surname", OType.STRING);
     db.command(
-            new OCommandSQL(
-                "create index "
-                    + className
-                    + ".name_surname on "
-                    + className
-                    + " (name, surname) NOTUNIQUE"))
-        .execute();
+            "create index "
+                + className
+                + ".name_surname on "
+                + className
+                + " (name, surname) NOTUNIQUE")
+        .close();
 
     for (int i = 0; i < 10; i++) {
       ODocument doc = db.newInstance(className);
@@ -2497,13 +2557,12 @@ public class OSelectStatementExecutionTest {
     clazz.createProperty("name", OType.STRING);
     clazz.createProperty("surname", OType.STRING);
     db.command(
-            new OCommandSQL(
-                "create index "
-                    + className
-                    + ".name_surname on "
-                    + className
-                    + " (name, surname) NOTUNIQUE"))
-        .execute();
+            "create index "
+                + className
+                + ".name_surname on "
+                + className
+                + " (name, surname) NOTUNIQUE")
+        .close();
 
     for (int i = 0; i < 10; i++) {
       ODocument doc = db.newInstance(className);
@@ -2546,13 +2605,12 @@ public class OSelectStatementExecutionTest {
     clazz.createProperty("surname", OType.STRING);
     clazz.createProperty("address", OType.STRING);
     db.command(
-            new OCommandSQL(
-                "create index "
-                    + className
-                    + ".name_surname on "
-                    + className
-                    + " (name, surname, address) NOTUNIQUE"))
-        .execute();
+            "create index "
+                + className
+                + ".name_surname on "
+                + className
+                + " (name, surname, address) NOTUNIQUE")
+        .close();
 
     for (int i = 0; i < 10; i++) {
       ODocument doc = db.newInstance(className);
@@ -2593,13 +2651,12 @@ public class OSelectStatementExecutionTest {
     clazz.createProperty("surname", OType.STRING);
     clazz.createProperty("address", OType.STRING);
     db.command(
-            new OCommandSQL(
-                "create index "
-                    + className
-                    + ".name_surname on "
-                    + className
-                    + " (name, surname, address) NOTUNIQUE"))
-        .execute();
+            "create index "
+                + className
+                + ".name_surname on "
+                + className
+                + " (name, surname, address) NOTUNIQUE")
+        .close();
 
     for (int i = 0; i < 10; i++) {
       ODocument doc = db.newInstance(className);
@@ -2640,13 +2697,12 @@ public class OSelectStatementExecutionTest {
     clazz.createProperty("surname", OType.STRING);
     clazz.createProperty("address", OType.STRING);
     db.command(
-            new OCommandSQL(
-                "create index "
-                    + className
-                    + ".name_surname on "
-                    + className
-                    + " (name, surname, address) NOTUNIQUE"))
-        .execute();
+            "create index "
+                + className
+                + ".name_surname on "
+                + className
+                + " (name, surname, address) NOTUNIQUE")
+        .close();
 
     for (int i = 0; i < 10; i++) {
       ODocument doc = db.newInstance(className);
@@ -2684,13 +2740,12 @@ public class OSelectStatementExecutionTest {
     clazz.createProperty("name", OType.STRING);
     clazz.createProperty("surname", OType.STRING);
     db.command(
-            new OCommandSQL(
-                "create index "
-                    + className
-                    + ".name_surname on "
-                    + className
-                    + " (name, surname) NOTUNIQUE"))
-        .execute();
+            "create index "
+                + className
+                + ".name_surname on "
+                + className
+                + " (name, surname) NOTUNIQUE")
+        .close();
 
     for (int i = 0; i < 10; i++) {
       ODocument doc = db.newInstance(className);
@@ -2729,13 +2784,12 @@ public class OSelectStatementExecutionTest {
     clazz.createProperty("name", OType.STRING);
     clazz.createProperty("surname", OType.STRING);
     db.command(
-            new OCommandSQL(
-                "create index "
-                    + className
-                    + ".name_surname on "
-                    + className
-                    + " (name, surname) NOTUNIQUE"))
-        .execute();
+            "create index "
+                + className
+                + ".name_surname on "
+                + className
+                + " (name, surname) NOTUNIQUE")
+        .close();
 
     for (int i = 0; i < 10; i++) {
       ODocument doc = db.newInstance(className);
@@ -2772,13 +2826,12 @@ public class OSelectStatementExecutionTest {
     clazz.createProperty("name", OType.STRING);
     clazz.createProperty("surname", OType.STRING);
     db.command(
-            new OCommandSQL(
-                "create index "
-                    + className
-                    + ".name_surname on "
-                    + className
-                    + " (name, surname) NOTUNIQUE"))
-        .execute();
+            "create index "
+                + className
+                + ".name_surname on "
+                + className
+                + " (name, surname) NOTUNIQUE")
+        .close();
 
     for (int i = 0; i < 10; i++) {
       ODocument doc = db.newInstance(className);
@@ -2815,13 +2868,12 @@ public class OSelectStatementExecutionTest {
     clazz.createProperty("name", OType.STRING);
     clazz.createProperty("surname", OType.STRING);
     db.command(
-            new OCommandSQL(
-                "create index "
-                    + className
-                    + ".name_surname on "
-                    + className
-                    + " (name, surname) NOTUNIQUE"))
-        .execute();
+            "create index "
+                + className
+                + ".name_surname on "
+                + className
+                + " (name, surname) NOTUNIQUE")
+        .close();
 
     for (int i = 0; i < 10; i++) {
       ODocument doc = db.newInstance(className);
@@ -2858,13 +2910,12 @@ public class OSelectStatementExecutionTest {
     clazz.createProperty("name", OType.STRING);
     clazz.createProperty("surname", OType.STRING);
     db.command(
-            new OCommandSQL(
-                "create index "
-                    + className
-                    + ".name_surname on "
-                    + className
-                    + " (name, surname) NOTUNIQUE"))
-        .execute();
+            "create index "
+                + className
+                + ".name_surname on "
+                + className
+                + " (name, surname) NOTUNIQUE")
+        .close();
 
     for (int i = 0; i < 10; i++) {
       ODocument doc = db.newInstance(className);
@@ -4242,7 +4293,11 @@ public class OSelectStatementExecutionTest {
 
     for (int i = 0; i < 5; i++) {
       Assert.assertTrue(result.hasNext());
+<<<<<<< HEAD
       System.out.println(result.next());
+=======
+      result.next();
+>>>>>>> develop
     }
     Assert.assertFalse(result.hasNext());
     result.close();
@@ -4265,7 +4320,11 @@ public class OSelectStatementExecutionTest {
 
     for (int i = 0; i < 6; i++) {
       Assert.assertTrue(result.hasNext());
+<<<<<<< HEAD
       System.out.println(result.next());
+=======
+      result.next();
+>>>>>>> develop
     }
     Assert.assertFalse(result.hasNext());
     result.close();
@@ -4289,7 +4348,11 @@ public class OSelectStatementExecutionTest {
 
     for (int i = 0; i < 5; i++) {
       Assert.assertTrue(result.hasNext());
+<<<<<<< HEAD
       System.out.println(result.next());
+=======
+      result.next();
+>>>>>>> develop
     }
     Assert.assertFalse(result.hasNext());
     result.close();
@@ -4430,4 +4493,78 @@ public class OSelectStatementExecutionTest {
       Assert.assertFalse(rs.hasNext());
     }
   }
+<<<<<<< HEAD
+=======
+
+  @Test
+  public void testExclude() {
+    String className = "TestExclude";
+    db.getMetadata().getSchema().createClass(className);
+    ODocument doc = db.newInstance(className);
+    doc.setProperty("name", "foo");
+    doc.setProperty("surname", "bar");
+    doc.save();
+
+    OResultSet result = db.query("select *, !surname from " + className);
+    Assert.assertTrue(result.hasNext());
+    OResult item = result.next();
+    Assert.assertNotNull(item);
+    Assert.assertEquals("foo", item.getProperty("name"));
+    Assert.assertNull(item.getProperty("surname"));
+
+    printExecutionPlan(result);
+    result.close();
+  }
+
+  @Test
+  public void testOrderByLet() {
+    String className = "testOrderByLet";
+    db.getMetadata().getSchema().createClass(className);
+    ODocument doc = db.newInstance(className);
+    doc.setProperty("name", "abbb");
+    doc.save();
+
+    doc = db.newInstance(className);
+    doc.setProperty("name", "baaa");
+    doc.save();
+
+    try (OResultSet result =
+        db.query(
+            "select from "
+                + className
+                + " LET $order = name.substring(1) ORDER BY $order ASC LIMIT 1")) {
+      Assert.assertTrue(result.hasNext());
+      OResult item = result.next();
+      Assert.assertNotNull(item);
+      Assert.assertEquals("baaa", item.getProperty("name"));
+    }
+    try (OResultSet result =
+        db.query(
+            "select from "
+                + className
+                + " LET $order = name.substring(1) ORDER BY $order DESC LIMIT 1")) {
+      Assert.assertTrue(result.hasNext());
+      OResult item = result.next();
+      Assert.assertNotNull(item);
+      Assert.assertEquals("abbb", item.getProperty("name"));
+    }
+  }
+
+  @Test
+  public void testMapToJson() {
+    String className = "testMapToJson";
+    db.command("create class " + className).close();
+    db.command("create property " + className + ".themap embeddedmap").close();
+    db.command(
+            "insert into "
+                + className
+                + " set name = 'foo', themap = {\"foo bar\":\"baz\", \"riz\":\"faz\"}")
+        .close();
+    try (OResultSet rs = db.query("select themap.tojson() as x from " + className)) {
+      Assert.assertTrue(rs.hasNext());
+      OResult item = rs.next();
+      Assert.assertTrue(((String) item.getProperty("x")).contains("foo bar"));
+    }
+  }
+>>>>>>> develop
 }

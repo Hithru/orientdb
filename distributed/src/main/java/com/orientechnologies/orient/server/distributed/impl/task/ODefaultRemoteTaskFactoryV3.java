@@ -38,12 +38,6 @@ public class ODefaultRemoteTaskFactoryV3 implements ORemoteTaskFactory {
   @Override
   public ORemoteTask createTask(final int code) {
     switch (code) {
-      case OSQLCommandTask.FACTORYID: // 5
-        return new OSQLCommandTask();
-
-      case OScriptTask.FACTORYID: // 6
-        return new OScriptTask();
-
       case OStopServerTask.FACTORYID: // 9
         return new OStopServerTask();
 
@@ -67,9 +61,6 @@ public class ODefaultRemoteTaskFactoryV3 implements ORemoteTaskFactory {
 
       case OUpdateDatabaseConfigurationTask.FACTORYID: // 24
         return new OUpdateDatabaseConfigurationTask();
-
-      case OUpdateDatabaseStatusTask.FACTORYID: // 25
-        return new OUpdateDatabaseStatusTask();
 
       case ORequestDatabaseConfigurationTask.FACTORYID: // 27
         return new ORequestDatabaseConfigurationTask();
@@ -109,6 +100,12 @@ public class ODefaultRemoteTaskFactoryV3 implements ORemoteTaskFactory {
 
       case OUpdateDatabaseSequenceStatusTask.FACTORYID: // 58
         return new OUpdateDatabaseSequenceStatusTask();
+
+      case OSQLCommandTaskFirstPhase.FACTORYID: // 59
+        return new OSQLCommandTaskFirstPhase();
+
+      case OSQLCommandTaskSecondPhase.FACTORYID: // 60
+        return new OSQLCommandTaskSecondPhase();
     }
 
     throw new IllegalArgumentException("Task with code " + code + " is not supported");

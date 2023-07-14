@@ -22,10 +22,9 @@ package com.orientechnologies.orient.server.distributed.impl;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.orient.core.config.OGlobalConfiguration;
+import com.orientechnologies.orient.core.db.OSystemDatabase;
 import com.orientechnologies.orient.core.record.impl.ODocument;
-import com.orientechnologies.orient.core.storage.impl.local.paginated.wal.OLogSequenceNumber;
 import com.orientechnologies.orient.core.tx.OTransactionSequenceStatus;
-import com.orientechnologies.orient.server.OSystemDatabase;
 import com.orientechnologies.orient.server.distributed.ODistributedConfiguration;
 import com.orientechnologies.orient.server.distributed.ODistributedDatabase;
 import com.orientechnologies.orient.server.distributed.ODistributedException;
@@ -37,17 +36,14 @@ import com.orientechnologies.orient.server.distributed.OModifiableDistributedCon
 import com.orientechnologies.orient.server.distributed.impl.task.OGossipTask;
 import com.orientechnologies.orient.server.distributed.impl.task.ORequestDatabaseConfigurationTask;
 import com.orientechnologies.orient.server.distributed.impl.task.OUpdateDatabaseSequenceStatusTask;
-import com.orientechnologies.orient.server.distributed.impl.task.OUpdateDatabaseStatusTask;
 import com.orientechnologies.orient.server.distributed.task.ODistributedOperationException;
 import com.orientechnologies.orient.server.distributed.task.ORemoteTask;
-import com.orientechnologies.orient.server.hazelcast.OHazelcastPlugin;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Timer task that checks periodically the cluster health status.
@@ -58,7 +54,6 @@ public class OClusterHealthChecker implements Runnable {
   private final ODistributedServerManager manager;
   private final long healthCheckerEveryMs;
   private long lastExecution = 0;
-  private Map<String, OLogSequenceNumber> sentLsn = new ConcurrentHashMap<>();
 
   public OClusterHealthChecker(
       final ODistributedServerManager manager, final long healthCheckerEveryMs) {
@@ -78,7 +73,6 @@ public class OClusterHealthChecker implements Runnable {
         checkServerStatus();
         checkServerInStall();
         checkServerList();
-        notifyCommittedLsn();
         notifyDatabaseSequenceStatus();
 
       } catch (HazelcastInstanceNotActiveException e) {
@@ -148,10 +142,10 @@ public class OClusterHealthChecker implements Runnable {
 
               if (cfg.getVersion() < mostUpdatedServerVersion) {
                 // OVERWRITE DB VERSION
-                ((ODistributedStorage) manager.getStorage(databaseName))
-                    .setDistributedConfiguration(
-                        new OModifiableDistributedConfiguration(
-                            (ODocument) responses.get(mostUpdatedServer)));
+                ODistributedDatabase local = manager.getDatabase(databaseName);
+                local.setDistributedConfiguration(
+                    new OModifiableDistributedConfiguration(
+                        (ODocument) responses.get(mostUpdatedServer)));
               }
             }
 
@@ -176,7 +170,7 @@ public class OClusterHealthChecker implements Runnable {
             "Server '%s' was not found in the list of registered servers. Reloading configuration from cluster...",
             server);
 
-        ((OHazelcastPlugin) manager).reloadRegisteredNodes(null);
+        ((ODistributedPlugin) manager).reloadRegisteredNodes();
         id = manager.getNodeIdByName(server);
         if (id == -1) {
           if (server.equals(manager.getLocalNodeName())) {
@@ -200,7 +194,7 @@ public class OClusterHealthChecker implements Runnable {
                 server);
 
             try {
-              ((OHazelcastPlugin) manager).restartNode(server);
+              ((ODistributedPlugin) manager).restartNode(server);
             } catch (IOException e) {
               ODistributedServerLog.warn(
                   this,
@@ -247,7 +241,7 @@ public class OClusterHealthChecker implements Runnable {
             "No server are ONLINE for database '%s'. Considering local copy of database as the good one. Setting status=ONLINE...",
             dbName);
 
-        manager.getMessageService().getDatabase(dbName).setOnline();
+        manager.getDatabase(dbName).setOnline();
 
       } else {
         ODistributedServerLog.info(
@@ -262,8 +256,9 @@ public class OClusterHealthChecker implements Runnable {
           // ONLY ONLINE NODE CAN TRY TO RECOVER FOR SINGLE DB STATUS
           return;
 
-        final ODistributedConfiguration dCfg =
-            ((ODistributedStorage) manager.getStorage(dbName)).getDistributedConfiguration();
+        ODistributedDatabase ddImpl = manager.getDatabase(dbName);
+
+        final ODistributedConfiguration dCfg = ddImpl.getDistributedConfiguration();
         if (dCfg != null) {
           final boolean result =
               manager.installDatabase(
@@ -326,7 +321,7 @@ public class OClusterHealthChecker implements Runnable {
                 dbName,
                 null,
                 servers,
-                new OGossipTask(manager.getLockManagerServer()),
+                new OGossipTask(),
                 manager.getNextMessageIdCounter(),
                 ODistributedRequest.EXECUTION_MODE.RESPONSE,
                 null);
@@ -334,23 +329,6 @@ public class OClusterHealthChecker implements Runnable {
         final Object payload = response != null ? response.getPayload() : null;
         if (payload instanceof Map) {
           final Map<String, Object> responses = (Map<String, Object>) payload;
-
-          final String lockManagerServer = manager.getLockManagerServer();
-          if (lockManagerServer != null)
-            for (Map.Entry<String, Object> r : responses.entrySet()) {
-              if (!lockManagerServer.equals(String.valueOf(r.getValue()))) {
-                ODistributedServerLog.warn(
-                    this,
-                    manager.getLocalNodeName(),
-                    null,
-                    ODistributedServerLog.DIRECTION.NONE,
-                    "Server '%s' is using server '%s' as lock, while current server is using '%s'",
-                    r.getKey(),
-                    r.getValue(),
-                    lockManagerServer);
-              }
-            }
-
           servers.removeAll(responses.keySet());
         }
       } catch (ODistributedException e) {
@@ -379,6 +357,7 @@ public class OClusterHealthChecker implements Runnable {
     }
   }
 
+<<<<<<< HEAD
   private void notifyCommittedLsn() {
     if (manager.getNodeStatus() != ODistributedServerManager.NODE_STATUS.ONLINE)
       // ONLY ONLINE NODE CAN TRY TO RECOVER FOR SINGLE DB STATUS
@@ -446,6 +425,8 @@ public class OClusterHealthChecker implements Runnable {
     }
   }
 
+=======
+>>>>>>> develop
   private void notifyDatabaseSequenceStatus() {
     if (manager.getNodeStatus() != ODistributedServerManager.NODE_STATUS.ONLINE)
       // ONLY ONLINE NODE CAN TRY TO RECOVER FOR SINGLE DB STATUS
@@ -469,7 +450,7 @@ public class OClusterHealthChecker implements Runnable {
       if (servers.isEmpty()) continue;
 
       try {
-        ODistributedDatabase sharedDb = manager.getMessageService().getDatabase(dbName);
+        ODistributedDatabase sharedDb = manager.getDatabase(dbName);
         Optional<OTransactionSequenceStatus> status = sharedDb.status();
         if (status.isPresent()) {
           ORemoteTask task = new OUpdateDatabaseSequenceStatusTask(dbName, status.get());

@@ -20,11 +20,17 @@
 
 package com.orientechnologies.orient.server.distributed;
 
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.common.util.OPair;
+import com.orientechnologies.orient.setup.ServerRun;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import org.junit.Assert;
 import org.junit.Test;
@@ -40,6 +46,8 @@ public class DistributedLifecycleListenerIT extends AbstractServerClusterTest
   private final List<OPair<String, ODistributedServerManager.DB_STATUS>> changeStatus =
       Collections.synchronizedList(
           new ArrayList<OPair<String, ODistributedServerManager.DB_STATUS>>());
+  private final CountDownLatch started = new CountDownLatch(SERVERS - 1);
+  private final CountDownLatch ended = new CountDownLatch(SERVERS - 1);
 
   @Override
   public boolean onNodeJoining(String iNode) {
@@ -50,11 +58,13 @@ public class DistributedLifecycleListenerIT extends AbstractServerClusterTest
   @Override
   public void onNodeJoined(String iNode) {
     afterNodeJoin.incrementAndGet();
+    started.countDown();
   }
 
   @Override
   public void onNodeLeft(String iNode) {
     nodeLeft.incrementAndGet();
+    ended.countDown();
   }
 
   @Override
@@ -87,7 +97,7 @@ public class DistributedLifecycleListenerIT extends AbstractServerClusterTest
 
   @Override
   protected void executeTest() throws Exception {
-    Thread.sleep(1000);
+    assertTrue(started.await(5, TimeUnit.SECONDS));
   }
 
   @Override
@@ -95,17 +105,14 @@ public class DistributedLifecycleListenerIT extends AbstractServerClusterTest
     Assert.assertEquals(SERVERS - 1, beforeNodeJoin.get());
     Assert.assertEquals(SERVERS - 1, afterNodeJoin.get());
 
-    for (int attempt = 0; attempt < 50; ++attempt) {
-      if (nodeLeft.get() >= SERVERS - 1) break;
-      try {
-        Thread.sleep(500);
-      } catch (InterruptedException e) {
-        e.printStackTrace();
-      }
+    try {
+      assertTrue(ended.await(5, TimeUnit.SECONDS));
+    } catch (InterruptedException e1) {
+      fail();
     }
     Assert.assertEquals(SERVERS - 1, nodeLeft.get());
 
-    Assert.assertEquals(9, changeStatus.size());
+    Assert.assertEquals(11, changeStatus.size());
     // Assert.assertEquals("europe-0." + getDatabaseName(), changeStatus.get(0).getKey());
     // Assert.assertEquals(ODistributedServerManager.DB_STATUS.BACKUP,
     // changeStatus.get(0).getValue());

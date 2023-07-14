@@ -22,7 +22,7 @@ import com.orientechnologies.orient.core.db.ODatabaseRecordThreadLocal;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.exception.OCommandExecutionException;
 import com.orientechnologies.orient.core.index.OIndex;
-import com.orientechnologies.orient.core.metadata.OMetadata;
+import com.orientechnologies.orient.core.metadata.OMetadataInternal;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.executor.OResult;
 import com.orientechnologies.orient.core.sql.executor.OResultInternal;
@@ -33,6 +33,8 @@ import com.orientechnologies.orient.core.sql.parser.OFromClause;
 import com.orientechnologies.orient.core.sql.parser.OFromItem;
 import com.orientechnologies.orient.core.sql.parser.OIdentifier;
 import com.orientechnologies.orient.core.sql.parser.OJson;
+import com.orientechnologies.orient.core.sql.parser.OLeOperator;
+import com.orientechnologies.orient.core.sql.parser.OLtOperator;
 import com.orientechnologies.spatial.index.OLuceneSpatialIndex;
 import com.orientechnologies.spatial.strategy.SpatialQueryBuilderAbstract;
 import java.util.Arrays;
@@ -53,7 +55,7 @@ public abstract class OSpatialFunctionAbstractIndexable extends OSpatialFunction
   }
 
   protected OLuceneSpatialIndex searchForIndex(OFromClause target, OExpression[] args) {
-    OMetadata dbMetadata = getDb().getMetadata();
+    OMetadataInternal dbMetadata = getDb().getMetadata();
 
     OFromItem item = target.getItem();
     OIdentifier identifier = item.getIdentifier();
@@ -61,7 +63,7 @@ public abstract class OSpatialFunctionAbstractIndexable extends OSpatialFunction
 
     String className = identifier.getStringValue();
     List<OLuceneSpatialIndex> indices =
-        dbMetadata.getSchema().getClass(className).getIndexes().stream()
+        dbMetadata.getImmutableSchemaSnapshot().getClass(className).getIndexes().stream()
             .filter(idx -> idx instanceof OLuceneSpatialIndex)
             .map(idx -> (OLuceneSpatialIndex) idx)
             .filter(idx -> intersect(idx.getDefinition().getFields(), Arrays.asList(fieldName)))
@@ -154,7 +156,7 @@ public abstract class OSpatialFunctionAbstractIndexable extends OSpatialFunction
       OCommandContext ctx,
       OExpression... args) {
 
-    return allowsIndexedExecution(target, operator, rightValue, ctx, args);
+    return true;
   }
 
   @Override
@@ -165,6 +167,9 @@ public abstract class OSpatialFunctionAbstractIndexable extends OSpatialFunction
       OCommandContext ctx,
       OExpression... args) {
 
+    if (!isValidBinaryOperator(operator)) {
+      return false;
+    }
     OLuceneSpatialIndex index = searchForIndex(target, args);
 
     return index != null;
@@ -177,7 +182,7 @@ public abstract class OSpatialFunctionAbstractIndexable extends OSpatialFunction
       Object rightValue,
       OCommandContext ctx,
       OExpression... args) {
-    return false;
+    return true;
   }
 
   @Override
@@ -202,5 +207,9 @@ public abstract class OSpatialFunctionAbstractIndexable extends OSpatialFunction
     }
 
     return false;
+  }
+
+  protected boolean isValidBinaryOperator(OBinaryCompareOperator operator) {
+    return operator instanceof OLtOperator || operator instanceof OLeOperator;
   }
 }

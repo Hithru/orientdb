@@ -23,13 +23,14 @@ import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.common.exception.OSystemException;
 import com.orientechnologies.orient.client.binary.OBinaryRequestExecutor;
 import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
+import com.orientechnologies.orient.core.metadata.security.OSecurityUser;
 import com.orientechnologies.orient.core.metadata.security.OToken;
+import com.orientechnologies.orient.core.security.OParsedToken;
 import com.orientechnologies.orient.core.sql.executor.OExecutionPlan;
 import com.orientechnologies.orient.core.sql.executor.OInternalExecutionPlan;
 import com.orientechnologies.orient.core.sql.executor.OResultSet;
 import com.orientechnologies.orient.enterprise.channel.binary.OChannelBinary;
 import com.orientechnologies.orient.enterprise.channel.binary.OTokenSecurityException;
-import com.orientechnologies.orient.server.config.OServerUserConfiguration;
 import com.orientechnologies.orient.server.network.protocol.ONetworkProtocol;
 import com.orientechnologies.orient.server.network.protocol.ONetworkProtocolData;
 import com.orientechnologies.orient.server.network.protocol.binary.ONetworkProtocolBinary;
@@ -54,13 +55,13 @@ public class OClientConnection {
       Collections.newSetFromMap(new WeakHashMap<ONetworkProtocol, Boolean>());
   private volatile ONetworkProtocol protocol;
   private volatile ODatabaseDocumentInternal database;
-  private volatile OServerUserConfiguration serverUser;
+  private volatile OSecurityUser serverUser;
   private ONetworkProtocolData data = new ONetworkProtocolData();
   private OClientConnectionStats stats = new OClientConnectionStats();
   private Lock lock = new ReentrantLock();
   private Boolean tokenBased;
   private byte[] tokenBytes;
-  private OToken token;
+  private OParsedToken token;
   private boolean disconnectOnAfter;
   private OBinaryRequestExecutor executor;
 
@@ -178,14 +179,16 @@ public class OClientConnection {
         return;
       }
 
-      OToken token = null;
+      OParsedToken token = null;
       try {
-        if (tokenFromNetwork != null) token = handler.parseBinaryToken(tokenFromNetwork);
+        if (tokenFromNetwork != null) {
+          token = handler.parseOnlyBinary(tokenFromNetwork);
+        }
       } catch (Exception e) {
         throw OException.wrapException(new OSystemException("Error on token parse"), e);
       }
 
-      if (token == null || !token.getIsVerified()) {
+      if (token == null || !handler.validateBinaryToken(token)) {
         cleanSession();
         protocol.getServer().getClientConnectionManager().disconnect(this);
         throw new OTokenSecurityException(
@@ -233,16 +236,14 @@ public class OClientConnection {
 
   public void init(final OServer server) {
     if (database == null) {
-      setData(server.getTokenHandler().getProtocolDataFromToken(this, token));
+      setData(server.getTokenHandler().getProtocolDataFromToken(this, token.getToken()));
 
       if (data == null) throw new OTokenSecurityException("missing in token data");
 
-      final String db = token.getDatabase();
-      final String type = token.getDatabaseType();
+      final String db = token.getToken().getDatabase();
+      final String type = token.getToken().getDatabaseType();
       if (db != null && type != null) {
-        if (data.serverUser) {
-          setDatabase(server.openDatabase(db, token.getUserName(), null, data, true));
-        } else setDatabase(server.openDatabase(db, token));
+        setDatabase(server.openDatabase(db, token));
       }
     }
   }
@@ -260,11 +261,11 @@ public class OClientConnection {
   }
 
   public OToken getToken() {
-    return token;
-  }
-
-  public void setToken(OToken token) {
-    this.token = token;
+    if (token != null) {
+      return token.getToken();
+    } else {
+      return null;
+    }
   }
 
   public int getId() {
@@ -287,7 +288,11 @@ public class OClientConnection {
     if (database != null) {
       return true;
     } else if (token != null) {
+<<<<<<< HEAD
       return token.getDatabase() != null;
+=======
+      return token.getToken().getDatabase() != null;
+>>>>>>> develop
     } else {
       return false;
     }
@@ -297,7 +302,11 @@ public class OClientConnection {
     if (database != null) {
       return database.getName();
     } else if (token != null) {
+<<<<<<< HEAD
       return token.getDatabase();
+=======
+      return token.getToken().getDatabase();
+>>>>>>> develop
     } else {
       return null;
     }
@@ -307,11 +316,11 @@ public class OClientConnection {
     this.database = database;
   }
 
-  public OServerUserConfiguration getServerUser() {
+  public OSecurityUser getServerUser() {
     return serverUser;
   }
 
-  public void setServerUser(OServerUserConfiguration serverUser) {
+  public void setServerUser(OSecurityUser serverUser) {
     this.serverUser = serverUser;
   }
 
@@ -387,5 +396,11 @@ public class OClientConnection {
       Thread.currentThread().interrupt();
     }
     return false;
+  }
+
+  public void setToken(OParsedToken parsedToken, byte[] tokenBytes) {
+    this.token = parsedToken;
+    this.tokenBytes = tokenBytes;
+    this.tokenBased = true;
   }
 }

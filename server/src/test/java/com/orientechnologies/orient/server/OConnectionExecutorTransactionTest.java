@@ -22,7 +22,6 @@ import com.orientechnologies.orient.client.remote.message.ORollbackTransactionRe
 import com.orientechnologies.orient.client.remote.message.OUpdateRecordRequest;
 import com.orientechnologies.orient.client.remote.message.OUpdateRecordResponse;
 import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
-import com.orientechnologies.orient.core.db.ODatabaseType;
 import com.orientechnologies.orient.core.db.OrientDB;
 import com.orientechnologies.orient.core.db.OrientDBConfig;
 import com.orientechnologies.orient.core.db.record.ORecordElement;
@@ -34,6 +33,10 @@ import com.orientechnologies.orient.core.serialization.serializer.record.binary.
 import com.orientechnologies.orient.core.sql.executor.OResult;
 import com.orientechnologies.orient.core.sql.executor.OResultSet;
 import com.orientechnologies.orient.server.network.protocol.ONetworkProtocolData;
+import java.io.IOException;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -55,10 +58,16 @@ public class OConnectionExecutorTransactionTest {
   private ODatabaseDocumentInternal database;
 
   @Before
-  public void before() {
+  public void before() throws IOException {
     MockitoAnnotations.initMocks(this);
-    orientDb = new OrientDB("embedded:./", OrientDBConfig.defaultConfig());
-    orientDb.create(OConnectionExecutorTransactionTest.class.getSimpleName(), ODatabaseType.MEMORY);
+    Path path =
+        FileSystems.getDefault()
+            .getPath("./target/" + OConnectionExecutorTransactionTest.class.getSimpleName());
+    Files.createDirectories(path);
+    orientDb = new OrientDB("embedded:" + path.toString(), OrientDBConfig.defaultConfig());
+    orientDb.execute(
+        "create database ? memory users (admin identified by 'admin' role admin)",
+        OConnectionExecutorTransactionTest.class.getSimpleName());
     database =
         (ODatabaseDocumentInternal)
             orientDb.open(

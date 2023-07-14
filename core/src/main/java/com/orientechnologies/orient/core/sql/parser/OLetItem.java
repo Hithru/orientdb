@@ -32,6 +32,18 @@ public class OLetItem extends SimpleNode {
     }
   }
 
+  public void toGenericStatement(StringBuilder builder) {
+    varName.toGenericStatement(builder);
+    builder.append(" = ");
+    if (expression != null) {
+      expression.toGenericStatement(builder);
+    } else if (query != null) {
+      builder.append("(");
+      query.toGenericStatement(builder);
+      builder.append(")");
+    }
+  }
+
   public OLetItem copy() {
     OLetItem result = new OLetItem(-1);
     result.varName = varName.copy();
@@ -138,10 +150,6 @@ public class OLetItem extends SimpleNode {
     if (expression != null) {
       return expression.isCacheable();
     }
-    if (query != null) {
-      return expression.isCacheable();
-    }
-
     return true;
   }
 }

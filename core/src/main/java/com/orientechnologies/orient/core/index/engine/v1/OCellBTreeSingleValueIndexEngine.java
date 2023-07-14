@@ -15,6 +15,8 @@ import com.orientechnologies.orient.core.storage.impl.local.paginated.atomicoper
 import com.orientechnologies.orient.core.storage.index.sbtree.singlevalue.OCellBTreeSingleValue;
 import com.orientechnologies.orient.core.storage.index.sbtree.singlevalue.v1.CellBTreeSingleValueV1;
 import com.orientechnologies.orient.core.storage.index.sbtree.singlevalue.v3.CellBTreeSingleValueV3;
+import com.orientechnologies.orient.core.storage.index.versionmap.OVersionPositionMap;
+import com.orientechnologies.orient.core.storage.index.versionmap.OVersionPositionMapV0;
 import java.io.IOException;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -25,6 +27,7 @@ public final class OCellBTreeSingleValueIndexEngine
   private static final String NULL_BUCKET_FILE_EXTENSION = ".nbt";
 
   private final OCellBTreeSingleValue<Object> sbTree;
+  private final OVersionPositionMap versionPositionMap;
   private final String name;
   private final int id;
 
@@ -44,6 +47,9 @@ public final class OCellBTreeSingleValueIndexEngine
     } else {
       throw new IllegalStateException("Invalid tree version " + version);
     }
+    versionPositionMap =
+        new OVersionPositionMapV0(
+            storage, name, name + DATA_FILE_EXTENSION, OVersionPositionMap.DEF_EXTENSION);
   }
 
   @Override
@@ -81,17 +87,18 @@ public final class OCellBTreeSingleValueIndexEngine
     try {
       //noinspection unchecked
       sbTree.create(atomicOperation, keySerializer, keyTypes, keySize, encryption);
+      versionPositionMap.create(atomicOperation);
     } catch (IOException e) {
       throw OException.wrapException(new OIndexException("Error of creation of index " + name), e);
     }
   }
 
   @Override
-  public void delete(OAtomicOperation atomicOperation) {
+  public void delete(final OAtomicOperation atomicOperation) {
     try {
       doClearTree(atomicOperation);
-
       sbTree.delete(atomicOperation);
+      versionPositionMap.delete(atomicOperation);
     } catch (IOException e) {
       throw OException.wrapException(
           new OIndexException("Error during deletion of index " + name), e);
@@ -109,7 +116,6 @@ public final class OCellBTreeSingleValueIndexEngine
             }
           });
     }
-
     sbTree.remove(atomicOperation, null);
   }
 
@@ -122,6 +128,12 @@ public final class OCellBTreeSingleValueIndexEngine
       final OEncryption encryption) {
     //noinspection unchecked
     sbTree.load(indexName, keySize, keyTypes, keySerializer, encryption);
+    try {
+      versionPositionMap.open();
+    } catch (final IOException e) {
+      throw OException.wrapException(
+          new OIndexException("Error during VPM load of index " + indexName), e);
+    }
   }
 
   @Override
@@ -154,7 +166,6 @@ public final class OCellBTreeSingleValueIndexEngine
     if (rid == null) {
       return Stream.empty();
     }
-
     return Stream.of(rid);
   }
 
@@ -164,7 +175,6 @@ public final class OCellBTreeSingleValueIndexEngine
     if (firstKey == null) {
       return Stream.empty();
     }
-
     return sbTree.iterateEntriesMajor(firstKey, true, true);
   }
 
@@ -174,7 +184,6 @@ public final class OCellBTreeSingleValueIndexEngine
     if (lastKey == null) {
       return Stream.empty();
     }
-
     return sbTree.iterateEntriesMinor(lastKey, true, false);
   }
 
@@ -247,5 +256,17 @@ public final class OCellBTreeSingleValueIndexEngine
   @Override
   public String getIndexNameByKey(Object key) {
     return name;
+  }
+
+  @Override
+  public void updateUniqueIndexVersion(final Object key) {
+    final int keyHash = versionPositionMap.getKeyHash(key);
+    versionPositionMap.updateVersion(keyHash);
+  }
+
+  @Override
+  public int getUniqueIndexVersion(final Object key) {
+    final int keyHash = versionPositionMap.getKeyHash(key);
+    return versionPositionMap.getVersion(keyHash);
   }
 }

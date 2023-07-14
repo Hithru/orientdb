@@ -39,7 +39,7 @@ import com.orientechnologies.orient.core.record.ORecord;
 import com.orientechnologies.orient.core.record.ORecordInternal;
 import com.orientechnologies.orient.core.record.impl.OSimpleMultiValueTracker;
 import com.orientechnologies.orient.core.serialization.serializer.binary.impl.OLinkSerializer;
-import com.orientechnologies.orient.core.storage.OStorageProxy;
+import com.orientechnologies.orient.core.storage.impl.local.OAbstractPaginatedStorage;
 import com.orientechnologies.orient.core.storage.impl.local.paginated.ORecordSerializationContext;
 import com.orientechnologies.orient.core.storage.impl.local.paginated.ORidBagDeleteSerializationOperation;
 import com.orientechnologies.orient.core.storage.impl.local.paginated.ORidBagUpdateSerializationOperation;
@@ -84,7 +84,7 @@ public class OSBTreeRidBag implements ORidBagDelegate {
   private OBonsaiCollectionPointer collectionPointer;
   private int size;
 
-  private OSimpleMultiValueTracker<OIdentifiable, OIdentifiable> tracker =
+  private final OSimpleMultiValueTracker<OIdentifiable, OIdentifiable> tracker =
       new OSimpleMultiValueTracker<>(this);
 
   private boolean autoConvertToRecord = true;
@@ -715,7 +715,7 @@ public class OSBTreeRidBag implements ORidBagDelegate {
   @Override
   public int getSerializedSize() {
     int result = 2 * OLongSerializer.LONG_SIZE + 3 * OIntegerSerializer.INT_SIZE;
-    if (ODatabaseRecordThreadLocal.instance().get().getStorage() instanceof OStorageProxy
+    if (ODatabaseRecordThreadLocal.instance().get().isRemote()
         || ORecordSerializationContext.getContext() == null) {
       result += getChangesSerializedSize();
     }
@@ -755,8 +755,11 @@ public class OSBTreeRidBag implements ORidBagDelegate {
     applyNewEntries();
 
     final ORecordSerializationContext context;
-    boolean remoteMode =
-        ODatabaseRecordThreadLocal.instance().get().getStorage() instanceof OStorageProxy;
+
+    final ODatabaseDocumentInternal databaseDocumentInternal =
+        ODatabaseRecordThreadLocal.instance().get();
+
+    boolean remoteMode = databaseDocumentInternal.isRemote();
     if (remoteMode) {
       context = null;
     } else {
@@ -769,11 +772,13 @@ public class OSBTreeRidBag implements ORidBagDelegate {
         final int clusterId = getHighLevelDocClusterId();
         assert clusterId > -1;
         try {
-          final OAtomicOperation atomicOperation = OAtomicOperationsManager.getCurrentOperation();
+          final OAtomicOperationsManager atomicOperationsManager =
+              ((OAbstractPaginatedStorage) databaseDocumentInternal.getStorage())
+                  .getAtomicOperationsManager();
+          final OAtomicOperation atomicOperation = atomicOperationsManager.getCurrentOperation();
           assert atomicOperation != null;
           collectionPointer =
-              ODatabaseRecordThreadLocal.instance()
-                  .get()
+              databaseDocumentInternal
                   .getSbTreeCollectionManager()
                   .createSBTree(clusterId, atomicOperation, ownerUuid);
         } catch (IOException e) {
@@ -840,7 +845,7 @@ public class OSBTreeRidBag implements ORidBagDelegate {
   public void requestDelete() {
     final ORecordSerializationContext context = ORecordSerializationContext.getContext();
     if (context != null && collectionPointer != null) {
-      context.push(new ORidBagDeleteSerializationOperation(collectionPointer, this));
+      context.push(new ORidBagDeleteSerializationOperation(this));
     }
   }
 
@@ -1035,7 +1040,7 @@ public class OSBTreeRidBag implements ORidBagDelegate {
   public void debugPrint(PrintStream writer) throws IOException {
     OSBTreeBonsai<OIdentifiable, Integer> tree = loadTree();
     if (tree instanceof OSBTreeBonsaiLocal) {
-      ((OSBTreeBonsaiLocal) tree).debugPrintBucket(writer);
+      ((OSBTreeBonsaiLocal<OIdentifiable, Integer>) tree).debugPrintBucket(writer);
     }
   }
 

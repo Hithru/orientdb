@@ -3,7 +3,6 @@ package com.orientechnologies.orient.server.distributed.impl.task;
 import static com.orientechnologies.orient.core.config.OGlobalConfiguration.DISTRIBUTED_CONCURRENT_TX_MAX_AUTORETRY;
 
 import com.orientechnologies.common.log.OLogManager;
-import com.orientechnologies.orient.core.Orient;
 import com.orientechnologies.orient.core.command.OCommandDistributedReplicateRequest;
 import com.orientechnologies.orient.core.config.OGlobalConfiguration;
 import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
@@ -11,7 +10,10 @@ import com.orientechnologies.orient.core.id.ORID;
 import com.orientechnologies.orient.core.id.ORecordId;
 import com.orientechnologies.orient.core.serialization.serializer.record.binary.ORecordSerializerNetworkDistributed;
 import com.orientechnologies.orient.core.serialization.serializer.record.binary.ORecordSerializerNetworkV37;
+<<<<<<< HEAD
 import com.orientechnologies.orient.core.storage.impl.local.paginated.wal.OLogSequenceNumber;
+=======
+>>>>>>> develop
 import com.orientechnologies.orient.core.tx.OTransactionId;
 import com.orientechnologies.orient.server.OServer;
 import com.orientechnologies.orient.server.distributed.ODistributedRequestId;
@@ -19,7 +21,11 @@ import com.orientechnologies.orient.server.distributed.ODistributedServerManager
 import com.orientechnologies.orient.server.distributed.ORemoteTaskFactory;
 import com.orientechnologies.orient.server.distributed.impl.ODatabaseDocumentDistributed;
 import com.orientechnologies.orient.server.distributed.impl.task.transaction.OTransactionUniqueKey;
+<<<<<<< HEAD
 import com.orientechnologies.orient.server.distributed.task.OAbstractReplicatedTask;
+=======
+import com.orientechnologies.orient.server.distributed.task.OAbstractRemoteTask;
+>>>>>>> develop
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -27,11 +33,19 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 /** @author Luigi Dell'Aquila (l.dellaquila - at - orientdb.com) */
+<<<<<<< HEAD
 public class OTransactionPhase2Task extends OAbstractReplicatedTask implements OLockKeySource {
+=======
+public class OTransactionPhase2Task extends OAbstractRemoteTask implements OLockKeySource {
+>>>>>>> develop
   public static final int FACTORYID = 44;
 
   private OTransactionId transactionId;
   private ODistributedRequestId firstPhaseId;
+<<<<<<< HEAD
+=======
+  // whether to commit or abort.
+>>>>>>> develop
   private boolean success;
   private SortedSet<ORID> involvedRids;
   private SortedSet<OTransactionUniqueKey> uniqueIndexKeys = new TreeSet<>();
@@ -43,13 +57,19 @@ public class OTransactionPhase2Task extends OAbstractReplicatedTask implements O
       boolean success,
       SortedSet<ORID> rids,
       SortedSet<OTransactionUniqueKey> uniqueIndexKeys,
+<<<<<<< HEAD
       OLogSequenceNumber lsn,
+=======
+>>>>>>> develop
       OTransactionId transactionId) {
     this.firstPhaseId = firstPhaseId;
     this.success = success;
     this.involvedRids = rids;
     this.uniqueIndexKeys = uniqueIndexKeys;
+<<<<<<< HEAD
     this.lastLSN = lsn;
+=======
+>>>>>>> develop
     this.transactionId = transactionId;
   }
 
@@ -78,9 +98,19 @@ public class OTransactionPhase2Task extends OAbstractReplicatedTask implements O
       involvedRids.add(ORecordId.deserialize(in));
     }
     this.success = in.readBoolean();
-    this.lastLSN = new OLogSequenceNumber(in);
-    if (lastLSN.getSegment() == -1 && lastLSN.getSegment() == -1) {
-      lastLSN = null;
+    ORecordSerializerNetworkDistributed serializer = ORecordSerializerNetworkDistributed.INSTANCE;
+    readTxUniqueIndexKeys(uniqueIndexKeys, serializer, in);
+  }
+
+  public static void readTxUniqueIndexKeys(
+      SortedSet<OTransactionUniqueKey> uniqueIndexKeys,
+      ORecordSerializerNetworkV37 serializer,
+      DataInput in)
+      throws IOException {
+    int size = in.readInt();
+    for (int i = 0; i < size; i++) {
+      OTransactionUniqueKey entry = OTransactionUniqueKey.read(in, serializer);
+      uniqueIndexKeys.add(entry);
     }
     ORecordSerializerNetworkDistributed serializer = ORecordSerializerNetworkDistributed.INSTANCE;
     readTxUniqueIndexKeys(uniqueIndexKeys, serializer, in);
@@ -108,10 +138,18 @@ public class OTransactionPhase2Task extends OAbstractReplicatedTask implements O
       ORecordId.serialize(id, out);
     }
     out.writeBoolean(success);
-    if (lastLSN == null) {
-      new OLogSequenceNumber(-1, -1).toStream(out);
-    } else {
-      lastLSN.toStream(out);
+    ORecordSerializerNetworkDistributed serializer = ORecordSerializerNetworkDistributed.INSTANCE;
+    writeTxUniqueIndexKeys(uniqueIndexKeys, serializer, out);
+  }
+
+  public static void writeTxUniqueIndexKeys(
+      SortedSet<OTransactionUniqueKey> uniqueIndexKeys,
+      ORecordSerializerNetworkV37 serializer,
+      DataOutput out)
+      throws IOException {
+    out.writeInt(uniqueIndexKeys.size());
+    for (OTransactionUniqueKey pair : uniqueIndexKeys) {
+      pair.write(serializer, out);
     }
     ORecordSerializerNetworkDistributed serializer = ORecordSerializerNetworkDistributed.INSTANCE;
     writeTxUniqueIndexKeys(uniqueIndexKeys, serializer, out);
@@ -147,10 +185,10 @@ public class OTransactionPhase2Task extends OAbstractReplicatedTask implements O
           OLogManager.instance()
               .info(
                   OTransactionPhase2Task.this,
-                  "Received second phase but not yet first phase, re-enqueue second phase");
+                  "Received second phase but not yet first phase for commit tx:%s, re-enqueue second phase",
+                  firstPhaseId);
           ((ODatabaseDocumentDistributed) database)
-              .getStorageDistributed()
-              .getLocalDistributedDatabase()
+              .getDistributedShared()
               .reEnqueue(
                   requestId.getNodeId(),
                   requestId.getMessageId(),
@@ -160,8 +198,10 @@ public class OTransactionPhase2Task extends OAbstractReplicatedTask implements O
                   autoRetryDelay);
           hasResponse = false;
         } else {
-          Orient.instance()
-              .submit(
+          database
+              .getSharedContext()
+              .getOrientDB()
+              .execute(
                   () -> {
                     OLogManager.instance()
                         .warn(
@@ -190,8 +230,7 @@ public class OTransactionPhase2Task extends OAbstractReplicatedTask implements O
                   OTransactionPhase2Task.this,
                   "Received second phase but not yet first phase, re-enqueue second phase");
           ((ODatabaseDocumentDistributed) database)
-              .getStorageDistributed()
-              .getLocalDistributedDatabase()
+              .getDistributedShared()
               .reEnqueue(
                   requestId.getNodeId(),
                   requestId.getMessageId(),
@@ -219,11 +258,14 @@ public class OTransactionPhase2Task extends OAbstractReplicatedTask implements O
 
   public ODistributedRequestId getFirstPhaseId() {
     return firstPhaseId;
+<<<<<<< HEAD
   }
 
   @Override
   public OLogSequenceNumber getLastLSN() {
     return super.getLastLSN();
+=======
+>>>>>>> develop
   }
 
   @Override
@@ -242,11 +284,14 @@ public class OTransactionPhase2Task extends OAbstractReplicatedTask implements O
   }
 
   @Override
+<<<<<<< HEAD
   public int[] getPartitionKey() {
     return null;
   }
 
   @Override
+=======
+>>>>>>> develop
   public SortedSet<ORID> getRids() {
     return involvedRids;
   }

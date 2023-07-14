@@ -5,13 +5,13 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
+import com.orientechnologies.orient.core.OCreateDatabaseUtil;
 import com.orientechnologies.orient.core.config.OGlobalConfiguration;
 import com.orientechnologies.orient.core.db.ODatabaseRecordThreadLocal;
 import com.orientechnologies.orient.core.db.ODatabaseSession;
-import com.orientechnologies.orient.core.db.ODatabaseType;
 import com.orientechnologies.orient.core.db.OrientDB;
-import com.orientechnologies.orient.core.db.OrientDBConfig;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
@@ -47,9 +47,8 @@ public class ODocumentSerializerDeltaTest {
     ODatabaseSession db = null;
     OrientDB odb = null;
     try {
-      odb = new OrientDB("memory:", OrientDBConfig.defaultConfig());
-      odb.createIfNotExists(dbName, ODatabaseType.MEMORY);
-      db = odb.open(dbName, defaultDbAdminCredentials, defaultDbAdminCredentials);
+      odb = OCreateDatabaseUtil.createDatabase(dbName, "memory:", OCreateDatabaseUtil.TYPE_MEMORY);
+      db = odb.open(dbName, defaultDbAdminCredentials, OCreateDatabaseUtil.NEW_ADMIN_PASSWORD);
 
       OClass claz = db.createClassIfNotExist("TestClass");
 
@@ -89,9 +88,8 @@ public class ODocumentSerializerDeltaTest {
     ODatabaseSession db = null;
     OrientDB odb = null;
     try {
-      odb = new OrientDB("memory:", OrientDBConfig.defaultConfig());
-      odb.createIfNotExists(dbName, ODatabaseType.MEMORY);
-      db = odb.open(dbName, defaultDbAdminCredentials, defaultDbAdminCredentials);
+      odb = OCreateDatabaseUtil.createDatabase(dbName, "memory:", OCreateDatabaseUtil.TYPE_MEMORY);
+      db = odb.open(dbName, defaultDbAdminCredentials, OCreateDatabaseUtil.NEW_ADMIN_PASSWORD);
 
       OClass claz = db.createClassIfNotExist("TestClass");
 
@@ -141,9 +139,8 @@ public class ODocumentSerializerDeltaTest {
     ODatabaseSession db = null;
     OrientDB odb = null;
     try {
-      odb = new OrientDB("memory:", OrientDBConfig.defaultConfig());
-      odb.createIfNotExists(dbName, ODatabaseType.MEMORY);
-      db = odb.open(dbName, defaultDbAdminCredentials, defaultDbAdminCredentials);
+      odb = OCreateDatabaseUtil.createDatabase(dbName, "memory:", OCreateDatabaseUtil.TYPE_MEMORY);
+      db = odb.open(dbName, defaultDbAdminCredentials, OCreateDatabaseUtil.NEW_ADMIN_PASSWORD);
 
       OClass claz = db.createClassIfNotExist("TestClass");
 
@@ -187,9 +184,8 @@ public class ODocumentSerializerDeltaTest {
     ODatabaseSession db = null;
     OrientDB odb = null;
     try {
-      odb = new OrientDB("memory:", OrientDBConfig.defaultConfig());
-      odb.createIfNotExists(dbName, ODatabaseType.MEMORY);
-      db = odb.open(dbName, defaultDbAdminCredentials, defaultDbAdminCredentials);
+      odb = OCreateDatabaseUtil.createDatabase(dbName, "memory:", OCreateDatabaseUtil.TYPE_MEMORY);
+      db = odb.open(dbName, defaultDbAdminCredentials, OCreateDatabaseUtil.NEW_ADMIN_PASSWORD);
 
       OClass claz = db.createClassIfNotExist("TestClass");
 
@@ -232,9 +228,8 @@ public class ODocumentSerializerDeltaTest {
     ODatabaseSession db = null;
     OrientDB odb = null;
     try {
-      odb = new OrientDB("memory:", OrientDBConfig.defaultConfig());
-      odb.createIfNotExists(dbName, ODatabaseType.MEMORY);
-      db = odb.open(dbName, defaultDbAdminCredentials, defaultDbAdminCredentials);
+      odb = OCreateDatabaseUtil.createDatabase(dbName, "memory:", OCreateDatabaseUtil.TYPE_MEMORY);
+      db = odb.open(dbName, defaultDbAdminCredentials, OCreateDatabaseUtil.NEW_ADMIN_PASSWORD);
 
       OClass claz = db.createClassIfNotExist("TestClass");
 
@@ -278,9 +273,8 @@ public class ODocumentSerializerDeltaTest {
     ODatabaseSession db = null;
     OrientDB odb = null;
     try {
-      odb = new OrientDB("memory:", OrientDBConfig.defaultConfig());
-      odb.createIfNotExists(dbName, ODatabaseType.MEMORY);
-      db = odb.open(dbName, defaultDbAdminCredentials, defaultDbAdminCredentials);
+      odb = OCreateDatabaseUtil.createDatabase(dbName, "memory:", OCreateDatabaseUtil.TYPE_MEMORY);
+      db = odb.open(dbName, defaultDbAdminCredentials, OCreateDatabaseUtil.NEW_ADMIN_PASSWORD);
 
       OClass claz = db.createClassIfNotExist("TestClass");
 
@@ -325,9 +319,8 @@ public class ODocumentSerializerDeltaTest {
     ODatabaseSession db = null;
     OrientDB odb = null;
     try {
-      odb = new OrientDB("memory:", OrientDBConfig.defaultConfig());
-      odb.createIfNotExists(dbName, ODatabaseType.MEMORY);
-      db = odb.open(dbName, defaultDbAdminCredentials, defaultDbAdminCredentials);
+      odb = OCreateDatabaseUtil.createDatabase(dbName, "memory:", OCreateDatabaseUtil.TYPE_MEMORY);
+      db = odb.open(dbName, defaultDbAdminCredentials, OCreateDatabaseUtil.NEW_ADMIN_PASSWORD);
 
       String fieldName = "testField";
 
@@ -381,9 +374,8 @@ public class ODocumentSerializerDeltaTest {
     ODatabaseSession db = null;
     OrientDB odb = null;
     try {
-      odb = new OrientDB("memory:", OrientDBConfig.defaultConfig());
-      odb.createIfNotExists(dbName, ODatabaseType.MEMORY);
-      db = odb.open(dbName, defaultDbAdminCredentials, defaultDbAdminCredentials);
+      odb = OCreateDatabaseUtil.createDatabase(dbName, "memory:", OCreateDatabaseUtil.TYPE_MEMORY);
+      db = odb.open(dbName, defaultDbAdminCredentials, OCreateDatabaseUtil.NEW_ADMIN_PASSWORD);
 
       OClass claz = db.createClassIfNotExist("TestClass");
 
@@ -429,7 +421,7 @@ public class ODocumentSerializerDeltaTest {
       assertEquals("two", checkList.get(0).get(0).field(variableField));
     } catch (Exception e) {
       e.printStackTrace();
-      assertNotNull(null);
+      fail();
     } finally {
       if (db != null) db.close();
       if (odb != null) {
@@ -444,9 +436,8 @@ public class ODocumentSerializerDeltaTest {
     ODatabaseSession db = null;
     OrientDB odb = null;
     try {
-      odb = new OrientDB("memory:", OrientDBConfig.defaultConfig());
-      odb.createIfNotExists(dbName, ODatabaseType.MEMORY);
-      db = odb.open(dbName, defaultDbAdminCredentials, defaultDbAdminCredentials);
+      odb = OCreateDatabaseUtil.createDatabase(dbName, "memory:", OCreateDatabaseUtil.TYPE_MEMORY);
+      db = odb.open(dbName, defaultDbAdminCredentials, OCreateDatabaseUtil.NEW_ADMIN_PASSWORD);
 
       OClass claz = db.createClassIfNotExist("TestClass");
 
@@ -495,9 +486,8 @@ public class ODocumentSerializerDeltaTest {
     ODatabaseSession db = null;
     OrientDB odb = null;
     try {
-      odb = new OrientDB("memory:", OrientDBConfig.defaultConfig());
-      odb.createIfNotExists(dbName, ODatabaseType.MEMORY);
-      db = odb.open(dbName, defaultDbAdminCredentials, defaultDbAdminCredentials);
+      odb = OCreateDatabaseUtil.createDatabase(dbName, "memory:", OCreateDatabaseUtil.TYPE_MEMORY);
+      db = odb.open(dbName, defaultDbAdminCredentials, OCreateDatabaseUtil.NEW_ADMIN_PASSWORD);
 
       String fieldName = "testField";
 
@@ -552,9 +542,8 @@ public class ODocumentSerializerDeltaTest {
     ODatabaseSession db = null;
     OrientDB odb = null;
     try {
-      odb = new OrientDB("memory:", OrientDBConfig.defaultConfig());
-      odb.createIfNotExists(dbName, ODatabaseType.MEMORY);
-      db = odb.open(dbName, defaultDbAdminCredentials, defaultDbAdminCredentials);
+      odb = OCreateDatabaseUtil.createDatabase(dbName, "memory:", OCreateDatabaseUtil.TYPE_MEMORY);
+      db = odb.open(dbName, defaultDbAdminCredentials, OCreateDatabaseUtil.NEW_ADMIN_PASSWORD);
 
       OClass claz = db.createClassIfNotExist("TestClass");
 
@@ -594,9 +583,8 @@ public class ODocumentSerializerDeltaTest {
     ODatabaseSession db = null;
     OrientDB odb = null;
     try {
-      odb = new OrientDB("memory:", OrientDBConfig.defaultConfig());
-      odb.createIfNotExists(dbName, ODatabaseType.MEMORY);
-      db = odb.open(dbName, defaultDbAdminCredentials, defaultDbAdminCredentials);
+      odb = OCreateDatabaseUtil.createDatabase(dbName, "memory:", OCreateDatabaseUtil.TYPE_MEMORY);
+      db = odb.open(dbName, defaultDbAdminCredentials, OCreateDatabaseUtil.NEW_ADMIN_PASSWORD);
 
       OClass claz = db.createClassIfNotExist("TestClass");
 
@@ -645,9 +633,8 @@ public class ODocumentSerializerDeltaTest {
     ODatabaseSession db = null;
     OrientDB odb = null;
     try {
-      odb = new OrientDB("memory:", OrientDBConfig.defaultConfig());
-      odb.createIfNotExists(dbName, ODatabaseType.MEMORY);
-      db = odb.open(dbName, defaultDbAdminCredentials, defaultDbAdminCredentials);
+      odb = OCreateDatabaseUtil.createDatabase(dbName, "memory:", OCreateDatabaseUtil.TYPE_MEMORY);
+      db = odb.open(dbName, defaultDbAdminCredentials, OCreateDatabaseUtil.NEW_ADMIN_PASSWORD);
 
       OClass claz = db.createClassIfNotExist("TestClass");
 
@@ -690,9 +677,8 @@ public class ODocumentSerializerDeltaTest {
     ODatabaseSession db = null;
     OrientDB odb = null;
     try {
-      odb = new OrientDB("memory:", OrientDBConfig.defaultConfig());
-      odb.createIfNotExists(dbName, ODatabaseType.MEMORY);
-      db = odb.open(dbName, defaultDbAdminCredentials, defaultDbAdminCredentials);
+      odb = OCreateDatabaseUtil.createDatabase(dbName, "memory:", OCreateDatabaseUtil.TYPE_MEMORY);
+      db = odb.open(dbName, defaultDbAdminCredentials, OCreateDatabaseUtil.NEW_ADMIN_PASSWORD);
 
       OClass claz = db.createClassIfNotExist("TestClass");
 
@@ -729,9 +715,8 @@ public class ODocumentSerializerDeltaTest {
     ODatabaseSession db = null;
     OrientDB odb = null;
     try {
-      odb = new OrientDB("memory:", OrientDBConfig.defaultConfig());
-      odb.createIfNotExists(dbName, ODatabaseType.MEMORY);
-      db = odb.open(dbName, defaultDbAdminCredentials, defaultDbAdminCredentials);
+      odb = OCreateDatabaseUtil.createDatabase(dbName, "memory:", OCreateDatabaseUtil.TYPE_MEMORY);
+      db = odb.open(dbName, defaultDbAdminCredentials, OCreateDatabaseUtil.NEW_ADMIN_PASSWORD);
 
       OClass claz = db.createClassIfNotExist("TestClass");
 
@@ -771,9 +756,8 @@ public class ODocumentSerializerDeltaTest {
     ODatabaseSession db = null;
     OrientDB odb = null;
     try {
-      odb = new OrientDB("memory:", OrientDBConfig.defaultConfig());
-      odb.createIfNotExists(dbName, ODatabaseType.MEMORY);
-      db = odb.open(dbName, defaultDbAdminCredentials, defaultDbAdminCredentials);
+      odb = OCreateDatabaseUtil.createDatabase(dbName, "memory:", OCreateDatabaseUtil.TYPE_MEMORY);
+      db = odb.open(dbName, defaultDbAdminCredentials, OCreateDatabaseUtil.NEW_ADMIN_PASSWORD);
 
       String nestedFieldName = "nested";
 
@@ -818,9 +802,8 @@ public class ODocumentSerializerDeltaTest {
     ODatabaseSession db = null;
     OrientDB odb = null;
     try {
-      odb = new OrientDB("memory:", OrientDBConfig.defaultConfig());
-      odb.createIfNotExists(dbName, ODatabaseType.MEMORY);
-      db = odb.open(dbName, defaultDbAdminCredentials, defaultDbAdminCredentials);
+      odb = OCreateDatabaseUtil.createDatabase(dbName, "memory:", OCreateDatabaseUtil.TYPE_MEMORY);
+      db = odb.open(dbName, defaultDbAdminCredentials, OCreateDatabaseUtil.NEW_ADMIN_PASSWORD);
 
       String fieldName = "testField";
 
@@ -870,9 +853,8 @@ public class ODocumentSerializerDeltaTest {
     ODatabaseSession db = null;
     OrientDB odb = null;
     try {
-      odb = new OrientDB("memory:", OrientDBConfig.defaultConfig());
-      odb.createIfNotExists(dbName, ODatabaseType.MEMORY);
-      db = odb.open(dbName, defaultDbAdminCredentials, defaultDbAdminCredentials);
+      odb = OCreateDatabaseUtil.createDatabase(dbName, "memory:", OCreateDatabaseUtil.TYPE_MEMORY);
+      db = odb.open(dbName, defaultDbAdminCredentials, OCreateDatabaseUtil.NEW_ADMIN_PASSWORD);
 
       OClass claz = db.createClassIfNotExist("TestClass");
 
@@ -912,9 +894,8 @@ public class ODocumentSerializerDeltaTest {
     ODatabaseSession db = null;
     OrientDB odb = null;
     try {
-      odb = new OrientDB("memory:", OrientDBConfig.defaultConfig());
-      odb.createIfNotExists(dbName, ODatabaseType.MEMORY);
-      db = odb.open(dbName, defaultDbAdminCredentials, defaultDbAdminCredentials);
+      odb = OCreateDatabaseUtil.createDatabase(dbName, "memory:", OCreateDatabaseUtil.TYPE_MEMORY);
+      db = odb.open(dbName, defaultDbAdminCredentials, OCreateDatabaseUtil.NEW_ADMIN_PASSWORD);
 
       OClass claz = db.createClassIfNotExist("TestClass");
 
@@ -963,9 +944,8 @@ public class ODocumentSerializerDeltaTest {
     ODatabaseSession db = null;
     OrientDB odb = null;
     try {
-      odb = new OrientDB("memory:", OrientDBConfig.defaultConfig());
-      odb.createIfNotExists(dbName, ODatabaseType.MEMORY);
-      db = odb.open(dbName, defaultDbAdminCredentials, defaultDbAdminCredentials);
+      odb = OCreateDatabaseUtil.createDatabase(dbName, "memory:", OCreateDatabaseUtil.TYPE_MEMORY);
+      db = odb.open(dbName, defaultDbAdminCredentials, OCreateDatabaseUtil.NEW_ADMIN_PASSWORD);
 
       OClass claz = db.createClassIfNotExist("TestClass");
 
@@ -1013,9 +993,8 @@ public class ODocumentSerializerDeltaTest {
     ODatabaseSession db = null;
     OrientDB odb = null;
     try {
-      odb = new OrientDB("memory:", OrientDBConfig.defaultConfig());
-      odb.createIfNotExists(dbName, ODatabaseType.MEMORY);
-      db = odb.open(dbName, defaultDbAdminCredentials, defaultDbAdminCredentials);
+      odb = OCreateDatabaseUtil.createDatabase(dbName, "memory:", OCreateDatabaseUtil.TYPE_MEMORY);
+      db = odb.open(dbName, defaultDbAdminCredentials, OCreateDatabaseUtil.NEW_ADMIN_PASSWORD);
 
       OClass claz = db.createClassIfNotExist("TestClass");
 
@@ -1067,9 +1046,8 @@ public class ODocumentSerializerDeltaTest {
     ODatabaseSession db = null;
     OrientDB odb = null;
     try {
-      odb = new OrientDB("memory:", OrientDBConfig.defaultConfig());
-      odb.createIfNotExists(dbName, ODatabaseType.MEMORY);
-      db = odb.open(dbName, defaultDbAdminCredentials, defaultDbAdminCredentials);
+      odb = OCreateDatabaseUtil.createDatabase(dbName, "memory:", OCreateDatabaseUtil.TYPE_MEMORY);
+      db = odb.open(dbName, defaultDbAdminCredentials, OCreateDatabaseUtil.NEW_ADMIN_PASSWORD);
 
       OClass claz = db.createClassIfNotExist("TestClass");
 
@@ -1118,9 +1096,8 @@ public class ODocumentSerializerDeltaTest {
     ODatabaseSession db = null;
     OrientDB odb = null;
     try {
-      odb = new OrientDB("memory:", OrientDBConfig.defaultConfig());
-      odb.createIfNotExists(dbName, ODatabaseType.MEMORY);
-      db = odb.open(dbName, defaultDbAdminCredentials, defaultDbAdminCredentials);
+      odb = OCreateDatabaseUtil.createDatabase(dbName, "memory:", OCreateDatabaseUtil.TYPE_MEMORY);
+      db = odb.open(dbName, defaultDbAdminCredentials, OCreateDatabaseUtil.NEW_ADMIN_PASSWORD);
 
       OClass claz = db.createClassIfNotExist("TestClass");
 
@@ -1169,9 +1146,8 @@ public class ODocumentSerializerDeltaTest {
     ODatabaseSession db = null;
     OrientDB odb = null;
     try {
-      odb = new OrientDB("memory:", OrientDBConfig.defaultConfig());
-      odb.createIfNotExists(dbName, ODatabaseType.MEMORY);
-      db = odb.open(dbName, defaultDbAdminCredentials, defaultDbAdminCredentials);
+      odb = OCreateDatabaseUtil.createDatabase(dbName, "memory:", OCreateDatabaseUtil.TYPE_MEMORY);
+      db = odb.open(dbName, defaultDbAdminCredentials, OCreateDatabaseUtil.NEW_ADMIN_PASSWORD);
 
       OClass claz = db.createClassIfNotExist("TestClass");
 
@@ -1217,9 +1193,8 @@ public class ODocumentSerializerDeltaTest {
     ODatabaseSession db = null;
     OrientDB odb = null;
     try {
-      odb = new OrientDB("memory:", OrientDBConfig.defaultConfig());
-      odb.createIfNotExists(dbName, ODatabaseType.MEMORY);
-      db = odb.open(dbName, defaultDbAdminCredentials, defaultDbAdminCredentials);
+      odb = OCreateDatabaseUtil.createDatabase(dbName, "memory:", OCreateDatabaseUtil.TYPE_MEMORY);
+      db = odb.open(dbName, defaultDbAdminCredentials, OCreateDatabaseUtil.NEW_ADMIN_PASSWORD);
 
       OClass claz = db.createClassIfNotExist("TestClass");
 
@@ -1265,9 +1240,8 @@ public class ODocumentSerializerDeltaTest {
     ODatabaseSession db = null;
     OrientDB odb = null;
     try {
-      odb = new OrientDB("memory:", OrientDBConfig.defaultConfig());
-      odb.createIfNotExists(dbName, ODatabaseType.MEMORY);
-      db = odb.open(dbName, defaultDbAdminCredentials, defaultDbAdminCredentials);
+      odb = OCreateDatabaseUtil.createDatabase(dbName, "memory:", OCreateDatabaseUtil.TYPE_MEMORY);
+      db = odb.open(dbName, defaultDbAdminCredentials, OCreateDatabaseUtil.NEW_ADMIN_PASSWORD);
 
       OClass claz = db.createClassIfNotExist("TestClass");
 
@@ -1317,9 +1291,8 @@ public class ODocumentSerializerDeltaTest {
     ODatabaseSession db = null;
     OrientDB odb = null;
     try {
-      odb = new OrientDB("memory:", OrientDBConfig.defaultConfig());
-      odb.createIfNotExists(dbName, ODatabaseType.MEMORY);
-      db = odb.open(dbName, defaultDbAdminCredentials, defaultDbAdminCredentials);
+      odb = OCreateDatabaseUtil.createDatabase(dbName, "memory:", OCreateDatabaseUtil.TYPE_MEMORY);
+      db = odb.open(dbName, defaultDbAdminCredentials, OCreateDatabaseUtil.NEW_ADMIN_PASSWORD);
 
       OClass claz = db.createClassIfNotExist("TestClass");
 
@@ -1371,9 +1344,8 @@ public class ODocumentSerializerDeltaTest {
     ODatabaseSession db = null;
     OrientDB odb = null;
     try {
-      odb = new OrientDB("memory:", OrientDBConfig.defaultConfig());
-      odb.createIfNotExists(dbName, ODatabaseType.MEMORY);
-      db = odb.open(dbName, defaultDbAdminCredentials, defaultDbAdminCredentials);
+      odb = OCreateDatabaseUtil.createDatabase(dbName, "memory:", OCreateDatabaseUtil.TYPE_MEMORY);
+      db = odb.open(dbName, defaultDbAdminCredentials, OCreateDatabaseUtil.NEW_ADMIN_PASSWORD);
 
       OClass claz = db.createClassIfNotExist("TestClass");
 
@@ -1428,9 +1400,8 @@ public class ODocumentSerializerDeltaTest {
     ODatabaseSession db = null;
     OrientDB odb = null;
     try {
-      odb = new OrientDB("memory:", OrientDBConfig.defaultConfig());
-      odb.createIfNotExists(dbName, ODatabaseType.MEMORY);
-      db = odb.open(dbName, defaultDbAdminCredentials, defaultDbAdminCredentials);
+      odb = OCreateDatabaseUtil.createDatabase(dbName, "memory:", OCreateDatabaseUtil.TYPE_MEMORY);
+      db = odb.open(dbName, defaultDbAdminCredentials, OCreateDatabaseUtil.NEW_ADMIN_PASSWORD);
 
       OClass claz = db.createClassIfNotExist("TestClass");
 

@@ -1,8 +1,17 @@
 package com.orientechnologies.orient.core.metadata.security.binary;
 
+<<<<<<< HEAD
 import com.orientechnologies.orient.core.id.ORID;
 import com.orientechnologies.orient.core.id.ORecordId;
 import com.orientechnologies.orient.core.metadata.security.jwt.OJwtHeader;
+=======
+import com.orientechnologies.orient.core.exception.ODatabaseException;
+import com.orientechnologies.orient.core.metadata.security.jwt.OBinaryTokenPayload;
+import com.orientechnologies.orient.core.metadata.security.jwt.OTokenHeader;
+import com.orientechnologies.orient.core.metadata.security.jwt.OTokenMetaInfo;
+import com.orientechnologies.orient.core.metadata.security.jwt.OTokenPayload;
+import com.orientechnologies.orient.core.metadata.security.jwt.OTokenPayloadDeserializer;
+>>>>>>> develop
 import com.orientechnologies.orient.core.metadata.security.jwt.OrientJwtHeader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -13,7 +22,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class OBinaryTokenSerializer {
+public class OBinaryTokenSerializer implements OTokenMetaInfo {
 
   private final String[] types;
   private final String[] keys;
@@ -36,6 +45,21 @@ public class OBinaryTokenSerializer {
     associetedTypes = createMap(entityTypes);
   }
 
+<<<<<<< HEAD
+=======
+  private OTokenPayloadDeserializer getForType(String type) {
+    switch (type) {
+        // The "node" token is for backward compatibility for old distributed binary, may be removed
+        // if we do not support runtime compatibility with 3.1 or less
+      case "node":
+        return new ODistributedBinaryTokenPayloadDeserializer();
+      case "OrientDB":
+        return new OBinaryTokenPayloadDeserializer();
+    }
+    throw new ODatabaseException("Unknown payload type");
+  }
+
+>>>>>>> develop
   public OBinaryTokenSerializer() {
     this(
         new String[] {"plocal", "memory"},
@@ -61,28 +85,13 @@ public class OBinaryTokenSerializer {
     OBinaryToken token = new OBinaryToken();
     token.setHeader(header);
 
-    token.setDatabase(readString(input));
-    byte pos = input.readByte();
-    if (pos >= 0) token.setDatabaseType(dbTypes[pos]);
-
-    short cluster = input.readShort();
-    long position = input.readLong();
-    if (cluster != -1 && position != -1) token.setUserRid(new ORecordId(cluster, position));
-    token.setExpiry(input.readLong());
-    token.setServerUser(input.readBoolean());
-    if (token.isServerUser()) {
-      token.setUserName(readString(input));
-    }
-
-    token.setProtocolVersion(input.readShort());
-    token.setSerializer(readString(input));
-    token.setDriverName(readString(input));
-    token.setDriverVersion(readString(input));
+    OBinaryTokenPayload payload = getForType(header.getType()).deserialize(input, this);
+    token.setPayload(payload);
 
     return token;
   }
 
-  private String readString(DataInputStream input) throws IOException {
+  protected static String readString(DataInputStream input) throws IOException {
     short s = input.readShort();
     if (s >= 0) {
       byte[] str = new byte[s];
@@ -95,35 +104,16 @@ public class OBinaryTokenSerializer {
   public void serialize(OBinaryToken token, OutputStream stream) throws IOException {
 
     DataOutputStream output = new DataOutputStream(stream);
-    OJwtHeader header = token.getHeader();
+    OTokenHeader header = token.getHeader();
+    OTokenPayload payload = token.getPayload();
+    assert header.getType() == payload.getPayloadType();
     output.writeByte(associetedTypes.get(header.getType())); // type
     output.writeByte(associetedKeys.get(header.getKeyId())); // keys
     output.writeByte(associetedAlgorithms.get(header.getAlgorithm())); // algorithm
-
-    String toWrite = token.getDatabase();
-    writeString(output, toWrite);
-    if (token.getDatabaseType() == null) output.writeByte(-1);
-    else output.writeByte(associetedDdTypes.get(token.getDatabaseType()));
-    ORID id = token.getUserId();
-    if (id == null) {
-      output.writeShort(-1);
-      output.writeLong(-1);
-    } else {
-      output.writeShort(id.getClusterId());
-      output.writeLong(id.getClusterPosition());
-    }
-    output.writeLong(token.getExpiry());
-    output.writeBoolean(token.isServerUser());
-    if (token.isServerUser()) {
-      writeString(output, token.getUserName());
-    }
-    output.writeShort(token.getProtocolVersion());
-    writeString(output, token.getSerializer());
-    writeString(output, token.getDriverName());
-    writeString(output, token.getDriverVersion());
+    payload.serialize(output, this);
   }
 
-  private void writeString(DataOutputStream output, String toWrite)
+  public static void writeString(DataOutputStream output, String toWrite)
       throws UnsupportedEncodingException, IOException {
     if (toWrite == null) output.writeShort(-1);
     else {
@@ -131,5 +121,15 @@ public class OBinaryTokenSerializer {
       output.writeShort(str.length);
       output.write(str);
     }
+  }
+
+  @Override
+  public String getDbType(int pos) {
+    return dbTypes[pos];
+  }
+
+  @Override
+  public int getDbTypeID(String databaseType) {
+    return associetedDdTypes.get(databaseType);
   }
 }

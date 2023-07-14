@@ -32,6 +32,14 @@ public class OUpdateRemoveItem extends SimpleNode {
     }
   }
 
+  public void toGenericStatement(StringBuilder builder) {
+    left.toGenericStatement(builder);
+    if (right != null) {
+      builder.append(" = ");
+      right.toGenericStatement(builder);
+    }
+  }
+
   public OUpdateRemoveItem copy() {
     OUpdateRemoveItem result = new OUpdateRemoveItem(-1);
     result.left = left == null ? null : left.copy();

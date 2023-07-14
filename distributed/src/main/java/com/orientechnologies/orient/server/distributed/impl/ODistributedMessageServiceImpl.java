@@ -22,10 +22,9 @@ package com.orientechnologies.orient.server.distributed.impl;
 import com.orientechnologies.common.profiler.OProfilerEntry;
 import com.orientechnologies.orient.core.Orient;
 import com.orientechnologies.orient.core.config.OGlobalConfiguration;
+import com.orientechnologies.orient.core.db.OSystemDatabase;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
-import com.orientechnologies.orient.server.OSystemDatabase;
-import com.orientechnologies.orient.server.distributed.ODistributedConfiguration;
 import com.orientechnologies.orient.server.distributed.ODistributedMessageService;
 import com.orientechnologies.orient.server.distributed.ODistributedRequestId;
 import com.orientechnologies.orient.server.distributed.ODistributedResponse;
@@ -33,7 +32,6 @@ import com.orientechnologies.orient.server.distributed.ODistributedResponseManag
 import com.orientechnologies.orient.server.distributed.ODistributedServerLog;
 import com.orientechnologies.orient.server.distributed.ODistributedServerLog.DIRECTION;
 import com.orientechnologies.orient.server.distributed.ODistributedServerManager;
-import com.orientechnologies.orient.server.hazelcast.OHazelcastPlugin;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -53,18 +51,17 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class ODistributedMessageServiceImpl implements ODistributedMessageService {
 
-  private final OHazelcastPlugin manager;
+  private final ODistributedPlugin manager;
   private final ConcurrentHashMap<Long, ODistributedResponseManager> responsesByRequestIds;
   private final TimerTask asynchMessageManager;
   protected final ConcurrentHashMap<String, ODistributedDatabaseImpl> databases =
       new ConcurrentHashMap<String, ODistributedDatabaseImpl>();
   private Thread responseThread;
   private long[] responseTimeMetrics = new long[10];
-  private volatile boolean running = true;
   private final Map<String, OProfilerEntry> latencies = new HashMap<String, OProfilerEntry>();
   private final Map<String, AtomicLong> messagesStats = new HashMap<String, AtomicLong>();
 
-  public ODistributedMessageServiceImpl(final OHazelcastPlugin manager) {
+  public ODistributedMessageServiceImpl(final ODistributedPlugin manager) {
     this.manager = manager;
     this.responsesByRequestIds = new ConcurrentHashMap<Long, ODistributedResponseManager>();
 
@@ -89,8 +86,6 @@ public class ODistributedMessageServiceImpl implements ODistributedMessageServic
   }
 
   public void shutdown() {
-    running = false;
-
     if (responseThread != null) {
       responseThread.interrupt();
       responseThread = null;
@@ -151,13 +146,11 @@ public class ODistributedMessageServiceImpl implements ODistributedMessageServic
   }
 
   /** Creates a distributed database instance if not defined yet. */
-  public ODistributedDatabaseImpl registerDatabase(
-      final String iDatabaseName, ODistributedConfiguration cfg) {
+  public ODistributedDatabaseImpl registerDatabase(final String iDatabaseName) {
     final ODistributedDatabaseImpl ddb = databases.get(iDatabaseName);
     if (ddb != null) return ddb;
 
-    return new ODistributedDatabaseImpl(
-        manager, this, iDatabaseName, cfg, manager.getServerInstance());
+    return new ODistributedDatabaseImpl(manager, this, iDatabaseName, manager.getServerInstance());
   }
 
   public ODistributedDatabaseImpl unregisterDatabase(final String iDatabaseName) {

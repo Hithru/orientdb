@@ -29,6 +29,14 @@ public class OTimeout extends SimpleNode {
     }
   }
 
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append(" TIMEOUT " + PARAMETER_PLACEHOLDER);
+    if (failureStrategy != null) {
+      builder.append(" ");
+      builder.append(failureStrategy);
+    }
+  }
+
   public OTimeout copy() {
     OTimeout result = new OTimeout(-1);
     result.val = val;

@@ -8,25 +8,17 @@ import java.util.Properties;
 public class OConstants {
   public static final String ORIENT_URL = "https://www.orientdb.com";
   public static final String COPYRIGHT = "Copyrights (c) 2017 OrientDB LTD";
-  public static final String CODENAME = "Veloce";
 
   private static final Properties properties = new Properties();
 
   static {
-    final InputStream inputStream =
-        OConstants.class.getResourceAsStream("/com/orientechnologies/orientdb.properties");
-    try {
-      properties.load(inputStream);
+    try (final InputStream inputStream =
+        OConstants.class.getResourceAsStream("/com/orientechnologies/orientdb.properties")) {
+      if (inputStream != null) {
+        properties.load(inputStream);
+      }
     } catch (IOException e) {
       OLogManager.instance().errorNoDb(OConstants.class, "Failed to load OrientDB properties", e);
-    } finally {
-      if (inputStream != null) {
-        try {
-          inputStream.close();
-        } catch (IOException ignore) {
-          // Ignore
-        }
-      }
     }
   }
 
@@ -102,8 +94,6 @@ public class OConstants {
   /** Returns the complete text of the current OrientDB version. */
   public static String getVersion() {
     return properties.getProperty("version")
-        + " - "
-        + CODENAME
         + " (build "
         + properties.getProperty("revision")
         + ", branch "

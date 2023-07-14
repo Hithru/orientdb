@@ -8,6 +8,7 @@ import com.orientechnologies.orient.core.metadata.schema.OSchema;
 import com.orientechnologies.orient.core.metadata.schema.OView;
 import com.orientechnologies.orient.core.metadata.schema.OViewConfig;
 import com.orientechnologies.orient.core.record.OElement;
+import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -135,8 +136,42 @@ public class OCreateViewStatementExecutionTest {
     Thread.sleep(1000);
 
     OResultSet result = db.query("SELECT FROM " + viewName + " WHERE name = 'name4'");
-    result.getExecutionPlan().get().getSteps().stream()
-        .anyMatch(x -> x instanceof FetchFromIndexStep);
+    Assert.assertTrue(
+        result.getExecutionPlan().get().getSteps().stream()
+            .anyMatch(x -> x instanceof FetchFromIndexStep));
+    Assert.assertTrue(result.hasNext());
+    result.next();
+    Assert.assertFalse(result.hasNext());
+    result.close();
+  }
+
+  @Test
+  public void testCollectionIndexes() throws InterruptedException {
+    String className = "testCollectionIndexesClass";
+    String viewName = "testCollectionIndexes";
+    db.createClass(className);
+
+    for (int i = 0; i < 10; i++) {
+      OElement elem = db.newElement(className);
+      elem.setProperty("name", "name" + i);
+      elem.setProperty("data", Arrays.asList(new Integer[] {20 + i, 40 + i, 50 + i}));
+      elem.save();
+    }
+
+    String statement =
+        "CREATE VIEW " + viewName + " FROM (SELECT FROM " + className + ") METADATA {";
+    statement +=
+        "indexes: [{type:'NOTUNIQUE', properties:{name:'STRING'}},{type:'NOTUNIQUE', properties:{data:{type:'EMBEDDEDLIST',linkedType:'INTEGER'}}}]";
+    statement += "}";
+
+    db.command(statement);
+
+    Thread.sleep(1000);
+
+    OResultSet result = db.query("SELECT FROM " + viewName + " WHERE data = 22");
+    Assert.assertTrue(
+        result.getExecutionPlan().get().getSteps().stream()
+            .anyMatch(x -> x instanceof FetchFromIndexStep));
     Assert.assertTrue(result.hasNext());
     result.next();
     Assert.assertFalse(result.hasNext());
@@ -180,40 +215,6 @@ public class OCreateViewStatementExecutionTest {
         Assert.assertEquals("sur" + item.getProperty("name"), item.getProperty("surname"));
       }
     }
-    result.close();
-  }
-
-  @Test
-  public void testLiveUpdateInsert() throws InterruptedException {
-    String className = "testLiveUpdateInsertClass";
-    String viewName = "testLiveUpdateInsert";
-    db.createClass(className);
-
-    for (int i = 0; i < 10; i++) {
-      OElement elem = db.newElement(className);
-      elem.setProperty("name", "name" + i);
-      elem.setProperty("surname", "surname" + i);
-      elem.save();
-    }
-
-    String statement =
-        "CREATE VIEW " + viewName + " FROM (SELECT FROM " + className + ") METADATA {";
-    statement += "updateStrategy:\"live\"";
-    statement += "}";
-
-    db.command(statement);
-
-    Thread.sleep(5000);
-
-    OResultSet result = db.query("SELECT FROM " + viewName);
-    Assert.assertEquals(10, result.stream().count());
-    result.close();
-
-    db.command("insert into " + className + " set name = 'name10', surname = 'surname10'");
-
-    Thread.sleep(1000);
-    result = db.query("SELECT FROM " + viewName);
-    Assert.assertEquals(11, result.stream().count());
     result.close();
   }
 

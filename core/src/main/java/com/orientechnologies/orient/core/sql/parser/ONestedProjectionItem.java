@@ -92,6 +92,29 @@ public class ONestedProjectionItem extends SimpleNode {
   }
 
   @Override
+  public void toGenericStatement(StringBuilder builder) {
+    if (exclude) {
+      builder.append("!");
+    }
+    if (star) {
+      builder.append("*");
+    }
+    if (expression != null) {
+      expression.toGenericStatement(builder);
+      if (rightWildcard) {
+        builder.append("*");
+      }
+    }
+    if (expansion != null) {
+      expansion.toGenericStatement(builder);
+    }
+    if (alias != null) {
+      builder.append(" AS ");
+      alias.toGenericStatement(builder);
+    }
+  }
+
+  @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;

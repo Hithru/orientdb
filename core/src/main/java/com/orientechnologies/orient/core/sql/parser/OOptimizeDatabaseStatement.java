@@ -9,7 +9,6 @@ import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.db.record.ridbag.ORidBag;
 import com.orientechnologies.orient.core.id.ORID;
-import com.orientechnologies.orient.core.intent.OIntentMassiveInsert;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.executor.OInternalResultSet;
 import com.orientechnologies.orient.core.sql.executor.OResultInternal;
@@ -31,6 +30,10 @@ public class OOptimizeDatabaseStatement extends OSimpleExecStatement {
 
   public OOptimizeDatabaseStatement(OrientSql p, int id) {
     super(p, id);
+  }
+
+  public void addOption(OCommandLineOption option) {
+    this.options.add(option);
   }
 
   @Override
@@ -58,6 +61,15 @@ public class OOptimizeDatabaseStatement extends OSimpleExecStatement {
   }
 
   @Override
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append("OPTIMIZE DATABASE");
+    for (OCommandLineOption option : options) {
+      builder.append(" ");
+      option.toGenericStatement(builder);
+    }
+  }
+
+  @Override
   public OOptimizeDatabaseStatement copy() {
     OOptimizeDatabaseStatement result = new OOptimizeDatabaseStatement(-1);
     result.options =
@@ -70,107 +82,106 @@ public class OOptimizeDatabaseStatement extends OSimpleExecStatement {
   private String optimizeEdges() {
     final ODatabaseDocumentInternal db = getDatabase();
 
-    db.declareIntent(new OIntentMassiveInsert());
+    long transformed = 0;
+    if (db.getTransaction().isActive()) db.commit();
+
+    db.begin();
+
     try {
-      long transformed = 0;
-      if (db.getTransaction().isActive()) db.commit();
 
-      db.begin();
+      final long totalEdges = db.countClass("E");
+      long browsedEdges = 0;
+      long lastLapBrowsed = 0;
+      long lastLapTime = System.currentTimeMillis();
 
-      try {
+      for (ODocument doc : db.browseClass("E")) {
+        if (Thread.currentThread().isInterrupted()) break;
 
-        final long totalEdges = db.countClass("E");
-        long browsedEdges = 0;
-        long lastLapBrowsed = 0;
-        long lastLapTime = System.currentTimeMillis();
+        browsedEdges++;
 
+<<<<<<< HEAD
         for (ODocument doc : db.browseClass("E")) {
           if (Thread.interrupted()) {
             throw new OInterruptedException("Thread execution was interrupted");
           }
+=======
+        if (doc != null) {
+          if (doc.fields() == 2) {
+            final ORID edgeIdentity = doc.getIdentity();
+>>>>>>> develop
 
-          browsedEdges++;
+            final ODocument outV = doc.field("out");
+            final ODocument inV = doc.field("in");
 
-          if (doc != null) {
-            if (doc.fields() == 2) {
-              final ORID edgeIdentity = doc.getIdentity();
-
-              final ODocument outV = doc.field("out");
-              final ODocument inV = doc.field("in");
-
-              // OUTGOING
-              final Object outField = outV.field("out_" + doc.getClassName());
-              if (outField instanceof ORidBag) {
-                final Iterator<OIdentifiable> it = ((ORidBag) outField).iterator();
-                while (it.hasNext()) {
-                  OIdentifiable v = it.next();
-                  if (edgeIdentity.equals(v)) {
-                    // REPLACE EDGE RID WITH IN-VERTEX RID
-                    it.remove();
-                    ((ORidBag) outField).add(inV.getIdentity());
-                    break;
-                  }
+            // OUTGOING
+            final Object outField = outV.field("out_" + doc.getClassName());
+            if (outField instanceof ORidBag) {
+              final Iterator<OIdentifiable> it = ((ORidBag) outField).iterator();
+              while (it.hasNext()) {
+                OIdentifiable v = it.next();
+                if (edgeIdentity.equals(v)) {
+                  // REPLACE EDGE RID WITH IN-VERTEX RID
+                  it.remove();
+                  ((ORidBag) outField).add(inV.getIdentity());
+                  break;
                 }
               }
+            }
 
-              outV.save();
+            outV.save();
 
-              // INCOMING
-              final Object inField = inV.field("in_" + doc.getClassName());
-              if (outField instanceof ORidBag) {
-                final Iterator<OIdentifiable> it = ((ORidBag) inField).iterator();
-                while (it.hasNext()) {
-                  OIdentifiable v = it.next();
-                  if (edgeIdentity.equals(v)) {
-                    // REPLACE EDGE RID WITH IN-VERTEX RID
-                    it.remove();
-                    ((ORidBag) inField).add(outV.getIdentity());
-                    break;
-                  }
+            // INCOMING
+            final Object inField = inV.field("in_" + doc.getClassName());
+            if (outField instanceof ORidBag) {
+              final Iterator<OIdentifiable> it = ((ORidBag) inField).iterator();
+              while (it.hasNext()) {
+                OIdentifiable v = it.next();
+                if (edgeIdentity.equals(v)) {
+                  // REPLACE EDGE RID WITH IN-VERTEX RID
+                  it.remove();
+                  ((ORidBag) inField).add(outV.getIdentity());
+                  break;
                 }
               }
+            }
 
-              inV.save();
+            inV.save();
 
-              doc.delete();
+            doc.delete();
 
-              if (++transformed % batch == 0) {
-                db.commit();
-                db.begin();
-              }
+            if (++transformed % batch == 0) {
+              db.commit();
+              db.begin();
+            }
 
-              final long now = System.currentTimeMillis();
+            final long now = System.currentTimeMillis();
 
-              if (verbose() && (now - lastLapTime > 2000)) {
-                final long elapsed = now - lastLapTime;
+            if (verbose() && (now - lastLapTime > 2000)) {
+              final long elapsed = now - lastLapTime;
 
-                OLogManager.instance()
-                    .info(
-                        this,
-                        "Browsed %,d of %,d edges, transformed %,d so far (%,d edges/sec)",
-                        browsedEdges,
-                        totalEdges,
-                        transformed,
-                        (((browsedEdges - lastLapBrowsed) * 1000 / elapsed)));
+              OLogManager.instance()
+                  .info(
+                      this,
+                      "Browsed %,d of %,d edges, transformed %,d so far (%,d edges/sec)",
+                      browsedEdges,
+                      totalEdges,
+                      transformed,
+                      (((browsedEdges - lastLapBrowsed) * 1000 / elapsed)));
 
-                lastLapTime = System.currentTimeMillis();
-                lastLapBrowsed = browsedEdges;
-              }
+              lastLapTime = System.currentTimeMillis();
+              lastLapBrowsed = browsedEdges;
             }
           }
         }
-
-        // LAST COMMIT
-        db.commit();
-
-      } finally {
-        if (db.getTransaction().isActive()) db.rollback();
       }
-      return "Transformed " + transformed + " regular edges in lightweight edges";
+
+      // LAST COMMIT
+      db.commit();
 
     } finally {
-      db.declareIntent(null);
+      if (db.getTransaction().isActive()) db.rollback();
     }
+    return "Transformed " + transformed + " regular edges in lightweight edges";
   }
 
   private boolean isOptimizeEdges() {

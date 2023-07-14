@@ -739,7 +739,7 @@ public abstract class OrientBaseGraph extends OrientConfigurableGraph
     final ORecord rec = rid.getRecord();
     if (rec == null || !(rec instanceof ODocument)) return null;
 
-    final OClass cls = ((ODocument) rec).getSchemaClass();
+    final OClass cls = ODocumentInternal.getImmutableSchemaClass(((ODocument) rec));
     if (cls != null && cls.isEdgeType())
       throw new IllegalArgumentException(
           "Cannot retrieve a vertex with the RID " + rid + " because it is an edge");
@@ -817,7 +817,8 @@ public abstract class OrientBaseGraph extends OrientConfigurableGraph
   public Iterable<Vertex> getVerticesOfClass(final String iClassName, final boolean iPolymorphic) {
     makeActive();
 
-    final OClass cls = getRawGraph().getMetadata().getSchema().getClass(iClassName);
+    final OClass cls =
+        getRawGraph().getMetadata().getImmutableSchemaSnapshot().getClass(iClassName);
     if (cls == null)
       throw new IllegalArgumentException(
           "Cannot find class '" + iClassName + "' in database schema");
@@ -961,7 +962,8 @@ public abstract class OrientBaseGraph extends OrientConfigurableGraph
   public Iterable<Edge> getEdgesOfClass(final String iClassName, final boolean iPolymorphic) {
     makeActive();
 
-    final OClass cls = getRawGraph().getMetadata().getSchema().getClass(iClassName);
+    final OClass cls =
+        getRawGraph().getMetadata().getImmutableSchemaSnapshot().getClass(iClassName);
     if (cls == null)
       throw new IllegalArgumentException(
           "Cannot find class '" + iClassName + "' in database schema");
@@ -1053,7 +1055,7 @@ public abstract class OrientBaseGraph extends OrientConfigurableGraph
     final ODocument doc = rec.getRecord();
     if (doc == null) return null;
 
-    final OClass cls = doc.getSchemaClass();
+    final OClass cls = ODocumentInternal.getImmutableSchemaClass(doc);
     if (cls != null) {
       if (cls.isVertexType())
         throw new IllegalArgumentException(
@@ -1119,7 +1121,7 @@ public abstract class OrientBaseGraph extends OrientConfigurableGraph
     try {
       if (!isClosed()) {
         if (commitTx) {
-          final OStorage storage = getDatabase().getStorage().getUnderlying();
+          final OStorage storage = getDatabase().getStorage();
           if (storage instanceof OAbstractPaginatedStorage) {
             if (((OAbstractPaginatedStorage) storage).getWALInstance() != null)
               getDatabase().commit();
@@ -1953,21 +1955,23 @@ public abstract class OrientBaseGraph extends OrientConfigurableGraph
 
     final List<OStorageEntryConfiguration> custom =
         (List<OStorageEntryConfiguration>) databaseDocumentTx.get(ATTRIBUTES.CUSTOM);
-    for (OStorageEntryConfiguration c : custom) {
-      if (c.name.equals("useLightweightEdges"))
-        setUseLightweightEdges(Boolean.parseBoolean(c.value));
-      else if (c.name.equals("txRequiredForSQLGraphOperations")) // Since v2.2.0
-      setTxRequiredForSQLGraphOperations(Boolean.parseBoolean(c.value));
-      else if (c.name.equals("maxRetries")) // Since v2.2.0
-      setMaxRetries(Integer.parseInt(c.value));
-      else if (c.name.equals("useClassForEdgeLabel"))
-        setUseClassForEdgeLabel(Boolean.parseBoolean(c.value));
-      else if (c.name.equals("useClassForVertexLabel"))
-        setUseClassForVertexLabel(Boolean.parseBoolean(c.value));
-      else if (c.name.equals("useVertexFieldsForEdgeLabels"))
-        setUseVertexFieldsForEdgeLabels(Boolean.parseBoolean(c.value));
-      else if (c.name.equals("standardElementConstraints"))
-        setStandardElementConstraints(Boolean.parseBoolean(c.value));
+    if (custom != null) {
+      for (OStorageEntryConfiguration c : custom) {
+        if (c.name.equals("useLightweightEdges"))
+          setUseLightweightEdges(Boolean.parseBoolean(c.value));
+        else if (c.name.equals("txRequiredForSQLGraphOperations")) // Since v2.2.0
+        setTxRequiredForSQLGraphOperations(Boolean.parseBoolean(c.value));
+        else if (c.name.equals("maxRetries")) // Since v2.2.0
+        setMaxRetries(Integer.parseInt(c.value));
+        else if (c.name.equals("useClassForEdgeLabel"))
+          setUseClassForEdgeLabel(Boolean.parseBoolean(c.value));
+        else if (c.name.equals("useClassForVertexLabel"))
+          setUseClassForVertexLabel(Boolean.parseBoolean(c.value));
+        else if (c.name.equals("useVertexFieldsForEdgeLabels"))
+          setUseVertexFieldsForEdgeLabels(Boolean.parseBoolean(c.value));
+        else if (c.name.equals("standardElementConstraints"))
+          setStandardElementConstraints(Boolean.parseBoolean(c.value));
+      }
     }
   }
 
@@ -1985,16 +1989,14 @@ public abstract class OrientBaseGraph extends OrientConfigurableGraph
         if (getDatabase().isClosed()) getDatabase().open(username, password);
       } else getDatabase().create();
 
-      if (getDatabase().getStorage().getUnderlying() instanceof OAbstractPaginatedStorage)
-        ((OAbstractPaginatedStorage) getDatabase().getStorage().getUnderlying())
-            .registerRecoverListener(this);
+      if (getDatabase().getStorage() instanceof OAbstractPaginatedStorage)
+        ((OAbstractPaginatedStorage) getDatabase().getStorage()).registerRecoverListener(this);
 
     } else {
       database = pool.acquire();
 
-      if (getDatabase().getStorage().getUnderlying() instanceof OAbstractPaginatedStorage)
-        ((OAbstractPaginatedStorage) getDatabase().getStorage().getUnderlying())
-            .registerRecoverListener(this);
+      if (getDatabase().getStorage() instanceof OAbstractPaginatedStorage)
+        ((OAbstractPaginatedStorage) getDatabase().getStorage()).registerRecoverListener(this);
     }
 
     makeActive();

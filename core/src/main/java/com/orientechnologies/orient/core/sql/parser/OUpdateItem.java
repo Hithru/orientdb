@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -65,6 +66,31 @@ public class OUpdateItem extends SimpleNode {
         break;
     }
     right.toString(params, builder);
+  }
+
+  public void toGenericStatement(StringBuilder builder) {
+    left.toGenericStatement(builder);
+    if (leftModifier != null) {
+      leftModifier.toGenericStatement(builder);
+    }
+    switch (operator) {
+      case OPERATOR_EQ:
+        builder.append(" = ");
+        break;
+      case OPERATOR_PLUSASSIGN:
+        builder.append(" += ");
+        break;
+      case OPERATOR_MINUSASSIGN:
+        builder.append(" -= ");
+        break;
+      case OPERATOR_STARASSIGN:
+        builder.append(" *= ");
+        break;
+      case OPERATOR_SLASHASSIGN:
+        builder.append(" /= ");
+        break;
+    }
+    right.toGenericStatement(builder);
   }
 
   public OUpdateItem copy() {
@@ -181,7 +207,7 @@ public class OUpdateItem extends SimpleNode {
       case OPERATOR_EQ:
         Object newValue = convertResultToDocument(rightValue);
         newValue = convertToPropertyType(doc, attrName, newValue, ctx);
-        doc.setProperty(attrName.getStringValue(), newValue);
+        doc.setProperty(attrName.getStringValue(), cleanValue(newValue));
         break;
       case OPERATOR_MINUSASSIGN:
         doc.setProperty(
@@ -200,6 +226,18 @@ public class OUpdateItem extends SimpleNode {
             attrName.getStringValue(), calculateNewValue(doc, ctx, OMathExpression.Operator.STAR));
         break;
     }
+  }
+
+  @SuppressWarnings("unchecked")
+  public static Object cleanValue(Object newValue) {
+    if (newValue instanceof Iterator) {
+      List<Object> value = new ArrayList<Object>();
+      while (((Iterator<Object>) newValue).hasNext()) {
+        value.add(((Iterator<Object>) newValue).next());
+      }
+      return value;
+    }
+    return newValue;
   }
 
   public static Object convertToPropertyType(
@@ -302,9 +340,9 @@ public class OUpdateItem extends SimpleNode {
       ((OBaseExpression) leftEx.mathExpression).modifier = leftModifier.copy();
     }
     OMathExpression mathExp = new OMathExpression(-1);
-    mathExp.getChildExpressions().add(leftEx.getMathExpression());
-    mathExp.getChildExpressions().add(new OParenthesisExpression(right.copy()));
-    mathExp.getOperators().add(explicitOperator);
+    mathExp.addChildExpression(leftEx.getMathExpression());
+    mathExp.addChildExpression(new OParenthesisExpression(right.copy()));
+    mathExp.addOperator(explicitOperator);
     return mathExp.execute(doc, ctx);
   }
 

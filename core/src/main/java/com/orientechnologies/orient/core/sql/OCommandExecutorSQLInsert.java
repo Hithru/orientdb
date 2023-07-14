@@ -37,6 +37,7 @@ import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.record.OElement;
 import com.orientechnologies.orient.core.record.ORecord;
 import com.orientechnologies.orient.core.record.impl.ODocument;
+import com.orientechnologies.orient.core.record.impl.ODocumentInternal;
 import com.orientechnologies.orient.core.serialization.serializer.OStringSerializerHelper;
 import com.orientechnologies.orient.core.sql.filter.OSQLFilterItemField;
 import com.orientechnologies.orient.core.sql.query.OSQLAsynchQuery;
@@ -134,7 +135,7 @@ public class OCommandExecutorSQLInsert extends OCommandExecutorSQLSetAware
 
       if (clusterName != null && className == null) {
         ODatabaseDocumentInternal db = getDatabase();
-        final int clusterId = db.getStorage().getClusterIdByName(clusterName);
+        final int clusterId = db.getClusterIdByName(clusterName);
         if (clusterId >= 0) {
           clazz = db.getMetadata().getSchema().getClassByClusterId(clusterId);
           if (clazz != null) {
@@ -297,7 +298,7 @@ public class OCommandExecutorSQLInsert extends OCommandExecutorSQLSetAware
     OClass oldClass = null;
     ORecord oldRecord = ((OIdentifiable) iRecord).getRecord();
     if (oldRecord instanceof ODocument) {
-      oldClass = ((ODocument) oldRecord).getSchemaClass();
+      oldClass = ODocumentInternal.getImmutableSchemaClass(((ODocument) oldRecord));
     }
     final ORecord rec = oldRecord.copy();
 
@@ -329,7 +330,8 @@ public class OCommandExecutorSQLInsert extends OCommandExecutorSQLSetAware
             Object edges = doc.getProperty(field);
             if (edges instanceof OIdentifiable) {
               ODocument edgeRec = ((OIdentifiable) edges).getRecord();
-              if (edgeRec.getSchemaClass() != null && edgeRec.getSchemaClass().isSubClassOf("E")) {
+              OClass clazz = ODocumentInternal.getImmutableSchemaClass(edgeRec);
+              if (clazz != null && clazz.isSubClassOf("E")) {
                 doc.removeProperty(field);
               }
             } else if (edges instanceof Iterable) {

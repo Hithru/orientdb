@@ -67,6 +67,16 @@ public class ORebuildIndexStatement extends OSimpleExecStatement {
   }
 
   @Override
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append("REBUILD INDEX ");
+    if (all) {
+      builder.append("*");
+    } else {
+      name.toGenericStatement(builder);
+    }
+  }
+
+  @Override
   public ORebuildIndexStatement copy() {
     ORebuildIndexStatement result = new ORebuildIndexStatement(-1);
     result.all = all;

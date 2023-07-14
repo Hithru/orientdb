@@ -49,6 +49,11 @@ public class OExpressionStatement extends OSimpleExecStatement {
   }
 
   @Override
+  public void toGenericStatement(StringBuilder builder) {
+    expression.toGenericStatement(builder);
+  }
+
+  @Override
   public boolean refersToParent() {
     return expression.refersToParent();
   }

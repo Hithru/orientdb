@@ -19,7 +19,6 @@ public class HttpGraphTest extends BaseHttpDatabaseTest {
 
   @Test
   public void updateWithEdges() throws IOException {
-
     Assert.assertEquals(
         post("command/" + getDatabaseName() + "/sql/")
             .payload("create class Foo extends V", CONTENT.TEXT)
@@ -27,7 +26,6 @@ public class HttpGraphTest extends BaseHttpDatabaseTest {
             .getStatusLine()
             .getStatusCode(),
         200);
-
     Assert.assertEquals(
         post("command/" + getDatabaseName() + "/sql/")
             .payload("create class FooEdge extends E", CONTENT.TEXT)
@@ -43,14 +41,13 @@ public class HttpGraphTest extends BaseHttpDatabaseTest {
     script += "commit;";
     script += "return $v1;";
 
-    String scriptPayload =
+    final String scriptPayload =
         "{ \"operations\" : [{ \"type\" : \"script\", \"language\" : \"SQL\",  \"script\" : \"%s\"}]}";
 
     HttpResponse response =
         post("batch/" + getDatabaseName() + "/sql/")
             .payload(String.format(scriptPayload, script), CONTENT.JSON)
             .getResponse();
-
     Assert.assertEquals(response.getStatusLine().getStatusCode(), 200);
 
     final ODocument result = new ODocument().fromJSON(response.getEntity().getContent());
@@ -81,7 +78,6 @@ public class HttpGraphTest extends BaseHttpDatabaseTest {
 
   @Test
   public void getGraphResult() throws IOException {
-
     Assert.assertEquals(
         post("command/" + getDatabaseName() + "/sql/")
             .payload("create class Foo extends V", CONTENT.TEXT)
@@ -89,7 +85,6 @@ public class HttpGraphTest extends BaseHttpDatabaseTest {
             .getStatusLine()
             .getStatusCode(),
         200);
-
     Assert.assertEquals(
         post("command/" + getDatabaseName() + "/sql/")
             .payload("create class FooEdge extends E", CONTENT.TEXT)
@@ -105,28 +100,24 @@ public class HttpGraphTest extends BaseHttpDatabaseTest {
     script += "commit;";
     script += "return $v1;";
 
-    String scriptPayload =
+    final String scriptPayload =
         "{ \"operations\" : [{ \"type\" : \"script\", \"language\" : \"SQL\",  \"script\" : \"%s\"}]}";
 
     HttpResponse response =
         post("batch/" + getDatabaseName() + "/sql/")
             .payload(String.format(scriptPayload, script), CONTENT.JSON)
             .getResponse();
-
     Assert.assertEquals(response.getStatusLine().getStatusCode(), 200);
 
-    String payload =
+    final String payload =
         new ODocument().field("command", "select from E").field("mode", "graph").toJSON();
-
     response =
         post("command/" + getDatabaseName() + "/sql/").payload(payload, CONTENT.JSON).getResponse();
 
     final ODocument result = new ODocument().fromJSON(response.getEntity().getContent());
-
     final Map<String, Object> res = result.field("graph");
-
-    Collection vertices = (Collection) res.get("vertices");
-    Collection edges = (Collection) res.get("edges");
+    final Collection vertices = (Collection) res.get("vertices");
+    final Collection edges = (Collection) res.get("edges");
 
     Assert.assertEquals(2, vertices.size());
     Assert.assertEquals(1, edges.size());

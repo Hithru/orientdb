@@ -1,7 +1,7 @@
 package com.orientechnologies.orient.server.token;
 
+import com.orientechnologies.orient.core.metadata.security.OSecurityUser;
 import com.orientechnologies.orient.server.OServer;
-import com.orientechnologies.orient.server.config.OServerUserConfiguration;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -20,7 +20,7 @@ public class OServerUserTokenTest {
   @Test
   public void testToken() throws Exception {
 
-    OServerUserConfiguration root = server.serverLogin("root", "root", "*");
+    OSecurityUser root = server.authenticateUser("root", "root", "*");
 
     byte[] signedWebTokenServerUser = server.getTokenHandler().getSignedWebTokenServerUser(root);
 

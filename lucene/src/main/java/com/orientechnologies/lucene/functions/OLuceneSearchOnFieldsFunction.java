@@ -9,7 +9,7 @@ import com.orientechnologies.lucene.query.OLuceneKeyAndMetadata;
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.id.ORID;
-import com.orientechnologies.orient.core.metadata.OMetadata;
+import com.orientechnologies.orient.core.metadata.OMetadataInternal;
 import com.orientechnologies.orient.core.record.OElement;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.executor.OResult;
@@ -116,7 +116,7 @@ public class OLuceneSearchOnFieldsFunction extends OLuceneSearchFunctionTemplate
     String query = (String) expression.execute((OIdentifiable) null, ctx);
     if (index != null) {
 
-      ODocument meta = getMetadata(args);
+      ODocument meta = getMetadata(args, ctx);
       Set<OIdentifiable> luceneResultSet;
       try (Stream<ORID> rids =
           index
@@ -132,11 +132,11 @@ public class OLuceneSearchOnFieldsFunction extends OLuceneSearchFunctionTemplate
     throw new RuntimeException();
   }
 
-  private ODocument getMetadata(OExpression[] args) {
+  private ODocument getMetadata(OExpression[] args, OCommandContext ctx) {
     if (args.length == 3) {
-      return new ODocument().fromJSON(args[2].toString());
+      return getMetadata(args[2], ctx);
     }
-    return new ODocument();
+    return OLuceneQueryBuilder.EMPTY_METADATA;
   }
 
   @Override
@@ -151,10 +151,11 @@ public class OLuceneSearchOnFieldsFunction extends OLuceneSearchFunctionTemplate
 
   private OLuceneFullTextIndex searchForIndex(
       String className, OCommandContext ctx, List<String> fieldNames) {
-    OMetadata dbMetadata = ctx.getDatabase().activateOnCurrentThread().getMetadata();
+    OMetadataInternal dbMetadata =
+        (OMetadataInternal) ctx.getDatabase().activateOnCurrentThread().getMetadata();
 
     List<OLuceneFullTextIndex> indices =
-        dbMetadata.getSchema().getClass(className).getIndexes().stream()
+        dbMetadata.getImmutableSchemaSnapshot().getClass(className).getIndexes().stream()
             .filter(idx -> idx instanceof OLuceneFullTextIndex)
             .map(idx -> (OLuceneFullTextIndex) idx)
             .filter(idx -> intersect(idx.getDefinition().getFields(), fieldNames))

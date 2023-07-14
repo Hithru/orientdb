@@ -3,12 +3,13 @@
 package com.orientechnologies.orient.core.sql.parser;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.db.ODatabase;
+import com.orientechnologies.orient.core.db.ODatabaseSession;
 import com.orientechnologies.orient.core.id.ORID;
 import com.orientechnologies.orient.core.metadata.function.OFunction;
 import com.orientechnologies.orient.core.sql.executor.OInternalResultSet;
 import com.orientechnologies.orient.core.sql.executor.OResultInternal;
 import com.orientechnologies.orient.core.sql.executor.OResultSet;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -30,9 +31,16 @@ public class OCreateFunctionStatement extends OSimpleExecStatement {
     super(p, id);
   }
 
+  public void addParameter(OIdentifier parameter) {
+    if (this.parameters == null) {
+      this.parameters = new ArrayList<>();
+    }
+    this.parameters.add(parameter);
+  }
+
   @Override
   public OResultSet executeSimple(OCommandContext ctx) {
-    ODatabase database = ctx.getDatabase();
+    ODatabaseSession database = ctx.getDatabase();
     final OFunction f =
         database.getMetadata().getFunctionLibrary().createFunction(name.getStringValue());
     f.setCode(code);
@@ -78,6 +86,34 @@ public class OCreateFunctionStatement extends OSimpleExecStatement {
     if (language != null) {
       builder.append(" LANGUAGE ");
       language.toString(params, builder);
+    }
+  }
+
+  @Override
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append("CREATE FUNCTION ");
+    name.toGenericStatement(builder);
+    builder.append(" ");
+    builder.append(codeQuoted);
+    if (parameters != null) {
+      boolean first = true;
+      builder.append(" PARAMETERS [");
+      for (OIdentifier param : parameters) {
+        if (!first) {
+          builder.append(", ");
+        }
+        param.toGenericStatement(builder);
+        first = false;
+      }
+      builder.append("]");
+    }
+    if (idempotent != null) {
+      builder.append(" IDEMPOTENT ");
+      builder.append(idempotent ? "true" : "false");
+    }
+    if (language != null) {
+      builder.append(" LANGUAGE ");
+      language.toGenericStatement(builder);
     }
   }
 

@@ -11,13 +11,16 @@
     * limitations under the License. ~ * ~ * For more information: http://www.orientechnologies.com 
     ~ */ -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.orientechnologies</groupId>
         <artifactId>orientdb-parent</artifactId>
+<<<<<<< HEAD
         <version>3.1.14-SNAPSHOT</version>
+=======
+        <version>3.2.20-SNAPSHOT</version>
+>>>>>>> develop
     </parent>
 
     <artifactId>orientdb-object</artifactId>
@@ -30,6 +33,56 @@
         <url>http://www.orientechnologies.com</url>
     </organization>
     <profiles>
+        <profile>
+            <id>java8</id>
+            <activation>
+                <jdk>1.8</jdk>
+            </activation>
+            <properties>
+                <argLine>
+                    -ea
+                    -Xmx${heapSize}
+                    -Dstorage.diskCache.bufferSize=4096
+                    -Dmemory.directMemory.trackMode=true
+                    -Dstorage.makeFullCheckpointAfterCreate=false
+                    -Dstorage.makeFullCheckpointAfterOpen=false
+                    -Dstorage.makeFullCheckpointAfterClusterCreate=false
+                    -Dstorage.wal.syncOnPageFlush=false
+                    -Dstorage.configuration.syncOnUpdate=false
+                    -Ddb.makeFullCheckpointOnIndexChange=false
+                    -Ddb.makeFullCheckpointOnSchemaChange=false
+                    -Djava.util.logging.manager=com.orientechnologies.common.log.ShutdownLogManager
+                    -Dstorage.diskCache.checksumMode=storeAndThrow
+                    -Dsecurity.warningDefaultUsers=false
+                </argLine>
+            </properties>
+        </profile>
+        <profile>
+            <id>java11</id>
+            <activation>
+                <jdk>[11,)</jdk>
+            </activation>
+            <properties>
+                <argLine>
+                    -ea
+                    -Xmx${heapSize}
+                    -Dstorage.diskCache.bufferSize=4096
+                    -Dmemory.directMemory.trackMode=true
+                    -Dstorage.makeFullCheckpointAfterCreate=false
+                    -Dstorage.makeFullCheckpointAfterOpen=false
+                    -Dstorage.makeFullCheckpointAfterClusterCreate=false
+                    -Dstorage.wal.syncOnPageFlush=false
+                    -Dstorage.configuration.syncOnUpdate=false
+                    -Ddb.makeFullCheckpointOnIndexChange=false
+                    -Ddb.makeFullCheckpointOnSchemaChange=false
+                    -Djava.util.logging.manager=com.orientechnologies.common.log.ShutdownLogManager
+                    -Dstorage.diskCache.checksumMode=storeAndThrow
+                    -Dsecurity.warningDefaultUsers=false
+                    --add-opens jdk.unsupported/sun.misc=ALL-UNNAMED
+                </argLine>
+            </properties>
+        </profile>
+
         <profile>
             <id>development</id>
             <activation>
@@ -62,6 +115,23 @@
                         <version>${surefire.version}</version>
                         <configuration>
                             <skipTests>true</skipTests>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>secondary-tests</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>${surefire.version}</version>
+                        <configuration>
+                            <includes>
+                                <include>**/*ST.java</include>
+                            </includes>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -149,25 +219,6 @@
     </build>
     <properties>
         <import.package>*</import.package>
-        <export.package>com.orientechnologies.orient.object.*</export.package>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <argLine>
-            -ea
-            -Xmx${heapSize}
-            -Dstorage.diskCache.bufferSize=4096
-            -Dmemory.directMemory.trackMode=true
-            -Dstorage.makeFullCheckpointAfterCreate=false
-            -Dstorage.makeFullCheckpointAfterOpen=false
-            -Dstorage.makeFullCheckpointAfterClusterCreate=false
-            -Dstorage.wal.syncOnPageFlush=false
-            -Dstorage.configuration.syncOnUpdate=false
-            -Ddb.makeFullCheckpointOnIndexChange=false
-            -Ddb.makeFullCheckpointOnSchemaChange=false
-            -Djava.util.logging.manager=com.orientechnologies.common.log.ShutdownLogManager
-            -Dstorage.diskCache.checksumMode=storeAndThrow
-            -Dindex.allowManualIndexes=false
-            -Dsecurity.warningDefaultUsers=false
-        </argLine>
-        <project.rootdir>${project.basedir}/../</project.rootdir>
     </properties>
 </project>

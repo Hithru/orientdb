@@ -4,7 +4,7 @@ package com.orientechnologies.orient.core.sql.parser;
 
 import com.orientechnologies.orient.core.command.OBasicCommandContext;
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.db.ODatabase;
+import com.orientechnologies.orient.core.db.ODatabaseSession;
 import com.orientechnologies.orient.core.sql.executor.OResultSet;
 import com.orientechnologies.orient.core.sql.executor.OUpdateExecutionPlan;
 import com.orientechnologies.orient.core.sql.executor.OUpdateExecutionPlanner;
@@ -101,6 +101,65 @@ public class OUpdateStatement extends OStatement {
     }
   }
 
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append(getStatementType());
+    if (target != null) {
+      target.toGenericStatement(builder);
+    }
+
+    for (OUpdateOperations ops : this.operations) {
+      builder.append(" ");
+      ops.toGenericStatement(builder);
+    }
+
+    if (upsert) {
+      builder.append(" UPSERT");
+    }
+
+    if (returnBefore || returnAfter || returnCount) {
+      builder.append(" RETURN");
+      if (returnBefore) {
+        builder.append(" BEFORE");
+      } else if (returnAfter) {
+        builder.append(" AFTER");
+      } else {
+        builder.append(" COUNT");
+      }
+      if (returnProjection != null) {
+        builder.append(" ");
+        returnProjection.toGenericStatement(builder);
+      }
+    }
+    if (whereClause != null) {
+      builder.append(" WHERE ");
+      whereClause.toGenericStatement(builder);
+    }
+
+    if (lockRecord != null) {
+      builder.append(" LOCK ");
+      switch (lockRecord) {
+        case DEFAULT:
+          builder.append("DEFAULT");
+          break;
+        case EXCLUSIVE_LOCK:
+          builder.append("RECORD");
+          break;
+        case SHARED_LOCK:
+          builder.append("SHARED");
+          break;
+        case NONE:
+          builder.append("NONE");
+          break;
+      }
+    }
+    if (limit != null) {
+      limit.toGenericStatement(builder);
+    }
+    if (timeout != null) {
+      timeout.toGenericStatement(builder);
+    }
+  }
+
   protected String getStatementType() {
     return "UPDATE ";
   }
@@ -132,7 +191,7 @@ public class OUpdateStatement extends OStatement {
 
   @Override
   public OResultSet execute(
-      ODatabase db, Object[] args, OCommandContext parentCtx, boolean usePlanCache) {
+      ODatabaseSession db, Object[] args, OCommandContext parentCtx, boolean usePlanCache) {
     OBasicCommandContext ctx = new OBasicCommandContext();
     if (parentCtx != null) {
       ctx.setParentWithoutOverridingChild(parentCtx);
@@ -157,7 +216,7 @@ public class OUpdateStatement extends OStatement {
 
   @Override
   public OResultSet execute(
-      ODatabase db, Map params, OCommandContext parentCtx, boolean usePlanCache) {
+      ODatabaseSession db, Map params, OCommandContext parentCtx, boolean usePlanCache) {
     OBasicCommandContext ctx = new OBasicCommandContext();
     if (parentCtx != null) {
       ctx.setParentWithoutOverridingChild(parentCtx);
@@ -178,6 +237,7 @@ public class OUpdateStatement extends OStatement {
     OUpdateExecutionPlanner planner = new OUpdateExecutionPlanner(this);
     OUpdateExecutionPlan result = planner.createExecutionPlan(ctx, enableProfiling);
     result.setStatement(this.originalStatement);
+    result.setGenericStatement(this.toGenericStatement());
     return result;
   }
 
@@ -227,6 +287,10 @@ public class OUpdateStatement extends OStatement {
 
   public List<OUpdateOperations> getOperations() {
     return operations;
+  }
+
+  public void addOperations(OUpdateOperations op) {
+    this.operations.add(op);
   }
 
   public boolean isUpsert() {

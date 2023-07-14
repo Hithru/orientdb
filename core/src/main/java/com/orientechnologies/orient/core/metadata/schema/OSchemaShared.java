@@ -19,7 +19,6 @@
  */
 package com.orientechnologies.orient.core.metadata.schema;
 
-import com.orientechnologies.common.concur.lock.OReadersWriterSpinLock;
 import com.orientechnologies.common.concur.resource.OCloseable;
 import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.common.types.OModifiableInteger;
@@ -41,8 +40,6 @@ import com.orientechnologies.orient.core.metadata.schema.clusterselection.OClust
 import com.orientechnologies.orient.core.metadata.security.ORole;
 import com.orientechnologies.orient.core.metadata.security.ORule;
 import com.orientechnologies.orient.core.record.impl.ODocument;
-import com.orientechnologies.orient.core.storage.OAutoshardedStorage;
-import com.orientechnologies.orient.core.storage.OStorageProxy;
 import com.orientechnologies.orient.core.storage.impl.local.OAbstractPaginatedStorage;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -54,6 +51,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Shared schema class. It's shared by all the database instances that point to the same storage.
@@ -70,7 +68,7 @@ public abstract class OSchemaShared implements OCloseable {
   public static final int VERSION_NUMBER_V5 = 5;
   private static final long serialVersionUID = 1L;
 
-  private final OReadersWriterSpinLock rwSpinLock = new OReadersWriterSpinLock();
+  private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
   protected final Map<String, OClass> classes = new HashMap<String, OClass>();
   protected final Map<Integer, OClass> clustersToClasses = new HashMap<Integer, OClass>();
@@ -338,16 +336,16 @@ public abstract class OSchemaShared implements OCloseable {
 
   /** Reloads the schema inside a storage's shared lock. */
   public void reload(ODatabaseDocumentInternal database) {
-    rwSpinLock.acquireWriteLock();
+    lock.writeLock().lock();
     try {
       ((ORecordId) document.getIdentity())
-          .fromString(database.getStorage().getConfiguration().getSchemaRecordId());
+          .fromString(database.getStorageInfo().getConfiguration().getSchemaRecordId());
       //noinspection NonAtomicOperationOnVolatileField
       this.document = database.reload(this.document, null, true, true);
       fromStream();
       forceSnapshot(database);
     } finally {
-      rwSpinLock.releaseWriteLock();
+      lock.writeLock().unlock();
     }
   }
 
@@ -412,15 +410,16 @@ public abstract class OSchemaShared implements OCloseable {
   }
 
   public void acquireSchemaReadLock() {
-    rwSpinLock.acquireReadLock();
+    lock.readLock().lock();
   }
 
   public void releaseSchemaReadLock() {
-    rwSpinLock.releaseReadLock();
+    lock.readLock().unlock();
   }
 
   public void acquireSchemaWriteLock(ODatabaseDocumentInternal database) {
-    rwSpinLock.acquireWriteLock();
+    database.startEsclusiveMetadataChange();
+    lock.writeLock().lock();
     modificationCounter.increment();
   }
 
@@ -437,7 +436,7 @@ public abstract class OSchemaShared implements OCloseable {
         // by sql commands and we need to reload local replica
 
         if (iSave) {
-          if (database.getStorage().getUnderlying() instanceof OAbstractPaginatedStorage) {
+          if (database.getStorage() instanceof OAbstractPaginatedStorage) {
             saveInternal(database);
           } else {
             reload(database);
@@ -450,11 +449,12 @@ public abstract class OSchemaShared implements OCloseable {
     } finally {
       modificationCounter.decrement();
       count = modificationCounter.intValue();
-      rwSpinLock.releaseWriteLock();
+      lock.writeLock().unlock();
+      database.endEsclusiveMetadataChange();
     }
     assert count >= 0;
 
-    if (count == 0 && database.getStorage().getUnderlying() instanceof OStorageProxy) {
+    if (count == 0 && database.isRemote()) {
       database.getStorage().reload();
     }
   }
@@ -515,7 +515,7 @@ public abstract class OSchemaShared implements OCloseable {
 
   /** Binds ODocument to POJO. */
   public void fromStream() {
-    rwSpinLock.acquireWriteLock();
+    lock.writeLock().lock();
     modificationCounter.increment();
     try {
       // READ CURRENT SCHEMA VERSION
@@ -651,14 +651,13 @@ public abstract class OSchemaShared implements OCloseable {
 
       if (!hasGlobalProperties) {
         ODatabaseDocumentInternal database = ODatabaseRecordThreadLocal.instance().get();
-        if (database.getStorage().getUnderlying() instanceof OAbstractPaginatedStorage)
-          saveInternal(database);
+        if (database.getStorage() instanceof OAbstractPaginatedStorage) saveInternal(database);
       }
 
     } finally {
       version++;
       modificationCounter.decrement();
-      rwSpinLock.releaseWriteLock();
+      lock.writeLock().unlock();
     }
   }
 
@@ -667,7 +666,7 @@ public abstract class OSchemaShared implements OCloseable {
   protected abstract OViewImpl createViewInstance(ODocument c);
 
   public ODocument toNetworkStream() {
-    rwSpinLock.acquireReadLock();
+    lock.readLock().lock();
     try {
       ODocument document = new ODocument();
       document.setTrackingChanges(false);
@@ -693,13 +692,13 @@ public abstract class OSchemaShared implements OCloseable {
       document.field("blobClusters", blobClusters, OType.EMBEDDEDSET);
       return document;
     } finally {
-      rwSpinLock.releaseReadLock();
+      lock.readLock().unlock();
     }
   }
 
   /** Binds POJO to ODocument. */
   public ODocument toStream() {
-    rwSpinLock.acquireReadLock();
+    lock.readLock().lock();
     try {
       document.field("schemaVersion", CURRENT_VERSION_NUMBER);
 
@@ -723,7 +722,7 @@ public abstract class OSchemaShared implements OCloseable {
 
       return document;
     } finally {
-      rwSpinLock.releaseReadLock();
+      lock.readLock().unlock();
     }
   }
 
@@ -785,30 +784,31 @@ public abstract class OSchemaShared implements OCloseable {
 
   public OSchemaShared load(ODatabaseDocumentInternal database) {
 
-    rwSpinLock.acquireWriteLock();
+    lock.writeLock().lock();
     try {
-      if (!new ORecordId(database.getStorage().getConfiguration().getSchemaRecordId()).isValid())
+      if (!new ORecordId(database.getStorageInfo().getConfiguration().getSchemaRecordId())
+          .isValid())
         throw new OSchemaNotCreatedException("Schema is not created and cannot be loaded");
 
       ((ORecordId) document.getIdentity())
-          .fromString(database.getStorage().getConfiguration().getSchemaRecordId());
+          .fromString(database.getStorageInfo().getConfiguration().getSchemaRecordId());
       document = database.reload(document, "*:-1 index:0", true);
       fromStream();
 
       return this;
     } finally {
-      rwSpinLock.releaseWriteLock();
+      lock.writeLock().unlock();
     }
   }
 
   public void create(final ODatabaseDocumentInternal database) {
-    rwSpinLock.acquireWriteLock();
+    lock.writeLock().lock();
     try {
       document = database.save(document, OMetadataDefault.CLUSTER_INTERNAL_NAME);
       database.getStorage().setSchemaRecordId(document.getIdentity().toString());
       snapshot = new OImmutableSchema(this, database);
     } finally {
-      rwSpinLock.releaseWriteLock();
+      lock.writeLock().unlock();
     }
   }
 
@@ -830,12 +830,12 @@ public abstract class OSchemaShared implements OCloseable {
   }
 
   public OSchemaShared setDirty() {
-    rwSpinLock.acquireWriteLock();
+    lock.writeLock().lock();
     try {
       document.setDirty();
       return this;
     } finally {
-      rwSpinLock.releaseWriteLock();
+      lock.writeLock().unlock();
     }
   }
 
@@ -876,8 +876,7 @@ public abstract class OSchemaShared implements OCloseable {
   }
 
   protected boolean executeThroughDistributedStorage(ODatabaseDocumentInternal database) {
-    return database.getStorage() instanceof OAutoshardedStorage
-        && !((OAutoshardedStorage) database.getStorage()).isLocalEnv();
+    return !database.isLocalEnv();
   }
 
   private void saveInternal(ODatabaseDocumentInternal database) {

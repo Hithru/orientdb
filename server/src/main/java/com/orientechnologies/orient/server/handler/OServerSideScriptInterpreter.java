@@ -40,7 +40,6 @@ import java.util.Set;
  * @author Luca
  */
 public class OServerSideScriptInterpreter extends OServerPluginAbstract {
-  protected boolean enabled = false;
   protected Set<String> allowedLanguages = new HashSet<String>();
 
   protected OScriptInterceptor interceptor;
@@ -86,18 +85,13 @@ public class OServerSideScriptInterpreter extends OServerPluginAbstract {
               final String language =
                   ((OCommandScript) iArgument).getLanguage().toLowerCase(Locale.ENGLISH);
 
-              if (!allowedLanguages.contains(language))
-                throw new OSecurityException(
-                    "Language '" + language + "' is not allowed to be executed");
-
+              checkLanguage(language);
               return null;
             });
 
     interceptor =
         (db, language, script, params) -> {
-          if (!allowedLanguages.contains(language))
-            throw new OSecurityException(
-                "Language '" + language + "' is not allowed to be executed");
+          checkLanguage(language);
         };
 
     OrientDBInternal.extract(server.getContext())
@@ -130,5 +124,13 @@ public class OServerSideScriptInterpreter extends OServerPluginAbstract {
         .getScriptManager()
         .getCommandManager()
         .unregisterExecutor(OCommandScript.class);
+  }
+
+  private void checkLanguage(final String language) {
+    if (allowedLanguages.contains(language)) return;
+
+    if ("js".equals(language) && allowedLanguages.contains("javascript")) return;
+
+    throw new OSecurityException("Language '" + language + "' is not allowed to be executed");
   }
 }

@@ -218,7 +218,7 @@ public class AsyncReadCacheTestIT {
         final int pageIndex = random.nextInt(pageLimit);
 
         final OCacheEntry cacheEntry =
-            readCache.loadForWrite(fileId, pageIndex, true, writeCache, true, null);
+            readCache.loadForWrite(fileId, pageIndex, writeCache, true, null);
         readCache.releaseFromWrite(cacheEntry, writeCache, true);
         pageCounter++;
       }
@@ -257,9 +257,8 @@ public class AsyncReadCacheTestIT {
         final int fileId = random.nextInt(fileLimit);
         final int pageIndex = random.nextInt(pageLimit);
 
-        final OCacheEntry cacheEntry =
-            readCache.loadForRead(fileId, pageIndex, true, writeCache, true);
-        readCache.releaseFromRead(cacheEntry, writeCache);
+        final OCacheEntry cacheEntry = readCache.loadForRead(fileId, pageIndex, writeCache, true);
+        readCache.releaseFromRead(cacheEntry);
         pageCounter++;
       }
 
@@ -293,8 +292,7 @@ public class AsyncReadCacheTestIT {
       while (pageCounter < pageCount) {
         final int pageIndex = random.nextInt();
         assert pageIndex < pageLimit;
-        final OCacheEntry cacheEntry =
-            readCache.loadForWrite(0, pageIndex, true, writeCache, true, null);
+        final OCacheEntry cacheEntry = readCache.loadForWrite(0, pageIndex, writeCache, true, null);
         readCache.releaseFromWrite(cacheEntry, writeCache, true);
         pageCounter++;
       }
@@ -329,8 +327,8 @@ public class AsyncReadCacheTestIT {
       while (pageCounter < pageCount) {
         final int pageIndex = random.nextInt();
         assert pageIndex < pageLimit;
-        final OCacheEntry cacheEntry = readCache.loadForRead(0, pageIndex, true, writeCache, true);
-        readCache.releaseFromRead(cacheEntry, writeCache);
+        final OCacheEntry cacheEntry = readCache.loadForRead(0, pageIndex, writeCache, true);
+        readCache.releaseFromRead(cacheEntry);
         pageCounter++;
       }
 
@@ -382,7 +380,11 @@ public class AsyncReadCacheTestIT {
     }
 
     @Override
+<<<<<<< HEAD
     public void syncDataFiles(long segmentId, byte[] lastMetadata) throws IOException {}
+=======
+    public void syncDataFiles(long segmentId, byte[] lastMetadata) {}
+>>>>>>> develop
 
     @Override
     public void flushTillSegment(final long segmentId) {}
@@ -537,10 +539,13 @@ public class AsyncReadCacheTestIT {
         final OCachePointer pointer, final OLogSequenceNumber startLSN) {}
 
     @Override
-    public void create() throws IOException {}
+    public void create() {}
 
     @Override
     public void open() throws IOException {}
+
+    @Override
+    public void replaceFileId(long fileId, long newFileId) {}
   }
 
   private static final class ScrambledZipfianGenerator {

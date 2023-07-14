@@ -22,11 +22,11 @@ package com.orientechnologies.orient.server.distributed.impl;
 import com.orientechnologies.common.io.OFileUtils;
 import com.orientechnologies.common.log.OAnsiCode;
 import com.orientechnologies.orient.console.OTableFormatter;
+import com.orientechnologies.orient.core.config.OStorageConfiguration;
 import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
 import com.orientechnologies.orient.core.db.ODatabaseRecordThreadLocal;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.record.impl.ODocument;
-import com.orientechnologies.orient.core.util.ODateHelper;
 import com.orientechnologies.orient.server.distributed.ODistributedConfiguration;
 import com.orientechnologies.orient.server.distributed.ODistributedRequestId;
 import com.orientechnologies.orient.server.distributed.ODistributedServerManager;
@@ -66,9 +66,6 @@ public class ODistributedOutput {
 
         String serverLabel = serverName;
         if (manager.getLocalNodeName().equals(serverName)) serverLabel += "(*)";
-
-        final String lockManagerServer = manager.getLockManagerServer();
-        if (lockManagerServer != null && lockManagerServer.equals(serverName)) serverLabel += "(@)";
 
         serverRow.field("Name", serverLabel);
         serverRow.field("Status", (Object) m.field("status"));
@@ -154,8 +151,7 @@ public class ODistributedOutput {
     return buffer.toString();
   }
 
-  public static String formatLatency(
-      final ODistributedAbstractPlugin manager, final ODocument distribCfg) {
+  public static String formatLatency(final ODistributedPlugin manager, final ODocument distribCfg) {
     final List<OIdentifiable> rows = new ArrayList<OIdentifiable>();
 
     final List<ODocument> members = distribCfg.field("members");
@@ -227,13 +223,13 @@ public class ODistributedOutput {
   }
 
   public static String formatMessages(
-      final ODistributedAbstractPlugin manager, final ODocument distribCfg) {
+      final ODistributedPlugin manager, final ODocument distribCfg) {
     return formatMessageBetweenServers(manager, distribCfg)
         + formatMessageStats(manager, distribCfg);
   }
 
   public static String formatMessageBetweenServers(
-      final ODistributedAbstractPlugin manager, final ODocument distribCfg) {
+      final ODistributedPlugin manager, final ODocument distribCfg) {
     final List<OIdentifiable> rows = new ArrayList<OIdentifiable>();
 
     final List<ODocument> members = distribCfg.field("members");
@@ -332,7 +328,7 @@ public class ODistributedOutput {
   }
 
   public static String formatMessageStats(
-      final ODistributedAbstractPlugin manager, final ODocument distribCfg) {
+      final ODistributedPlugin manager, final ODocument distribCfg) {
     final List<OIdentifiable> rows = new ArrayList<OIdentifiable>();
 
     final List<ODocument> members = distribCfg.field("members");
@@ -639,12 +635,11 @@ public class ODistributedOutput {
   }
 
   protected static String formatServerName(
-      final ODistributedAbstractPlugin manager, final String fromServer) {
+      final ODistributedPlugin manager, final String fromServer) {
     return fromServer + (manager.getLocalNodeName().equals(fromServer) ? "*" : "");
   }
 
-  public static Object formatNewRecordLocks(
-      final ODistributedAbstractPlugin manager, final String db) {
+  public static Object formatNewRecordLocks(final ODistributedPlugin manager, final String db) {
     final List<ODocument> rows = getRequestsStatus(manager, db);
 
     final StringBuilder buffer = new StringBuilder();
@@ -666,17 +661,22 @@ public class ODistributedOutput {
   }
 
   public static List<ODocument> getRequestsStatus(
-      final ODistributedAbstractPlugin manager, final String db) {
+      final ODistributedPlugin manager, final String db) {
     final List<ODocument> rows = new ArrayList<ODocument>();
 
     Map<ODistributedRequestId, ODistributedTxContext> activeTxContexts =
+<<<<<<< HEAD
         manager.getMessageService().getDatabase(db).getActiveTxContexts();
+=======
+        manager.getDatabase(db).getActiveTxContexts();
+>>>>>>> develop
 
     if (activeTxContexts != null) {
       for (Map.Entry<ODistributedRequestId, ODistributedTxContext> entries :
           activeTxContexts.entrySet()) {
 
-        SimpleDateFormat dateFormat = new SimpleDateFormat(ODateHelper.DEF_DATETIME_FORMAT);
+        SimpleDateFormat dateFormat =
+            new SimpleDateFormat(OStorageConfiguration.DEFAULT_DATETIME_FORMAT);
 
         ODistributedRequestId key = entries.getKey();
         ODistributedTxContext value = entries.getValue();
@@ -692,7 +692,9 @@ public class ODistributedOutput {
           row.field("status", context.getStatus().toString());
           row.field(
               "records",
-              context.getLockedRids().stream().map(Object::toString).collect(Collectors.toList()));
+              context.getPromisedRids().stream()
+                  .map(r -> r.getKey().toString())
+                  .collect(Collectors.toList()));
 
           rows.add(row);
         }

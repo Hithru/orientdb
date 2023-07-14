@@ -4,7 +4,7 @@ package com.orientechnologies.orient.core.sql.parser;
 
 import com.orientechnologies.orient.core.command.OBasicCommandContext;
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.db.ODatabase;
+import com.orientechnologies.orient.core.db.ODatabaseSession;
 import com.orientechnologies.orient.core.sql.executor.OCreateEdgeExecutionPlanner;
 import com.orientechnologies.orient.core.sql.executor.OInsertExecutionPlan;
 import com.orientechnologies.orient.core.sql.executor.OResultSet;
@@ -37,7 +37,7 @@ public class OCreateEdgeStatement extends OStatement {
 
   @Override
   public OResultSet execute(
-      ODatabase db, Object[] args, OCommandContext parentCtx, boolean usePlanCache) {
+      ODatabaseSession db, Object[] args, OCommandContext parentCtx, boolean usePlanCache) {
     OBasicCommandContext ctx = new OBasicCommandContext();
     if (parentCtx != null) {
       ctx.setParentWithoutOverridingChild(parentCtx);
@@ -62,7 +62,7 @@ public class OCreateEdgeStatement extends OStatement {
 
   @Override
   public OResultSet execute(
-      ODatabase db, Map params, OCommandContext parentCtx, boolean usePlanCache) {
+      ODatabaseSession db, Map params, OCommandContext parentCtx, boolean usePlanCache) {
     OBasicCommandContext ctx = new OBasicCommandContext();
     if (parentCtx != null) {
       ctx.setParentWithoutOverridingChild(parentCtx);
@@ -83,6 +83,7 @@ public class OCreateEdgeStatement extends OStatement {
     OCreateEdgeExecutionPlanner planner = new OCreateEdgeExecutionPlanner(this);
     OInsertExecutionPlan result = planner.createExecutionPlan(ctx, enableProfiling, true);
     result.setStatement(this.originalStatement);
+    result.setGenericStatement(this.toGenericStatement());
     return result;
   }
 
@@ -91,6 +92,7 @@ public class OCreateEdgeStatement extends OStatement {
     OCreateEdgeExecutionPlanner planner = new OCreateEdgeExecutionPlanner(this);
     OInsertExecutionPlan result = planner.createExecutionPlan(ctx, enableProfiling, false);
     result.setStatement(this.originalStatement);
+    result.setGenericStatement(this.toGenericStatement());
     return result;
   }
 
@@ -127,6 +129,43 @@ public class OCreateEdgeStatement extends OStatement {
     }
     if (batch != null) {
       batch.toString(params, builder);
+    }
+  }
+
+  @Override
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append("CREATE EDGE");
+    if (targetClass != null) {
+      builder.append(" ");
+      targetClass.toGenericStatement(builder);
+      if (targetClusterName != null) {
+        builder.append(" CLUSTER ");
+        targetClusterName.toGenericStatement(builder);
+      }
+    }
+    if (upsert) {
+      builder.append(" UPSERT");
+    }
+    builder.append(" FROM ");
+    leftExpression.toGenericStatement(builder);
+
+    builder.append(" TO ");
+    rightExpression.toGenericStatement(builder);
+
+    if (body != null) {
+      builder.append(" ");
+      body.toGenericStatement(builder);
+    }
+    if (retry != null) {
+      builder.append(" RETRY ");
+      builder.append(PARAMETER_PLACEHOLDER);
+    }
+    if (wait != null) {
+      builder.append(" WAIT ");
+      builder.append(PARAMETER_PLACEHOLDER);
+    }
+    if (batch != null) {
+      batch.toGenericStatement(builder);
     }
   }
 

@@ -9,6 +9,7 @@ import com.orientechnologies.orient.core.id.ORID;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.record.ORecord;
 import com.orientechnologies.orient.core.record.impl.ODocument;
+import com.orientechnologies.orient.core.record.impl.ODocumentInternal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -74,8 +75,7 @@ public class FetchTemporaryFromTxStep extends AbstractExecutionStep {
           ORecord record = txEntries.next();
 
           currentElement++;
-          OResultInternal result = new OResultInternal();
-          result.setElement(record);
+          OResultInternal result = new OResultInternal(record);
           ctx.setVariable("$current", result);
           return result;
         } finally {
@@ -175,7 +175,7 @@ public class FetchTemporaryFromTxStep extends AbstractExecutionStep {
       return false;
     }
 
-    OClass schema = ((ODocument) doc).getSchemaClass();
+    OClass schema = ODocumentInternal.getImmutableSchemaClass(((ODocument) doc));
     if (schema == null) return className == null;
     else if (schema.getName().equals(className)) {
       return true;

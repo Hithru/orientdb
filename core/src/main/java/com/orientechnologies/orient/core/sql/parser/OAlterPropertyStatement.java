@@ -4,7 +4,7 @@ package com.orientechnologies.orient.core.sql.parser;
 
 import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.db.ODatabase;
+import com.orientechnologies.orient.core.db.ODatabaseSession;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.exception.OCommandExecutionException;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
@@ -38,7 +38,7 @@ public class OAlterPropertyStatement extends ODDLStatement {
 
   @Override
   public OResultSet executeDDL(OCommandContext ctx) {
-    ODatabase db = ctx.getDatabase();
+    ODatabaseSession db = ctx.getDatabase();
     OClass clazz = db.getMetadata().getSchema().getClass(className.getStringValue());
 
     if (clazz == null) {
@@ -129,6 +129,25 @@ public class OAlterPropertyStatement extends ODDLStatement {
       settingName.toString(params, builder);
       builder.append(" ");
       settingValue.toString(params, builder);
+    }
+  }
+
+  @Override
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append("ALTER PROPERTY ");
+    className.toGenericStatement(builder);
+    builder.append(".");
+    propertyName.toGenericStatement(builder);
+    if (customPropertyName != null) {
+      builder.append(" CUSTOM ");
+      customPropertyName.toGenericStatement(builder);
+      builder.append(" = ");
+      customPropertyValue.toGenericStatement(builder);
+    } else {
+      builder.append(" ");
+      settingName.toGenericStatement(builder);
+      builder.append(" ");
+      settingValue.toGenericStatement(builder);
     }
   }
 

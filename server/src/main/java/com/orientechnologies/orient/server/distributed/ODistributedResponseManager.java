@@ -6,10 +6,6 @@ import java.util.Set;
 public interface ODistributedResponseManager {
   boolean setLocalResult(String localNodeName, Object localResult);
 
-  default Object getGenericFinalResponse() {
-    return getFinalResponse();
-  }
-
   ODistributedResponse getFinalResponse();
 
   void removeServerBecauseUnreachable(String node);
@@ -24,11 +20,7 @@ public interface ODistributedResponseManager {
 
   List<String> getRespondingNodes();
 
-  Set<String> getServersWithoutFollowup();
-
   ODistributedRequestId getMessageId();
-
-  ODistributedRequest getRequest();
 
   int getQuorum();
 

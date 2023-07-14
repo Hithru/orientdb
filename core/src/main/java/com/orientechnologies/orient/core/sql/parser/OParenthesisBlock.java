@@ -37,6 +37,12 @@ public class OParenthesisBlock extends OBooleanExpression {
     builder.append(" )");
   }
 
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append("(");
+    subElement.toGenericStatement(builder);
+    builder.append(" )");
+  }
+
   @Override
   public boolean supportsBasicCalculation() {
     return subElement.supportsBasicCalculation();

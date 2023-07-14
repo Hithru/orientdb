@@ -4,11 +4,12 @@ package com.orientechnologies.orient.core.sql.parser;
 
 import com.orientechnologies.orient.core.command.OBasicCommandContext;
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.db.ODatabase;
+import com.orientechnologies.orient.core.db.ODatabaseSession;
 import com.orientechnologies.orient.core.sql.executor.ODeleteEdgeExecutionPlanner;
 import com.orientechnologies.orient.core.sql.executor.ODeleteExecutionPlan;
 import com.orientechnologies.orient.core.sql.executor.OInternalExecutionPlan;
 import com.orientechnologies.orient.core.sql.executor.OResultSet;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,7 +42,7 @@ public class ODeleteEdgeStatement extends OStatement {
 
   @Override
   public OResultSet execute(
-      ODatabase db, Map params, OCommandContext parentCtx, boolean usePlanCache) {
+      ODatabaseSession db, Map params, OCommandContext parentCtx, boolean usePlanCache) {
     OBasicCommandContext ctx = new OBasicCommandContext();
     if (parentCtx != null) {
       ctx.setParentWithoutOverridingChild(parentCtx);
@@ -60,7 +61,7 @@ public class ODeleteEdgeStatement extends OStatement {
 
   @Override
   public OResultSet execute(
-      ODatabase db, Object[] args, OCommandContext parentCtx, boolean usePlanCache) {
+      ODatabaseSession db, Object[] args, OCommandContext parentCtx, boolean usePlanCache) {
     Map<Object, Object> params = new HashMap<>();
     if (args != null) {
       for (int i = 0; i < args.length; i++) {
@@ -74,6 +75,7 @@ public class ODeleteEdgeStatement extends OStatement {
     ODeleteEdgeExecutionPlanner planner = new ODeleteEdgeExecutionPlanner(this);
     OInternalExecutionPlan result = planner.createExecutionPlan(ctx, enableProfiling, true);
     result.setStatement(this.originalStatement);
+    result.setGenericStatement(this.toGenericStatement());
     return result;
   }
 
@@ -82,6 +84,7 @@ public class ODeleteEdgeStatement extends OStatement {
     ODeleteEdgeExecutionPlanner planner = new ODeleteEdgeExecutionPlanner(this);
     OInternalExecutionPlan result = planner.createExecutionPlan(ctx, enableProfiling, false);
     result.setStatement(this.originalStatement);
+    result.setGenericStatement(this.toGenericStatement());
     return result;
   }
 
@@ -132,6 +135,56 @@ public class ODeleteEdgeStatement extends OStatement {
     }
     if (batch != null) {
       batch.toString(params, builder);
+    }
+  }
+
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append("DELETE EDGE");
+
+    if (className != null) {
+      builder.append(" ");
+      className.toGenericStatement(builder);
+      if (targetClusterName != null) {
+        builder.append(" CLUSTER ");
+        targetClusterName.toGenericStatement(builder);
+      }
+    }
+
+    if (rid != null) {
+      builder.append(" ");
+      rid.toGenericStatement(builder);
+    }
+    if (rids != null) {
+      builder.append(" [");
+      boolean first = true;
+      for (ORid rid : rids) {
+        if (!first) {
+          builder.append(", ");
+        }
+        rid.toGenericStatement(builder);
+        first = false;
+      }
+      builder.append("]");
+    }
+    if (leftExpression != null) {
+      builder.append(" FROM ");
+      leftExpression.toGenericStatement(builder);
+    }
+    if (rightExpression != null) {
+      builder.append(" TO ");
+      rightExpression.toGenericStatement(builder);
+    }
+
+    if (whereClause != null) {
+      builder.append(" WHERE ");
+      whereClause.toGenericStatement(builder);
+    }
+
+    if (limit != null) {
+      limit.toGenericStatement(builder);
+    }
+    if (batch != null) {
+      batch.toGenericStatement(builder);
     }
   }
 
@@ -243,6 +296,13 @@ public class ODeleteEdgeStatement extends OStatement {
 
   public void setRids(List<ORid> rids) {
     this.rids = rids;
+  }
+
+  public void addRid(ORid rid) {
+    if (this.rids == null) {
+      this.rids = new ArrayList<>();
+    }
+    this.rids.add(rid);
   }
 
   public OWhereClause getWhereClause() {

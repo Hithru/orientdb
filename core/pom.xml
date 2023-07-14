@@ -11,61 +11,25 @@
     * limitations under the License. ~ * ~ * For more information: http://www.orientechnologies.com 
     ~ */ -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
     <parent>
         <groupId>com.orientechnologies</groupId>
         <artifactId>orientdb-parent</artifactId>
+<<<<<<< HEAD
         <version>3.1.14-SNAPSHOT</version>
+=======
+        <version>3.2.20-SNAPSHOT</version>
+>>>>>>> develop
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>orientdb-core</artifactId>
-
     <name>OrientDB Core</name>
 
     <properties>
-        <osgi.import>
-            com.orientechnologies.orient.graph.console;resolution:=optional,
-            com.orientechnologies.orient.graph.gremlin;resolution:=optional,
-            com.orientechnologies.orient.graph.handler;resolution:=optional,
-            com.orientechnologies.orient.graph.sql.functions;resolution:=optional,
-            javax.imageio.spi,sun.misc;resolution:=optional,
-            com.orientechnologies.orient.client.remote;resolution:=optional,
-            com.sun.jna;resolution:=optional,
-            sun.nio.ch;resolution:=optional,
-            com.orientechnologies.orient.server.distributed.impl;resolution:=optional,
-            com.orientechnologies.orient.server.distributed.impl.task;resolution:=optional,
-            *
-        </osgi.import>
-        <osgi.export>com.orientechnologies.orient.core.*,
-            com.orientechnologies.common.*,com.orientechnologies.nio.*,
-            com.orientechnologies.orient.enterprise.*
-        </osgi.export>
         <jna.version>4.0.0</jna.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <argLine>-ea
-            -Xmx${heapSize}
-            -Dstorage.diskCache.bufferSize=4096
-            -Dindex.flushAfterCreate=false
-            -Dstorage.makeFullCheckpointAfterCreate=false
-            -Dstorage.makeFullCheckpointAfterOpen=false
-            -Dstorage.makeFullCheckpointAfterClusterCreate=false
-            -Dstorage.wal.syncOnPageFlush=false
-            -Dstorage.configuration.syncOnUpdate=false
-            -Ddb.makeFullCheckpointOnIndexChange=false
-            -Ddb.makeFullCheckpointOnSchemaChange=false
-            -Dsecurity.userPasswordSaltIterations=10
-            -Dmemory.directMemory.trackMode=true
-            -Djava.util.logging.manager=com.orientechnologies.common.log.ShutdownLogManager
-            -Dstorage.diskCache.checksumMode=storeAndThrow
-            -Dindex.allowManualIndexes=false
-	    -Dsecurity.warningDefaultUsers=false
-        </argLine>
-        <project.rootdir>${project.basedir}/../</project.rootdir>
     </properties>
 
     <profiles>
@@ -127,6 +91,153 @@
                         <version>${surefire.version}</version>
                         <configuration>
                             <skipTests>true</skipTests>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>java8</id>
+            <activation>
+                <jdk>1.8</jdk>
+            </activation>
+
+            <dependencies>
+                <dependency>
+                    <groupId>org.graalvm.sdk</groupId>
+                    <artifactId>graal-sdk</artifactId>
+                    <version>${graalvm.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.graalvm.truffle</groupId>
+                    <artifactId>truffle-api</artifactId>
+                    <version>${graalvm.version}</version>
+                    <scope>compile</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.graalvm.js</groupId>
+                    <artifactId>js</artifactId>
+                    <version>${graalvm.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.graalvm.js</groupId>
+                    <artifactId>js-scriptengine</artifactId>
+                    <version>${graalvm.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.graalvm.tools</groupId>
+                    <artifactId>profiler</artifactId>
+                    <version>${graalvm.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.graalvm.tools</groupId>
+                    <artifactId>chromeinspector</artifactId>
+                    <version>${graalvm.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
+            </dependencies>
+            <properties>
+                <argLine>-ea
+                    -Xmx${heapSize}
+                    -Dstorage.diskCache.bufferSize=4096
+                    -Dindex.flushAfterCreate=false
+                    -Dstorage.makeFullCheckpointAfterCreate=false
+                    -Dstorage.makeFullCheckpointAfterOpen=false
+                    -Dstorage.makeFullCheckpointAfterClusterCreate=false
+                    -Dstorage.wal.syncOnPageFlush=false
+                    -Dstorage.configuration.syncOnUpdate=false
+                    -Ddb.makeFullCheckpointOnIndexChange=false
+                    -Ddb.makeFullCheckpointOnSchemaChange=false
+                    -Dsecurity.userPasswordSaltIterations=10
+                    -Dmemory.directMemory.trackMode=true
+                    -Djava.util.logging.manager=com.orientechnologies.common.log.ShutdownLogManager
+                    -Dstorage.diskCache.checksumMode=storeAndThrow
+                    -Dsecurity.warningDefaultUsers=false
+                </argLine>
+            </properties>
+        </profile>
+        <profile>
+            <id>java11</id>
+            <activation>
+                <jdk>[11,)</jdk>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>org.graalvm.sdk</groupId>
+                    <artifactId>graal-sdk</artifactId>
+                    <version>${graalvm.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.graalvm.truffle</groupId>
+                    <artifactId>truffle-api</artifactId>
+                    <version>${graalvm.version}</version>
+                    <scope>compile</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.graalvm.js</groupId>
+                    <artifactId>js</artifactId>
+                    <version>${graalvm.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.graalvm.js</groupId>
+                    <artifactId>js-scriptengine</artifactId>
+                    <version>${graalvm.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.graalvm.tools</groupId>
+                    <artifactId>profiler</artifactId>
+                    <version>${graalvm.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.graalvm.tools</groupId>
+                    <artifactId>chromeinspector</artifactId>
+                    <version>${graalvm.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
+            </dependencies>
+            <properties>
+                <argLine>-ea
+                    -Xmx${heapSize}
+                    -Dstorage.diskCache.bufferSize=4096
+                    -Dindex.flushAfterCreate=false
+                    -Dstorage.makeFullCheckpointAfterCreate=false
+                    -Dstorage.makeFullCheckpointAfterOpen=false
+                    -Dstorage.makeFullCheckpointAfterClusterCreate=false
+                    -Dstorage.wal.syncOnPageFlush=false
+                    -Dstorage.configuration.syncOnUpdate=false
+                    -Ddb.makeFullCheckpointOnIndexChange=false
+                    -Ddb.makeFullCheckpointOnSchemaChange=false
+                    -Dsecurity.userPasswordSaltIterations=10
+                    -Dmemory.directMemory.trackMode=true
+                    -Djava.util.logging.manager=com.orientechnologies.common.log.ShutdownLogManager
+                    -Dstorage.diskCache.checksumMode=storeAndThrow
+                    -Dindex.allowManualIndexes=false
+                    -Dsecurity.warningDefaultUsers=false
+                    <!-- new security feature -->
+                    -Dsecurity.createDefaultUsers=false
+                    --add-opens jdk.unsupported/sun.misc=ALL-UNNAMED
+                    --add-opens java.base/sun.security.x509=ALL-UNNAMED
+                    -Dmemory.directMemory.preallocate=false
+                </argLine>
+            </properties>
+        </profile>
+        <profile>
+            <id>secondary-tests</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>${surefire.version}</version>
+                        <configuration>
+                            <includes>
+                                <include>**/*ST.java</include>
+                            </includes>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -231,7 +342,7 @@
         <dependency>
             <groupId>com.github.jnr</groupId>
             <artifactId>jnr-posix</artifactId>
-            <version>3.0.50</version>
+            <version>3.1.15</version>
         </dependency>
         <dependency>
             <groupId>com.googlecode.concurrentlinkedhashmap</groupId>
@@ -247,12 +358,7 @@
         <dependency>
             <groupId>org.lz4</groupId>
             <artifactId>lz4-java</artifactId>
-            <version>1.4.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.ibm.icu</groupId>
-            <artifactId>icu4j</artifactId>
-            <version>65.1</version>
+            <version>1.8.0</version>
         </dependency>
         <dependency>
             <groupId>commons-lang</groupId>
@@ -270,10 +376,19 @@
             <artifactId>javax.activation-api</artifactId>
             <version>1.2.0</version>
         </dependency>
+<<<<<<< HEAD
         <dependency>
             <groupId>com.carrotsearch</groupId>
             <artifactId>hppc</artifactId>
             <version>0.8.2</version>
+=======
+      
+        <!-- json parser -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>2.14.2</version>
+>>>>>>> develop
         </dependency>
 
         <!-- test -->
@@ -287,14 +402,22 @@
         <dependency>
             <groupId>org.openjdk.jmh</groupId>
             <artifactId>jmh-core</artifactId>
-            <version>1.22</version>
+            <version>1.36</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.openjdk.jmh</groupId>
             <artifactId>jmh-generator-annprocess</artifactId>
-            <version>1.22</version>
+            <version>1.36</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- plotting -->
+        <dependency>
+            <groupId>org.knowm.xchart</groupId>
+            <artifactId>xchart</artifactId>
+            <version>3.8.3</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
+
 </project>

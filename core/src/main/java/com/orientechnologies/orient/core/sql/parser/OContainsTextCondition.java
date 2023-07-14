@@ -46,7 +46,10 @@ public class OContainsTextCondition extends OBooleanExpression {
     if (left.isFunctionAll()) {
       return evaluateAllFunction(currentRecord, ctx);
     }
+<<<<<<< HEAD
 
+=======
+>>>>>>> develop
     Object leftValue = left.execute(currentRecord, ctx);
     if (leftValue == null || !(leftValue instanceof String)) {
       return false;
@@ -101,6 +104,12 @@ public class OContainsTextCondition extends OBooleanExpression {
     left.toString(params, builder);
     builder.append(" CONTAINSTEXT ");
     right.toString(params, builder);
+  }
+
+  public void toGenericStatement(StringBuilder builder) {
+    left.toGenericStatement(builder);
+    builder.append(" CONTAINSTEXT ");
+    right.toGenericStatement(builder);
   }
 
   @Override
@@ -223,6 +232,31 @@ public class OContainsTextCondition extends OBooleanExpression {
 
   public OExpression getRight() {
     return right;
+  }
+
+  @Override
+  public boolean isFullTextIndexAware(String indexField) {
+    if (left.isBaseIdentifier()) {
+      String fieldName = left.getDefaultAlias().getStringValue();
+      if (indexField.equals(fieldName)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  @Override
+  public OExpression resolveKeyFrom(OBinaryCondition additional) {
+    if (getRight() != null) {
+      return getRight();
+    } else {
+      throw new UnsupportedOperationException("Cannot execute index query with " + this);
+    }
+  }
+
+  @Override
+  public OExpression resolveKeyTo(OBinaryCondition additional) {
+    return getRight();
   }
 }
 /* JavaCC - OriginalChecksum=b588492ba2cbd0f932055f1f64bbbecd (do not edit this line) */

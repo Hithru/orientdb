@@ -53,8 +53,7 @@ public class OLuceneSpatialIndexEngineDelegator
   private OLuceneSpatialIndexEngineAbstract delegate;
   private final int id;
 
-  public OLuceneSpatialIndexEngineDelegator(
-      int id, String name, Boolean durableInNonTxMode, OStorage storage, int version) {
+  public OLuceneSpatialIndexEngineDelegator(int id, String name, OStorage storage, int version) {
     this.id = id;
 
     this.indexName = name;
@@ -282,6 +281,11 @@ public class OLuceneSpatialIndexEngineDelegator
   }
 
   @Override
+  public boolean remove(Object key) {
+    return delegate.remove(key);
+  }
+
+  @Override
   public boolean remove(Object key, OIdentifiable value) {
     return delegate.remove(key, value);
   }
@@ -349,6 +353,16 @@ public class OLuceneSpatialIndexEngineDelegator
   @Override
   public String getIndexNameByKey(Object key) {
     return delegate.getIndexNameByKey(key);
+  }
+
+  @Override
+  public void updateUniqueIndexVersion(final Object key) {
+    // not implemented
+  }
+
+  @Override
+  public int getUniqueIndexVersion(final Object key) {
+    return 0; // not implemented
   }
 
   public OLuceneIndexEngine getDelegate() {

@@ -65,6 +65,11 @@ public class OIsNotNullCondition extends OBooleanExpression {
     builder.append(" IS NOT NULL");
   }
 
+  public void toGenericStatement(StringBuilder builder) {
+    expression.toGenericStatement(builder);
+    builder.append(" IS NOT NULL");
+  }
+
   @Override
   public boolean supportsBasicCalculation() {
     return expression.supportsBasicCalculation();

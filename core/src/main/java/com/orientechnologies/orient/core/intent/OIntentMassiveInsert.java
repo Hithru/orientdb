@@ -29,6 +29,7 @@ import com.orientechnologies.orient.core.metadata.security.OSecurityUser;
 import java.util.HashMap;
 import java.util.Map;
 
+@Deprecated
 public class OIntentMassiveInsert implements OIntent {
   private boolean previousRetainRecords;
   private boolean previousRetainObjects;
@@ -57,7 +58,7 @@ public class OIntentMassiveInsert implements OIntent {
       ((ODatabaseDocument) ownerDb).setRetainRecords(false);
 
       // VALIDATION
-      if (disableValidation && !iDatabase.getStorage().isRemote()) {
+      if (disableValidation && !iDatabase.isRemote()) {
         // Avoid to change server side validation if massive intent run on a client
         previousValidation = ((ODatabaseDocument) ownerDb).isValidationEnabled();
         if (previousValidation) ((ODatabaseDocument) ownerDb).setValidationEnabled(false);
@@ -93,7 +94,7 @@ public class OIntentMassiveInsert implements OIntent {
     }
     if (ownerDb instanceof ODatabaseDocument) {
       ((ODatabaseDocument) ownerDb).setRetainRecords(previousRetainRecords);
-      if (disableValidation && !iDatabase.getStorage().isRemote())
+      if (disableValidation && !iDatabase.isRemote())
         ((ODatabaseDocument) ownerDb).setValidationEnabled(previousValidation);
     }
 

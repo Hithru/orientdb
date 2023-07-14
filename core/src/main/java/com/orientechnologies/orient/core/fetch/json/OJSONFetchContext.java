@@ -17,6 +17,7 @@
 package com.orientechnologies.orient.core.fetch.json;
 
 import com.orientechnologies.common.exception.OException;
+import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.db.record.ORecordLazySet;
 import com.orientechnologies.orient.core.db.record.ridbag.ORidBag;
@@ -41,30 +42,31 @@ public class OJSONFetchContext implements OFetchContext {
 
   protected final OJSONWriter jsonWriter;
   protected final FormatSettings settings;
-  protected final Stack<StringBuilder> typesStack = new Stack<StringBuilder>();
-  protected final Stack<ODocument> collectionStack = new Stack<ODocument>();
+  protected final Stack<StringBuilder> typesStack = new Stack<>();
+  protected final Stack<ODocument> collectionStack = new Stack<>();
 
-  public OJSONFetchContext(final OJSONWriter iJsonWriter, final FormatSettings iSettings) {
-    jsonWriter = iJsonWriter;
-    settings = iSettings;
+  public OJSONFetchContext(final OJSONWriter jsonWriter, final FormatSettings settings) {
+    this.jsonWriter = jsonWriter;
+    this.settings = settings;
   }
 
-  public void onBeforeFetch(final ODocument iRootRecord) {
+  public void onBeforeFetch(final ODocument rootRecord) {
     typesStack.add(new StringBuilder());
   }
 
-  public void onAfterFetch(final ODocument iRootRecord) {
-    StringBuilder buffer = typesStack.pop();
-    if (settings.keepTypes && buffer.length() > 0)
+  public void onAfterFetch(final ODocument rootRecord) {
+    final StringBuilder sb = typesStack.pop();
+    if (settings.keepTypes && sb.length() > 0) {
       try {
         jsonWriter.writeAttribute(
             settings.indentLevel > -1 ? settings.indentLevel : 1,
             true,
             ORecordSerializerJSON.ATTRIBUTE_FIELD_TYPES,
-            buffer.toString());
-      } catch (IOException e) {
+            sb.toString());
+      } catch (final IOException e) {
         throw OException.wrapException(new OFetchException("Error writing field types"), e);
       }
+    }
   }
 
   public void onBeforeStandardField(
@@ -92,21 +94,21 @@ public class OJSONFetchContext implements OFetchContext {
   }
 
   public void onBeforeCollection(
-      final ODocument iRootRecord,
-      final String iFieldName,
-      final Object iUserObject,
+      final ODocument rootRecord,
+      final String fieldName,
+      final Object userObject,
       final Iterable<?> iterable) {
     try {
-      manageTypes(iFieldName, iterable, null);
-      jsonWriter.beginCollection(++settings.indentLevel, true, iFieldName);
-      collectionStack.add(iRootRecord);
-    } catch (IOException e) {
+      manageTypes(fieldName, iterable, null);
+      jsonWriter.beginCollection(++settings.indentLevel, true, fieldName);
+      collectionStack.add(rootRecord);
+    } catch (final IOException e) {
       throw OException.wrapException(
           new OFetchException(
               "Error writing collection field "
-                  + iFieldName
+                  + fieldName
                   + " of record "
-                  + iRootRecord.getIdentity()),
+                  + rootRecord.getIdentity()),
           e);
     }
   }
@@ -223,7 +225,6 @@ public class OJSONFetchContext implements OFetchContext {
       json.write("null");
       return;
     }
-
     boolean firstAttribute = true;
 
     if (settings.includeType) {
@@ -266,27 +267,38 @@ public class OJSONFetchContext implements OFetchContext {
     return settings.alwaysFetchEmbeddedDocuments;
   }
 
-  protected void manageTypes(final String iFieldName, final Object iFieldValue, OType fieldType) {
+  protected void manageTypes(
+      final String fieldName, final Object fieldValue, final OType fieldType) {
+    // TODO: avoid `EmptyStackException`, but check root cause
+    if (typesStack.empty()) {
+      typesStack.push(new StringBuilder());
+      OLogManager.instance()
+          .debug(
+              OJSONFetchContext.class,
+              "Type stack in `manageTypes` null for `field` %s, `value` %s, and `type` %s.",
+              fieldName,
+              fieldValue,
+              fieldType);
+    }
     if (settings.keepTypes) {
-      if (iFieldValue instanceof Long) appendType(typesStack.peek(), iFieldName, 'l');
-      else if (iFieldValue instanceof OIdentifiable) appendType(typesStack.peek(), iFieldName, 'x');
-      else if (iFieldValue instanceof Float) appendType(typesStack.peek(), iFieldName, 'f');
-      else if (iFieldValue instanceof Short) appendType(typesStack.peek(), iFieldName, 's');
-      else if (iFieldValue instanceof Double) appendType(typesStack.peek(), iFieldName, 'd');
-      else if (iFieldValue instanceof Date) appendType(typesStack.peek(), iFieldName, 't');
-      else if (iFieldValue instanceof Byte || iFieldValue instanceof byte[])
-        appendType(typesStack.peek(), iFieldName, 'b');
-      else if (iFieldValue instanceof BigDecimal) appendType(typesStack.peek(), iFieldName, 'c');
-      else if (iFieldValue instanceof ORecordLazySet)
-        appendType(typesStack.peek(), iFieldName, 'n');
-      else if (iFieldValue instanceof Set<?>) appendType(typesStack.peek(), iFieldName, 'e');
-      else if (iFieldValue instanceof ORidBag) appendType(typesStack.peek(), iFieldName, 'g');
+      if (fieldValue instanceof Long) appendType(typesStack.peek(), fieldName, 'l');
+      else if (fieldValue instanceof OIdentifiable) appendType(typesStack.peek(), fieldName, 'x');
+      else if (fieldValue instanceof Float) appendType(typesStack.peek(), fieldName, 'f');
+      else if (fieldValue instanceof Short) appendType(typesStack.peek(), fieldName, 's');
+      else if (fieldValue instanceof Double) appendType(typesStack.peek(), fieldName, 'd');
+      else if (fieldValue instanceof Date) appendType(typesStack.peek(), fieldName, 't');
+      else if (fieldValue instanceof Byte || fieldValue instanceof byte[])
+        appendType(typesStack.peek(), fieldName, 'b');
+      else if (fieldValue instanceof BigDecimal) appendType(typesStack.peek(), fieldName, 'c');
+      else if (fieldValue instanceof ORecordLazySet) appendType(typesStack.peek(), fieldName, 'n');
+      else if (fieldValue instanceof Set<?>) appendType(typesStack.peek(), fieldName, 'e');
+      else if (fieldValue instanceof ORidBag) appendType(typesStack.peek(), fieldName, 'g');
       else {
         OType t = fieldType;
-        if (t == null) t = OType.getTypeByValue(iFieldValue);
-        if (t == OType.LINKLIST) appendType(typesStack.peek(), iFieldName, 'z');
-        else if (t == OType.LINKMAP) appendType(typesStack.peek(), iFieldName, 'm');
-        else if (t == OType.CUSTOM) appendType(typesStack.peek(), iFieldName, 'u');
+        if (t == null) t = OType.getTypeByValue(fieldValue);
+        if (t == OType.LINKLIST) appendType(typesStack.peek(), fieldName, 'z');
+        else if (t == OType.LINKMAP) appendType(typesStack.peek(), fieldName, 'm');
+        else if (t == OType.CUSTOM) appendType(typesStack.peek(), fieldName, 'u');
       }
     }
   }

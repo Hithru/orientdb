@@ -89,7 +89,12 @@ public class OImmutableClass implements OClass {
   private boolean sequence;
   private boolean ouser;
   private boolean orole;
+<<<<<<< HEAD
   private boolean oSecurityPolicy;
+=======
+  private boolean securityPolicy;
+  private OIndex autoShardingIndex;
+>>>>>>> develop
   private HashSet<OIndex> indexes;
 
   public OImmutableClass(final OClass oClass, final OImmutableSchema schema) {
@@ -153,12 +158,20 @@ public class OImmutableClass implements OClass {
       this.sequence = isSubClassOf(OSequence.CLASS_NAME);
       this.ouser = isSubClassOf(OUser.CLASS_NAME);
       this.orole = isSubClassOf(ORole.CLASS_NAME);
+<<<<<<< HEAD
       this.oSecurityPolicy = isSubClassOf(OSecurityPolicy.CLASS_NAME);
+=======
+      this.securityPolicy = OSecurityPolicy.class.getSimpleName().equals(this.name);
+>>>>>>> develop
       this.indexes = new HashSet<>();
       getRawIndexes(indexes);
     }
 
     inited = true;
+  }
+
+  public boolean isSecurityPolicy() {
+    return securityPolicy;
   }
 
   @Override
@@ -467,6 +480,10 @@ public class OImmutableClass implements OClass {
 
   @Override
   public long count(boolean isPolymorphic) {
+    return getDatabase().countClass(getName(), isPolymorphic);
+  }
+
+  public long countImpl(boolean isPolymorphic) {
     if (isPolymorphic)
       return getDatabase()
           .countClusterElements(
@@ -665,8 +682,7 @@ public class OImmutableClass implements OClass {
 
   @Override
   public Set<OIndex> getClassIndexes() {
-    final ODatabaseDocumentInternal database = getDatabase();
-    return database.getMetadata().getIndexManagerInternal().getClassIndexes(database, name);
+    return this.indexes;
   }
 
   @Override
@@ -700,9 +716,7 @@ public class OImmutableClass implements OClass {
 
   @Override
   public Set<OIndex> getIndexes() {
-    final Set<OIndex> indexes = new HashSet<OIndex>();
-    getIndexes(indexes);
-    return indexes;
+    return this.indexes;
   }
 
   public Set<OIndex> getRawIndexes() {
@@ -774,7 +788,7 @@ public class OImmutableClass implements OClass {
     return name.compareTo(other.getName());
   }
 
-  private ODatabaseDocumentInternal getDatabase() {
+  protected ODatabaseDocumentInternal getDatabase() {
     return ODatabaseRecordThreadLocal.instance().get();
   }
 

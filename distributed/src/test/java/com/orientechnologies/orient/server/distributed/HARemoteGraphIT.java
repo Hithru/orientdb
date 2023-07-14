@@ -2,7 +2,7 @@ package com.orientechnologies.orient.server.distributed;
 
 import com.orientechnologies.orient.core.db.ODatabasePool;
 import com.orientechnologies.orient.core.db.OrientDBConfig;
-import org.junit.Ignore;
+import com.orientechnologies.orient.setup.ServerRun;
 
 /**
  * Test case to check the right management of distributed exception while a server is starting.
@@ -13,7 +13,6 @@ import org.junit.Ignore;
  *
  * @author Luca Garulli (l.garulli--(at)--orientdb.com)
  */
-@Ignore
 public class HARemoteGraphIT extends HALocalGraphIT {
   @Override
   protected String getDatabaseURL(final ServerRun server) {

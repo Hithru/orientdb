@@ -6,11 +6,11 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.orientechnologies.orient.core.OCreateDatabaseUtil;
 import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
 import com.orientechnologies.orient.core.db.ODatabaseSession;
 import com.orientechnologies.orient.core.db.ODatabaseType;
 import com.orientechnologies.orient.core.db.OrientDB;
-import com.orientechnologies.orient.core.db.OrientDBConfig;
 import com.orientechnologies.orient.core.db.record.ORecordOperation;
 import com.orientechnologies.orient.core.db.tool.ODatabaseExport;
 import com.orientechnologies.orient.core.db.tool.ODatabaseImport;
@@ -28,7 +28,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Optional;
 import org.junit.Test;
 
@@ -36,7 +38,6 @@ public class OTransactionDataTest {
 
   @Test
   public void testReadWriteTransactionData() throws IOException {
-
     OTransactionData data = new OTransactionData(new OTransactionId(Optional.of("one"), 1, 2));
     byte[] recordData = new byte[] {1, 2, 3};
     ORecordId recordId = new ORecordId(10, 10);
@@ -68,10 +69,10 @@ public class OTransactionDataTest {
 
   @Test
   public void testTransactionDataChangesFromTransaction() throws IOException {
-
-    try (OrientDB orientDB = new OrientDB("embedded:", OrientDBConfig.defaultConfig())) {
-      orientDB.create("test", ODatabaseType.MEMORY);
-      try (ODatabaseSession db = orientDB.open("test", "admin", "admin")) {
+    try (final OrientDB orientDB =
+        OCreateDatabaseUtil.createDatabase("test", "embedded:", OCreateDatabaseUtil.TYPE_MEMORY)) {
+      try (final ODatabaseSession db =
+          orientDB.open("test", "admin", OCreateDatabaseUtil.NEW_ADMIN_PASSWORD)) {
         db.createClass("test");
         db.begin();
         ODocument doc = new ODocument("test");
@@ -102,9 +103,14 @@ public class OTransactionDataTest {
     OServer server0 = OServer.startFromClasspathConfig("orientdb-simple-dserver-config-0.xml");
 
     try (OrientDB orientDB = server0.getContext()) {
+<<<<<<< HEAD
       orientDB.create("test", ODatabaseType.MEMORY);
+=======
+      OCreateDatabaseUtil.createDatabase("test", orientDB, OCreateDatabaseUtil.TYPE_MEMORY);
+>>>>>>> develop
       ByteArrayOutputStream backup = new ByteArrayOutputStream();
-      try (ODatabaseSession db = orientDB.open("test", "admin", "admin")) {
+      try (final ODatabaseSession db =
+          orientDB.open("test", "admin", OCreateDatabaseUtil.NEW_ADMIN_PASSWORD)) {
         db.createClass("test");
         db.begin();
         ODocument doc = new ODocument("test");
@@ -119,9 +125,17 @@ public class OTransactionDataTest {
         export.exportDatabase();
         export.close();
       }
-      orientDB.create("test1", ODatabaseType.MEMORY);
-      try (ODatabaseSession db = orientDB.open("test1", "admin", "admin")) {
-        ODatabaseImport imp =
+      orientDB.execute(
+          "create database "
+              + "test1"
+              + " "
+              + ODatabaseType.MEMORY
+              + " users ( admin identified by '"
+              + OCreateDatabaseUtil.NEW_ADMIN_PASSWORD
+              + "' role admin)");
+      try (ODatabaseSession db =
+          orientDB.open("test1", "admin", OCreateDatabaseUtil.NEW_ADMIN_PASSWORD)) {
+        final ODatabaseImport imp =
             new ODatabaseImport(
                 (ODatabaseDocumentInternal) db,
                 new ByteArrayInputStream(backup.toByteArray()),
@@ -129,9 +143,15 @@ public class OTransactionDataTest {
         imp.importDatabase();
         imp.close();
       }
+<<<<<<< HEAD
 
       OTransactionData data = new OTransactionData(new OTransactionId(Optional.empty(), 1, 1));
       try (ODatabaseSession db = orientDB.open("test", "admin", "admin")) {
+=======
+      List<byte[]> changes = new ArrayList<>();
+      try (ODatabaseSession db =
+          orientDB.open("test", "admin", OCreateDatabaseUtil.NEW_ADMIN_PASSWORD)) {
+>>>>>>> develop
         db.begin();
         ODocument doc = new ODocument("test");
         doc.setProperty("field", "value2");
@@ -143,11 +163,18 @@ public class OTransactionDataTest {
         Iterator<byte[]> res =
             ((OTransactionInternal) db.getTransaction()).getSerializedOperations();
         while (res.hasNext()) {
-          data.addRecord(res.next());
+          changes.add(res.next());
         }
         db.commit();
       }
-      try (ODatabaseSession db = orientDB.open("test1", "admin", "admin")) {
+      OTransactionId id = server0.getDistributedManager().getDatabase("test1").nextId().get();
+      server0.getDistributedManager().getDatabase("test1").rollback(id);
+      OTransactionData data = new OTransactionData(id);
+      for (byte[] change : changes) {
+        data.addRecord(change);
+      }
+      try (final ODatabaseSession db =
+          orientDB.open("test1", "admin", OCreateDatabaseUtil.NEW_ADMIN_PASSWORD)) {
         ((ODatabaseDocumentInternal) db).syncCommit(data);
 
         assertEquals(2, db.countClass("test"));

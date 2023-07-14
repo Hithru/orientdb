@@ -7,7 +7,6 @@ import com.orientechnologies.common.serialization.types.OIntegerSerializer;
 import com.orientechnologies.common.util.ORawPair;
 import com.orientechnologies.orient.core.db.ODatabaseInternal;
 import com.orientechnologies.orient.core.db.ODatabaseSession;
-import com.orientechnologies.orient.core.db.ODatabaseType;
 import com.orientechnologies.orient.core.db.OrientDB;
 import com.orientechnologies.orient.core.db.OrientDBConfig;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
@@ -75,7 +74,8 @@ public class SBTreeV2TestIT {
 
     OrientDBConfig orientDBConfig = OrientDBConfig.builder().build();
     orientDB = new OrientDB("plocal:" + buildDirectory, orientDBConfig);
-    orientDB.create(dbName, ODatabaseType.PLOCAL, orientDBConfig);
+    orientDB.execute(
+        "create database " + dbName + " plocal users ( admin identified by 'admin' role admin)");
 
     databaseDocumentTx = orientDB.open(dbName, "admin", "admin");
 

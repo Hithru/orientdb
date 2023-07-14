@@ -1,8 +1,7 @@
 package com.orientechnologies.orient.core.sql.executor;
 
-import com.orientechnologies.orient.core.db.ODatabaseType;
+import com.orientechnologies.orient.core.OCreateDatabaseUtil;
 import com.orientechnologies.orient.core.db.OrientDB;
-import com.orientechnologies.orient.core.db.OrientDBConfig;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
 import org.junit.After;
 import org.junit.Assert;
@@ -22,9 +21,9 @@ public class OMoveVertexStatementExecutionTest {
 
   @Before
   public void before() {
-    orientDB = new OrientDB("embedded:./target/databases", OrientDBConfig.defaultConfig());
-    orientDB.create(name.getMethodName(), ODatabaseType.MEMORY);
-    db = orientDB.open(name.getMethodName(), "admin", "admin");
+    orientDB =
+        OCreateDatabaseUtil.createDatabase("test", "embedded:", OCreateDatabaseUtil.TYPE_MEMORY);
+    db = orientDB.open("test", "admin", OCreateDatabaseUtil.NEW_ADMIN_PASSWORD);
   }
 
   @After

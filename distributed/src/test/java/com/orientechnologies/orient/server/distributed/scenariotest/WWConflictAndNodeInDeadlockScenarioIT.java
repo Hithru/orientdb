@@ -23,8 +23,8 @@ import static org.junit.Assert.fail;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.server.distributed.OModifiableDistributedConfiguration;
-import com.orientechnologies.orient.server.distributed.ServerRun;
-import com.orientechnologies.orient.server.hazelcast.OHazelcastPlugin;
+import com.orientechnologies.orient.server.distributed.impl.ODistributedPlugin;
+import com.orientechnologies.orient.setup.ServerRun;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -108,14 +108,14 @@ public class WWConflictAndNodeInDeadlockScenarioIT extends AbstractScenarioTest 
 
       ODocument cfg = null;
       ServerRun server = serverInstance.get(2);
-      OHazelcastPlugin manager =
-          (OHazelcastPlugin) server.getServerInstance().getDistributedManager();
+      ODistributedPlugin manager =
+          (ODistributedPlugin) server.getServerInstance().getDistributedManager();
       OModifiableDistributedConfiguration databaseConfiguration =
           manager.getDatabaseConfiguration(getDatabaseName()).modify();
       cfg = databaseConfiguration.getDocument();
       cfg.field("writeQuorum", 1);
       cfg.field("version", (Integer) cfg.field("version") + 1);
-      manager.updateCachedDatabaseConfiguration(getDatabaseName(), databaseConfiguration, true);
+      manager.updateCachedDatabaseConfiguration(getDatabaseName(), databaseConfiguration);
       System.out.println("\nConfiguration updated.");
 
       // deadlock on server3

@@ -4,7 +4,7 @@ package com.orientechnologies.orient.core.sql.parser;
 
 import com.orientechnologies.orient.core.command.OBasicCommandContext;
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.db.ODatabase;
+import com.orientechnologies.orient.core.db.ODatabaseSession;
 import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 import com.orientechnologies.orient.core.sql.executor.OInternalExecutionPlan;
 import com.orientechnologies.orient.core.sql.executor.OResultSet;
@@ -61,7 +61,7 @@ public class OTraverseStatement extends OStatement {
 
   @Override
   public OResultSet execute(
-      ODatabase db, Object[] args, OCommandContext parentCtx, boolean usePlanCache) {
+      ODatabaseSession db, Object[] args, OCommandContext parentCtx, boolean usePlanCache) {
     OBasicCommandContext ctx = new OBasicCommandContext();
     if (parentCtx != null) {
       ctx.setParentWithoutOverridingChild(parentCtx);
@@ -86,7 +86,7 @@ public class OTraverseStatement extends OStatement {
 
   @Override
   public OResultSet execute(
-      ODatabase db, Map params, OCommandContext parentCtx, boolean usePlanCache) {
+      ODatabaseSession db, Map params, OCommandContext parentCtx, boolean usePlanCache) {
     OBasicCommandContext ctx = new OBasicCommandContext();
     if (parentCtx != null) {
       ctx.setParentWithoutOverridingChild(parentCtx);
@@ -107,6 +107,7 @@ public class OTraverseStatement extends OStatement {
     OTraverseExecutionPlanner planner = new OTraverseExecutionPlanner(this);
     OInternalExecutionPlan result = planner.createExecutionPlan(ctx, enableProfiling);
     result.setStatement(originalStatement);
+    result.setGenericStatement(this.toGenericStatement());
     return result;
   }
 
@@ -139,6 +140,50 @@ public class OTraverseStatement extends OStatement {
     if (limit != null) {
       builder.append(" ");
       limit.toString(params, builder);
+    }
+
+    if (strategy != null) {
+      builder.append(" strategy ");
+      switch (strategy) {
+        case BREADTH_FIRST:
+          builder.append("breadth_first");
+          break;
+        case DEPTH_FIRST:
+          builder.append("depth_first");
+          break;
+      }
+    }
+  }
+
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append("TRAVERSE ");
+    boolean first = true;
+    for (OTraverseProjectionItem item : projections) {
+      if (!first) {
+        builder.append(", ");
+      }
+      item.toGenericStatement(builder);
+      first = false;
+    }
+
+    if (target != null) {
+      builder.append(" FROM ");
+      target.toGenericStatement(builder);
+    }
+
+    if (maxDepth != null) {
+      builder.append(" MAXDEPTH ");
+      maxDepth.toGenericStatement(builder);
+    }
+
+    if (whileClause != null) {
+      builder.append(" WHILE ");
+      whileClause.toGenericStatement(builder);
+    }
+
+    if (limit != null) {
+      builder.append(" ");
+      limit.toGenericStatement(builder);
     }
 
     if (strategy != null) {
@@ -271,6 +316,10 @@ public class OTraverseStatement extends OStatement {
 
   public void setSkip(OSkip skip) {
     this.skip = skip;
+  }
+
+  public void addProjection(OTraverseProjectionItem item) {
+    this.projections.add(item);
   }
 }
 /* JavaCC - OriginalChecksum=47399a3a3d5a423768bbdc70ee957464 (do not edit this line) */

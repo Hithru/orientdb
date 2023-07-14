@@ -26,6 +26,14 @@ public class OUpdatePutItem extends SimpleNode {
     value.toString(params, builder);
   }
 
+  public void toGenericStatement(StringBuilder builder) {
+    left.toGenericStatement(builder);
+    builder.append(" = ");
+    key.toGenericStatement(builder);
+    builder.append(", ");
+    value.toGenericStatement(builder);
+  }
+
   public OUpdatePutItem copy() {
     OUpdatePutItem result = new OUpdatePutItem(-1);
     result.left = left == null ? null : left.copy();

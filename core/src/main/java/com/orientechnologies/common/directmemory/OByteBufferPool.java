@@ -139,7 +139,11 @@ public final class OByteBufferPool implements OByteBufferPoolMXBean {
         pointer.clear();
       }
     } else {
+<<<<<<< HEAD
       pointer = allocator.allocate(pageSize, -1, clear, intention);
+=======
+      pointer = allocator.allocate(pageSize, clear, intention);
+>>>>>>> develop
     }
 
     pointer.getNativeByteBuffer().position(0);

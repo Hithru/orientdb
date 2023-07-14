@@ -3,7 +3,7 @@
 package com.orientechnologies.orient.core.sql.parser;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.db.ODatabase;
+import com.orientechnologies.orient.core.db.ODatabaseSession;
 import com.orientechnologies.orient.core.exception.OCommandExecutionException;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OClassEmbedded;
@@ -36,6 +36,13 @@ public class OCreatePropertyStatement extends ODDLStatement {
     super(p, id);
   }
 
+  public void addAttribute(OCreatePropertyAttributeStatement attribute) {
+    if (this.attributes == null) {
+      this.attributes = new ArrayList<>();
+    }
+    this.attributes.add(attribute);
+  }
+
   @Override
   public OResultSet executeDDL(OCommandContext ctx) {
     OResultInternal result = new OResultInternal();
@@ -49,7 +56,7 @@ public class OCreatePropertyStatement extends ODDLStatement {
   }
 
   private void executeInternal(OCommandContext ctx, OResultInternal result) {
-    ODatabase db = ctx.getDatabase();
+    ODatabaseSession db = ctx.getDatabase();
     OClassEmbedded clazz =
         (OClassEmbedded) db.getMetadata().getSchema().getClass(className.getStringValue());
     if (clazz == null) {
@@ -112,6 +119,40 @@ public class OCreatePropertyStatement extends ODDLStatement {
       for (int i = 0; i < attributes.size(); i++) {
         OCreatePropertyAttributeStatement att = attributes.get(i);
         att.toString(params, builder);
+
+        if (i < attributes.size() - 1) {
+          builder.append(", ");
+        }
+      }
+      builder.append(")");
+    }
+
+    if (unsafe) {
+      builder.append(" UNSAFE");
+    }
+  }
+
+  @Override
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append("CREATE PROPERTY ");
+    className.toGenericStatement(builder);
+    builder.append(".");
+    propertyName.toGenericStatement(builder);
+    if (ifNotExists) {
+      builder.append(" IF NOT EXISTS");
+    }
+    builder.append(" ");
+    propertyType.toGenericStatement(builder);
+    if (linkedType != null) {
+      builder.append(" ");
+      linkedType.toGenericStatement(builder);
+    }
+
+    if (!attributes.isEmpty()) {
+      builder.append(" (");
+      for (int i = 0; i < attributes.size(); i++) {
+        OCreatePropertyAttributeStatement att = attributes.get(i);
+        att.toGenericStatement(builder);
 
         if (i < attributes.size() - 1) {
           builder.append(", ");

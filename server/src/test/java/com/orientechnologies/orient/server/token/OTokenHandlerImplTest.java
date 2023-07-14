@@ -10,8 +10,11 @@ import com.orientechnologies.orient.core.id.ORecordId;
 import com.orientechnologies.orient.core.metadata.security.OSecurityUser;
 import com.orientechnologies.orient.core.metadata.security.OToken;
 import com.orientechnologies.orient.core.metadata.security.OUser;
-import com.orientechnologies.orient.core.metadata.security.jwt.OJwtHeader;
 import com.orientechnologies.orient.core.metadata.security.jwt.OJwtPayload;
+<<<<<<< HEAD
+=======
+import com.orientechnologies.orient.core.metadata.security.jwt.OTokenHeader;
+>>>>>>> develop
 import com.orientechnologies.orient.core.metadata.security.jwt.OrientJwtHeader;
 import com.orientechnologies.orient.server.network.protocol.ONetworkProtocolData;
 import java.io.IOException;
@@ -62,14 +65,14 @@ public class OTokenHandlerImplTest {
 
   @Test
   public void testSerializeDeserializeWebHeader() throws Exception {
-    OJwtHeader header = new OrientJwtHeader();
+    OTokenHeader header = new OrientJwtHeader();
     header.setType("Orient");
     header.setAlgorithm("some");
     header.setKeyId("the_key");
     OTokenHandlerImpl handler = new OTokenHandlerImpl();
     byte[] headerbytes = handler.serializeWebHeader(header);
 
-    OJwtHeader des = handler.deserializeWebHeader(headerbytes);
+    OTokenHeader des = handler.deserializeWebHeader(headerbytes);
     assertNotNull(des);
     assertEquals(header.getType(), des.getType());
     assertEquals(header.getKeyId(), des.getKeyId());

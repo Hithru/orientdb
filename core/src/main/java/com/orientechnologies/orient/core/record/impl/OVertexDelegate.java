@@ -206,7 +206,6 @@ public class OVertexDelegate implements OVertex {
 
   @Override
   public OVertex delete() {
-    deleteLinks(this);
     element.delete();
     return this;
   }
@@ -240,9 +239,9 @@ public class OVertexDelegate implements OVertex {
     if (edgeId == null) {
       // lightweight edge
 
-      Object out = edge.getFrom();
-      Object in = edge.getTo();
-      if (vertex.getIdentity().equals(out)) {
+      OVertex out = edge.getFrom();
+      OVertex in = edge.getTo();
+      if (out != null && vertex.getIdentity().equals(out.getIdentity())) {
         edgeId = (OIdentifiable) in;
       } else {
         edgeId = (OIdentifiable) out;
@@ -334,7 +333,7 @@ public class OVertexDelegate implements OVertex {
 
   @Override
   public Optional<OClass> getSchemaType() {
-    return Optional.ofNullable(element.getSchemaClass());
+    return element.getSchemaType();
   }
 
   @Override
@@ -378,7 +377,8 @@ public class OVertexDelegate implements OVertex {
       // DEFAULT CLASS, TREAT IT AS NO CLASS/LABEL
       iClassNames = null;
 
-    OSchema schema = ODatabaseRecordThreadLocal.instance().get().getMetadata().getSchema();
+    OSchema schema =
+        ODatabaseRecordThreadLocal.instance().get().getMetadata().getImmutableSchemaSnapshot();
 
     if (iDirection == ODirection.OUT || iDirection == ODirection.BOTH) {
       // FIELDS THAT STARTS WITH "out_"
@@ -466,7 +466,7 @@ public class OVertexDelegate implements OVertex {
       return null;
     }
 
-    OSchema schema = db.getMetadata().getSchema();
+    OSchema schema = db.getMetadata().getImmutableSchemaSnapshot();
 
     Set<String> allClassNames = new HashSet<String>();
     for (String className : iClassNames) {

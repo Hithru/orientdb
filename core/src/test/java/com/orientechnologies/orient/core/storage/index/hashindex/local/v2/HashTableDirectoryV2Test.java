@@ -65,7 +65,7 @@ public class HashTableDirectoryV2Test {
   private static OAtomicOperation startTx() throws IOException {
     OAbstractPaginatedStorage storage = (OAbstractPaginatedStorage) databaseDocumentTx.getStorage();
     OAtomicOperationsManager manager = storage.getAtomicOperationsManager();
-    Assert.assertNull(OAtomicOperationsManager.getCurrentOperation());
+    Assert.assertNull(manager.getCurrentOperation());
     return manager.startAtomicOperation(null);
   }
 
@@ -73,14 +73,22 @@ public class HashTableDirectoryV2Test {
     OAbstractPaginatedStorage storage = (OAbstractPaginatedStorage) databaseDocumentTx.getStorage();
     OAtomicOperationsManager manager = storage.getAtomicOperationsManager();
     manager.endAtomicOperation(new OCommandInterruptedException(""));
+<<<<<<< HEAD
     Assert.assertNull(OAtomicOperationsManager.getCurrentOperation());
+=======
+    Assert.assertNull(manager.getCurrentOperation());
+>>>>>>> develop
   }
 
   private static void completeTx() throws IOException {
     OAbstractPaginatedStorage storage = (OAbstractPaginatedStorage) databaseDocumentTx.getStorage();
     OAtomicOperationsManager manager = storage.getAtomicOperationsManager();
     manager.endAtomicOperation(null);
+<<<<<<< HEAD
     Assert.assertNull(OAtomicOperationsManager.getCurrentOperation());
+=======
+    Assert.assertNull(manager.getCurrentOperation());
+>>>>>>> develop
   }
 
   @Test

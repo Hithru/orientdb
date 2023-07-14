@@ -8,7 +8,6 @@ import com.orientechnologies.orient.client.remote.OBinaryResponse;
 import com.orientechnologies.orient.client.remote.message.OBatchOperationsRequest;
 import com.orientechnologies.orient.client.remote.message.OBatchOperationsResponse;
 import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
-import com.orientechnologies.orient.core.db.ODatabaseType;
 import com.orientechnologies.orient.core.db.OrientDB;
 import com.orientechnologies.orient.core.db.OrientDBConfig;
 import com.orientechnologies.orient.core.db.record.ORecordOperation;
@@ -17,6 +16,10 @@ import com.orientechnologies.orient.core.serialization.serializer.record.binary.
 import com.orientechnologies.orient.core.sql.executor.OResult;
 import com.orientechnologies.orient.core.sql.executor.OResultSet;
 import com.orientechnologies.orient.server.network.protocol.ONetworkProtocolData;
+import java.io.IOException;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -39,10 +42,16 @@ public class OConnetionExecutorTest {
   private ODatabaseDocumentInternal database;
 
   @Before
-  public void before() {
+  public void before() throws IOException {
     MockitoAnnotations.initMocks(this);
-    orientDb = new OrientDB("embedded:./", OrientDBConfig.defaultConfig());
-    orientDb.create(OConnetionExecutorTest.class.getSimpleName(), ODatabaseType.MEMORY);
+    Path path =
+        FileSystems.getDefault()
+            .getPath("./target/" + OConnetionExecutorTest.class.getSimpleName());
+    Files.createDirectories(path);
+    orientDb = new OrientDB("embedded:" + path.toString(), OrientDBConfig.defaultConfig());
+    orientDb.execute(
+        "create database ? memory users (admin identified by 'admin' role admin)",
+        OConnetionExecutorTest.class.getSimpleName());
     database =
         (ODatabaseDocumentInternal)
             orientDb.open(OConnetionExecutorTest.class.getSimpleName(), "admin", "admin");

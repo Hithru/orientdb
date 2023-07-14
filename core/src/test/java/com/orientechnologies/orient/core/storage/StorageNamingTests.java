@@ -19,31 +19,11 @@
 
 package com.orientechnologies.orient.core.storage;
 
-import com.orientechnologies.common.util.OCallable;
-import com.orientechnologies.orient.core.command.OCommandOutputListener;
-import com.orientechnologies.orient.core.command.OCommandRequestText;
-import com.orientechnologies.orient.core.config.OContextConfiguration;
-import com.orientechnologies.orient.core.conflict.ORecordConflictStrategy;
 import com.orientechnologies.orient.core.db.ODatabaseType;
 import com.orientechnologies.orient.core.db.OrientDB;
 import com.orientechnologies.orient.core.db.OrientDBConfig;
-import com.orientechnologies.orient.core.db.record.ORecordOperation;
 import com.orientechnologies.orient.core.exception.OInvalidDatabaseNameException;
-import com.orientechnologies.orient.core.exception.ORecordNotFoundException;
-import com.orientechnologies.orient.core.id.ORID;
-import com.orientechnologies.orient.core.id.ORecordId;
-import com.orientechnologies.orient.core.storage.cluster.OPaginatedCluster;
-import com.orientechnologies.orient.core.storage.ridbag.sbtree.OSBTreeCollectionManager;
-import com.orientechnologies.orient.core.tx.OTransactionInternal;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.concurrent.Callable;
+import com.orientechnologies.orient.core.storage.impl.local.OAbstractPaginatedStorage;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -52,7 +32,7 @@ public class StorageNamingTests {
 
   @Test
   public void testSpecialLettersOne() {
-    try (OrientDB orientDB = new OrientDB("embedded:nameTest", OrientDBConfig.defaultConfig())) {
+    try (OrientDB orientDB = new OrientDB("embedded:", OrientDBConfig.defaultConfig())) {
       try {
         orientDB.create("name%", ODatabaseType.MEMORY);
         Assert.fail();
@@ -64,7 +44,7 @@ public class StorageNamingTests {
 
   @Test
   public void testSpecialLettersTwo() {
-    try (OrientDB orientDB = new OrientDB("embedded:nameTest", OrientDBConfig.defaultConfig())) {
+    try (OrientDB orientDB = new OrientDB("embedded:", OrientDBConfig.defaultConfig())) {
       try {
         orientDB.create("na.me", ODatabaseType.MEMORY);
         Assert.fail();
@@ -76,7 +56,7 @@ public class StorageNamingTests {
 
   @Test
   public void testSpecialLettersThree() {
-    try (OrientDB orientDB = new OrientDB("embedded:nameTest", OrientDBConfig.defaultConfig())) {
+    try (OrientDB orientDB = new OrientDB("embedded:", OrientDBConfig.defaultConfig())) {
       orientDB.create("na_me$", ODatabaseType.MEMORY);
       orientDB.drop("na_me$");
     }
@@ -84,14 +64,14 @@ public class StorageNamingTests {
 
   @Test
   public void commaInPathShouldBeAllowed() {
-    new NamingTestStorage("/path/with/,/but/not/in/the/name");
-    new NamingTestStorage("/,,,/,/,/name");
+    OAbstractPaginatedStorage.checkName("/path/with/,/but/not/in/the/name");
+    OAbstractPaginatedStorage.checkName("/,,,/,/,/name");
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void commaInNameShouldThrow() {
 
-    new NamingTestStorage("/path/with/,/name/with,");
+    OAbstractPaginatedStorage.checkName("/path/with/,/name/with,");
 
     //    Assert.assertThrows(IllegalArgumentException.class, new Assert.ThrowingRunnable() {
     //      @Override
@@ -103,6 +83,7 @@ public class StorageNamingTests {
 
   @Test(expected = IllegalArgumentException.class)
   public void name() throws Exception {
+<<<<<<< HEAD
     new NamingTestStorage("/name/with,");
   }
 
@@ -454,5 +435,8 @@ public class StorageNamingTests {
 
     @Override
     public void clearProperties() {}
+=======
+    OAbstractPaginatedStorage.checkName("/name/with,");
+>>>>>>> develop
   }
 }

@@ -30,8 +30,8 @@ import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.OCommandSQL;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
 import com.orientechnologies.orient.server.distributed.OModifiableDistributedConfiguration;
-import com.orientechnologies.orient.server.distributed.ServerRun;
-import com.orientechnologies.orient.server.hazelcast.OHazelcastPlugin;
+import com.orientechnologies.orient.server.distributed.impl.ODistributedPlugin;
+import com.orientechnologies.orient.setup.ServerRun;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -233,14 +233,14 @@ public class ShutdownAndRestartNodeScenarioIT extends AbstractScenarioTest {
 
         ODocument cfg = null;
         ServerRun server = serverInstance.get(0);
-        OHazelcastPlugin manager =
-            (OHazelcastPlugin) server.getServerInstance().getDistributedManager();
+        ODistributedPlugin manager =
+            (ODistributedPlugin) server.getServerInstance().getDistributedManager();
         OModifiableDistributedConfiguration databaseConfiguration =
             manager.getDatabaseConfiguration(getDatabaseName()).modify();
         cfg = databaseConfiguration.getDocument();
         cfg.field("writeQuorum", 3);
         cfg.field("version", (Integer) cfg.field("version") + 1);
-        manager.updateCachedDatabaseConfiguration(getDatabaseName(), databaseConfiguration, true);
+        manager.updateCachedDatabaseConfiguration(getDatabaseName(), databaseConfiguration);
 
         System.out.println("\nConfiguration updated.");
 

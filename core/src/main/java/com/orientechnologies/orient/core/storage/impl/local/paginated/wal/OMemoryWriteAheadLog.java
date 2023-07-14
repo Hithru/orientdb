@@ -75,6 +75,7 @@ public class OMemoryWriteAheadLog extends OAbstractWriteAheadLog {
   @Override
   public OLogSequenceNumber log(WriteableWALRecord record) {
     final OLogSequenceNumber lsn = new OLogSequenceNumber(0, nextPosition.incrementAndGet());
+<<<<<<< HEAD
     final int operationId;
 
     if (record.trackOperationId()) {
@@ -91,6 +92,11 @@ public class OMemoryWriteAheadLog extends OAbstractWriteAheadLog {
   @Override
   public int lastOperationId() {
     return nextOperationId.get();
+=======
+    record.setLsn(lsn);
+
+    return lsn;
+>>>>>>> develop
   }
 
   @Override

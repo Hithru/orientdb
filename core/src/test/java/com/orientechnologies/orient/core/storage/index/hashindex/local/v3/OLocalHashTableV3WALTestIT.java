@@ -2,9 +2,10 @@ package com.orientechnologies.orient.core.storage.index.hashindex.local.v3;
 
 import com.orientechnologies.common.io.OFileUtils;
 import com.orientechnologies.common.serialization.types.OIntegerSerializer;
+import com.orientechnologies.orient.core.OCreateDatabaseUtil;
+import com.orientechnologies.orient.core.config.OGlobalConfiguration;
 import com.orientechnologies.orient.core.db.ODatabaseInternal;
 import com.orientechnologies.orient.core.db.ODatabaseSession;
-import com.orientechnologies.orient.core.db.ODatabaseType;
 import com.orientechnologies.orient.core.db.OrientDB;
 import com.orientechnologies.orient.core.db.OrientDBConfig;
 import com.orientechnologies.orient.core.metadata.schema.OType;
@@ -16,8 +17,8 @@ import com.orientechnologies.orient.core.storage.cluster.OClusterPage;
 import com.orientechnologies.orient.core.storage.disk.OLocalPaginatedStorage;
 import com.orientechnologies.orient.core.storage.fs.OFile;
 import com.orientechnologies.orient.core.storage.impl.local.OAbstractPaginatedStorage;
-import com.orientechnologies.orient.core.storage.impl.local.paginated.atomicoperations.OAtomicOperationsManager;
 import com.orientechnologies.orient.core.storage.impl.local.paginated.base.ODurablePage;
+<<<<<<< HEAD
 import com.orientechnologies.orient.core.storage.impl.local.paginated.wal.OAtomicUnitEndRecord;
 import com.orientechnologies.orient.core.storage.impl.local.paginated.wal.OAtomicUnitStartRecord;
 import com.orientechnologies.orient.core.storage.impl.local.paginated.wal.OFileCreatedWALRecord;
@@ -26,6 +27,9 @@ import com.orientechnologies.orient.core.storage.impl.local.paginated.wal.ONonTx
 import com.orientechnologies.orient.core.storage.impl.local.paginated.wal.OOperationUnitBodyRecord;
 import com.orientechnologies.orient.core.storage.impl.local.paginated.wal.OUpdatePageRecord;
 import com.orientechnologies.orient.core.storage.impl.local.paginated.wal.OWALRecord;
+=======
+import com.orientechnologies.orient.core.storage.impl.local.paginated.wal.*;
+>>>>>>> develop
 import com.orientechnologies.orient.core.storage.impl.local.paginated.wal.cas.CASDiskWriteAheadLog;
 import com.orientechnologies.orient.core.storage.impl.local.paginated.wal.common.OperationIdLSN;
 import com.orientechnologies.orient.core.storage.impl.local.paginated.wal.common.WriteableWALRecord;
@@ -76,13 +80,22 @@ public class OLocalHashTableV3WALTestIT extends OLocalHashTableV3Base {
     final java.io.File buildDir = new java.io.File(buildDirectory);
     OFileUtils.deleteRecursively(buildDir);
 
-    orientDB = new OrientDB("plocal:" + buildDirectory, OrientDBConfig.defaultConfig());
+    orientDB =
+        new OrientDB(
+            "plocal:" + buildDirectory,
+            OrientDBConfig.builder()
+                .addConfig(OGlobalConfiguration.CREATE_DEFAULT_USERS, false)
+                .build());
 
-    orientDB.create(ACTUAL_DB_NAME, ODatabaseType.PLOCAL);
-    databaseDocumentTx = orientDB.open(ACTUAL_DB_NAME, "admin", "admin");
+    OCreateDatabaseUtil.createDatabase(ACTUAL_DB_NAME, orientDB, OCreateDatabaseUtil.TYPE_PLOCAL);
+    // orientDB.create(ACTUAL_DB_NAME, ODatabaseType.PLOCAL);
+    databaseDocumentTx =
+        orientDB.open(ACTUAL_DB_NAME, "admin", OCreateDatabaseUtil.NEW_ADMIN_PASSWORD);
 
-    orientDB.create(EXPECTED_DB_NAME, ODatabaseType.PLOCAL);
-    expectedDatabaseDocumentTx = orientDB.open(EXPECTED_DB_NAME, "admin", "admin");
+    OCreateDatabaseUtil.createDatabase(EXPECTED_DB_NAME, orientDB, OCreateDatabaseUtil.TYPE_PLOCAL);
+    // orientDB.create(EXPECTED_DB_NAME, ODatabaseType.PLOCAL);
+    expectedDatabaseDocumentTx =
+        orientDB.open(EXPECTED_DB_NAME, "admin", OCreateDatabaseUtil.NEW_ADMIN_PASSWORD);
 
     expectedStorage =
         ((OLocalPaginatedStorage) ((ODatabaseInternal<?>) expectedDatabaseDocumentTx).getStorage());
@@ -145,7 +158,7 @@ public class OLocalHashTableV3WALTestIT extends OLocalHashTableV3Base {
   public void testKeyPut() throws IOException {
     super.testKeyPut();
 
-    Assert.assertNull(OAtomicOperationsManager.getCurrentOperation());
+    Assert.assertNull(atomicOperationsManager.getCurrentOperation());
 
     assertFileRestoreFromWAL();
   }
@@ -154,7 +167,7 @@ public class OLocalHashTableV3WALTestIT extends OLocalHashTableV3Base {
   public void testKeyPutRandomUniform() throws IOException {
     super.testKeyPutRandomUniform();
 
-    Assert.assertNull(OAtomicOperationsManager.getCurrentOperation());
+    Assert.assertNull(atomicOperationsManager.getCurrentOperation());
 
     assertFileRestoreFromWAL();
   }
@@ -163,7 +176,7 @@ public class OLocalHashTableV3WALTestIT extends OLocalHashTableV3Base {
   public void testKeyPutRandomGaussian() throws IOException {
     super.testKeyPutRandomGaussian();
 
-    Assert.assertNull(OAtomicOperationsManager.getCurrentOperation());
+    Assert.assertNull(atomicOperationsManager.getCurrentOperation());
 
     assertFileRestoreFromWAL();
   }
@@ -172,7 +185,7 @@ public class OLocalHashTableV3WALTestIT extends OLocalHashTableV3Base {
   public void testKeyDelete() throws IOException {
     super.testKeyDelete();
 
-    Assert.assertNull(OAtomicOperationsManager.getCurrentOperation());
+    Assert.assertNull(atomicOperationsManager.getCurrentOperation());
 
     assertFileRestoreFromWAL();
   }
@@ -181,7 +194,7 @@ public class OLocalHashTableV3WALTestIT extends OLocalHashTableV3Base {
   public void testKeyDeleteRandomGaussian() throws IOException {
     super.testKeyDeleteRandomGaussian();
 
-    Assert.assertNull(OAtomicOperationsManager.getCurrentOperation());
+    Assert.assertNull(atomicOperationsManager.getCurrentOperation());
 
     assertFileRestoreFromWAL();
   }
@@ -190,7 +203,7 @@ public class OLocalHashTableV3WALTestIT extends OLocalHashTableV3Base {
   public void testKeyAddDelete() throws IOException {
     super.testKeyAddDelete();
 
-    Assert.assertNull(OAtomicOperationsManager.getCurrentOperation());
+    Assert.assertNull(atomicOperationsManager.getCurrentOperation());
 
     assertFileRestoreFromWAL();
   }
@@ -199,7 +212,7 @@ public class OLocalHashTableV3WALTestIT extends OLocalHashTableV3Base {
   public void testKeyPutRemoveNullKey() throws IOException {
     super.testKeyPutRemoveNullKey();
 
-    Assert.assertNull(OAtomicOperationsManager.getCurrentOperation());
+    Assert.assertNull(atomicOperationsManager.getCurrentOperation());
 
     assertFileRestoreFromWAL();
   }
@@ -338,7 +351,7 @@ public class OLocalHashTableV3WALTestIT extends OLocalHashTableV3Base {
 
               OCacheEntry cacheEntry =
                   expectedReadCache.loadForWrite(
-                      fileId, pageIndex, true, expectedWriteCache, false, null);
+                      fileId, pageIndex, expectedWriteCache, false, null);
               if (cacheEntry == null) {
                 do {
                   if (cacheEntry != null) {

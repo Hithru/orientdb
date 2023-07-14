@@ -74,6 +74,7 @@ public abstract class OCommandExecutorSQLAbstract extends OCommandExecutorAbstra
   public static final String METADATA_INDEXMGR = "INDEXMANAGER";
   public static final String METADATA_STORAGE = "STORAGE";
   public static final String METADATA_DATABASE = "DATABASE";
+  public static final String METADATA_DISTRIBUTED = "DISTRIBUTED";
 
   public static final String DEFAULT_PARAM_USER = "$user";
 
@@ -240,7 +241,7 @@ public abstract class OCommandExecutorSQLAbstract extends OCommandExecutorAbstra
   }
 
   protected String preParse(final String queryText, final OCommandRequest iRequest) {
-    final boolean strict = getDatabase().getStorage().getConfiguration().isStrictSql();
+    final boolean strict = getDatabase().getStorageInfo().getConfiguration().isStrictSql();
 
     if (strict) {
       try {

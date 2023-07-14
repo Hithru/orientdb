@@ -8,7 +8,7 @@ import com.orientechnologies.orient.core.db.ODatabaseSession;
 import com.orientechnologies.orient.core.exception.OCommandExecutionException;
 import com.orientechnologies.orient.core.metadata.security.ORole;
 import com.orientechnologies.orient.core.metadata.security.OSecurityInternal;
-import com.orientechnologies.orient.core.metadata.security.OSecurityPolicy;
+import com.orientechnologies.orient.core.metadata.security.OSecurityPolicyImpl;
 import com.orientechnologies.orient.core.sql.executor.OInternalResultSet;
 import com.orientechnologies.orient.core.sql.executor.OResultInternal;
 import com.orientechnologies.orient.core.sql.executor.OResultSet;
@@ -45,6 +45,10 @@ public class OAlterRoleStatement extends OSimpleExecStatement {
     super(p, id);
   }
 
+  public void addOperation(Op operation) {
+    this.operations.add(operation);
+  }
+
   @Override
   public OResultSet executeSimple(OCommandContext ctx) {
     OInternalResultSet rs = new OInternalResultSet();
@@ -61,7 +65,7 @@ public class OAlterRoleStatement extends OSimpleExecStatement {
       result.setProperty("name", name.getStringValue());
       result.setProperty("resource", op.resource.toString());
       if (op.type == Op.TYPE_ADD) {
-        OSecurityPolicy policy = security.getSecurityPolicy(db, op.policyName.getStringValue());
+        OSecurityPolicyImpl policy = security.getSecurityPolicy(db, op.policyName.getStringValue());
         result.setProperty("operation", "ADD POLICY");
         result.setProperty("policyName", op.policyName.getStringValue());
         try {
@@ -98,6 +102,24 @@ public class OAlterRoleStatement extends OSimpleExecStatement {
       } else {
         builder.append(" REMOVE POLICY ON ");
         operation.resource.toString(params, builder);
+      }
+    }
+  }
+
+  @Override
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append("ALTER ROLE ");
+    name.toGenericStatement(builder);
+
+    for (Op operation : operations) {
+      if (operation.type == Op.TYPE_ADD) {
+        builder.append(" SET POLICY ");
+        operation.policyName.toGenericStatement(builder);
+        builder.append(" ON ");
+        operation.resource.toGenericStatement(builder);
+      } else {
+        builder.append(" REMOVE POLICY ON ");
+        operation.resource.toGenericStatement(builder);
       }
     }
   }

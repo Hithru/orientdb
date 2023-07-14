@@ -20,29 +20,9 @@ public class OThreadPoolExecutorWithLogging extends ThreadPoolExecutor {
       int maximumPoolSize,
       long keepAliveTime,
       TimeUnit unit,
-      BlockingQueue<Runnable> workQueue) {
-    super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue);
-  }
-
-  public OThreadPoolExecutorWithLogging(
-      int corePoolSize,
-      int maximumPoolSize,
-      long keepAliveTime,
-      TimeUnit unit,
       BlockingQueue<Runnable> workQueue,
       ThreadFactory threadFactory) {
     super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, threadFactory);
-  }
-
-  @SuppressWarnings("unused")
-  public OThreadPoolExecutorWithLogging(
-      int corePoolSize,
-      int maximumPoolSize,
-      long keepAliveTime,
-      TimeUnit unit,
-      BlockingQueue<Runnable> workQueue,
-      RejectedExecutionHandler handler) {
-    super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, handler);
   }
 
   @SuppressWarnings("unused")
@@ -61,7 +41,7 @@ public class OThreadPoolExecutorWithLogging extends ThreadPoolExecutor {
   protected void afterExecute(Runnable r, Throwable t) {
     super.afterExecute(r, t);
 
-    if (r instanceof Future<?>) {
+    if ((t == null) && (r instanceof Future<?>)) {
       final Future<?> future = (Future<?>) r;
       try {
         future.get();

@@ -33,6 +33,10 @@ public class OOrderBy extends SimpleNode {
     this.items = items;
   }
 
+  public void addItem(OOrderByItem item) {
+    this.items.add(item);
+  }
+
   public void toString(Map<Object, Object> params, StringBuilder builder) {
     if (items != null && items.size() > 0) {
       builder.append("ORDER BY ");
@@ -41,6 +45,18 @@ public class OOrderBy extends SimpleNode {
           builder.append(", ");
         }
         items.get(i).toString(params, builder);
+      }
+    }
+  }
+
+  public void toGenericStatement(StringBuilder builder) {
+    if (items != null && items.size() > 0) {
+      builder.append("ORDER BY ");
+      for (int i = 0; i < items.size(); i++) {
+        if (i > 0) {
+          builder.append(", ");
+        }
+        items.get(i).toGenericStatement(builder);
       }
     }
   }

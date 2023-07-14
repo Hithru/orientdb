@@ -17,12 +17,12 @@ package com.orientechnologies.orient.server.distributed;
 
 import com.orientechnologies.orient.client.remote.OServerAdmin;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
+import com.orientechnologies.orient.setup.ServerRun;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -37,7 +37,6 @@ public class OneNodeFrozenIT extends AbstractServerClusterTxTest {
   final AtomicInteger nodeLefts = new AtomicInteger();
 
   @Test
-  @Ignore
   public void test() throws Exception {
     startupNodesInSequence = true;
     count = 1500;
@@ -61,7 +60,7 @@ public class OneNodeFrozenIT extends AbstractServerClusterTxTest {
     if (serverStarted == 0) {
       // INSTALL ON FIRST SERVER ONLY THE SERVER MONITOR TO CHECK IF HAS BEEN RESTARTED
       server
-          .server
+          .getServerInstance()
           .getDistributedManager()
           .registerLifecycleListener(
               new ODistributedLifecycleListener() {

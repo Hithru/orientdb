@@ -9,6 +9,7 @@ import com.orientechnologies.orient.core.metadata.schema.OSchema;
 import com.orientechnologies.orient.core.sql.executor.OInternalResultSet;
 import com.orientechnologies.orient.core.sql.executor.OResultInternal;
 import com.orientechnologies.orient.core.sql.executor.OResultSet;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -140,6 +141,44 @@ public class OCreateClassStatement extends ODDLStatement {
   }
 
   @Override
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append("CREATE CLASS ");
+    name.toGenericStatement(builder);
+    if (ifNotExists) {
+      builder.append(" IF NOT EXISTS");
+    }
+    if (superclasses != null && superclasses.size() > 0) {
+      builder.append(" EXTENDS ");
+      boolean first = true;
+      for (OIdentifier sup : superclasses) {
+        if (!first) {
+          builder.append(", ");
+        }
+        sup.toGenericStatement(builder);
+        first = false;
+      }
+    }
+    if (clusters != null && clusters.size() > 0) {
+      builder.append(" CLUSTER ");
+      boolean first = true;
+      for (OInteger cluster : clusters) {
+        if (!first) {
+          builder.append(",");
+        }
+        cluster.toGenericStatement(builder);
+        first = false;
+      }
+    }
+    if (totalClusterNo != null) {
+      builder.append(" CLUSTERS ");
+      totalClusterNo.toGenericStatement(builder);
+    }
+    if (abstractClass) {
+      builder.append(" ABSTRACT");
+    }
+  }
+
+  @Override
   public OCreateClassStatement copy() {
     OCreateClassStatement result = new OCreateClassStatement(-1);
     result.name = name == null ? null : name.copy();
@@ -189,6 +228,20 @@ public class OCreateClassStatement extends ODDLStatement {
 
   public List<OIdentifier> getSuperclasses() {
     return superclasses;
+  }
+
+  public void addSuperclass(OIdentifier identifier) {
+    if (this.superclasses == null) {
+      this.superclasses = new ArrayList<>();
+    }
+    this.superclasses.add(identifier);
+  }
+
+  public void addCluster(OInteger id) {
+    if (clusters == null) {
+      this.clusters = new ArrayList<>();
+    }
+    this.clusters.add(id);
   }
 }
 /* JavaCC - OriginalChecksum=4043013624f55fdf0ea8fee6d4f211b0 (do not edit this line) */

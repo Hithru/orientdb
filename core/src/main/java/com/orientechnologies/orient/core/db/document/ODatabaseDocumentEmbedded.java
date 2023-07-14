@@ -25,17 +25,22 @@ import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.common.io.OIOUtils;
 import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.orient.core.Orient;
-import com.orientechnologies.orient.core.cache.OCommandCacheHook;
 import com.orientechnologies.orient.core.cache.OLocalRecordCache;
 import com.orientechnologies.orient.core.command.OBasicCommandContext;
+import com.orientechnologies.orient.core.command.OCommandOutputListener;
 import com.orientechnologies.orient.core.command.OScriptExecutor;
 import com.orientechnologies.orient.core.config.OGlobalConfiguration;
+<<<<<<< HEAD
 import com.orientechnologies.orient.core.db.*;
+=======
+import com.orientechnologies.orient.core.conflict.ORecordConflictStrategy;
+>>>>>>> develop
 import com.orientechnologies.orient.core.db.ODatabase;
 import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
 import com.orientechnologies.orient.core.db.ODatabaseLifecycleListener;
 import com.orientechnologies.orient.core.db.ODatabaseListener;
 import com.orientechnologies.orient.core.db.ODatabaseRecordThreadLocal;
+import com.orientechnologies.orient.core.db.ODatabaseStats;
 import com.orientechnologies.orient.core.db.OHookReplacedRecordThreadLocal;
 import com.orientechnologies.orient.core.db.OLiveQueryMonitor;
 import com.orientechnologies.orient.core.db.OLiveQueryResultListener;
@@ -58,11 +63,13 @@ import com.orientechnologies.orient.core.hook.ORecordHook;
 import com.orientechnologies.orient.core.id.ORID;
 import com.orientechnologies.orient.core.id.ORecordId;
 import com.orientechnologies.orient.core.index.OClassIndexManager;
+import com.orientechnologies.orient.core.iterator.ORecordIteratorCluster;
 import com.orientechnologies.orient.core.metadata.OMetadataDefault;
 import com.orientechnologies.orient.core.metadata.function.OFunctionLibraryImpl;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OImmutableClass;
 import com.orientechnologies.orient.core.metadata.schema.OImmutableSchema;
+import com.orientechnologies.orient.core.metadata.schema.OSchemaProxy;
 import com.orientechnologies.orient.core.metadata.schema.OView;
 import com.orientechnologies.orient.core.metadata.security.OImmutableUser;
 import com.orientechnologies.orient.core.metadata.security.OPropertyAccess;
@@ -72,8 +79,13 @@ import com.orientechnologies.orient.core.metadata.security.ORestrictedOperation;
 import com.orientechnologies.orient.core.metadata.security.ORole;
 import com.orientechnologies.orient.core.metadata.security.ORule;
 import com.orientechnologies.orient.core.metadata.security.OSecurityInternal;
+<<<<<<< HEAD
+=======
+import com.orientechnologies.orient.core.metadata.security.OSecurityUser;
+>>>>>>> develop
 import com.orientechnologies.orient.core.metadata.security.OToken;
 import com.orientechnologies.orient.core.metadata.security.OUser;
+import com.orientechnologies.orient.core.metadata.security.auth.OAuthenticationInfo;
 import com.orientechnologies.orient.core.metadata.sequence.OSequenceAction;
 import com.orientechnologies.orient.core.metadata.sequence.OSequenceLibraryProxy;
 import com.orientechnologies.orient.core.query.live.OLiveQueryHook;
@@ -84,12 +96,12 @@ import com.orientechnologies.orient.core.record.OElement;
 import com.orientechnologies.orient.core.record.ORecord;
 import com.orientechnologies.orient.core.record.ORecordInternal;
 import com.orientechnologies.orient.core.record.ORecordVersionHelper;
-import com.orientechnologies.orient.core.record.impl.ODirtyManager;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.record.impl.ODocumentInternal;
-import com.orientechnologies.orient.core.record.impl.OEdgeDelegate;
-import com.orientechnologies.orient.core.record.impl.OVertexDelegate;
+import com.orientechnologies.orient.core.record.impl.OEdgeDocument;
+import com.orientechnologies.orient.core.record.impl.OVertexDocument;
 import com.orientechnologies.orient.core.schedule.OScheduledEvent;
+import com.orientechnologies.orient.core.serialization.serializer.record.ORecordSerializer;
 import com.orientechnologies.orient.core.serialization.serializer.record.ORecordSerializerFactory;
 import com.orientechnologies.orient.core.sql.OSQLEngine;
 import com.orientechnologies.orient.core.sql.executor.LiveQueryListenerImpl;
@@ -100,19 +112,39 @@ import com.orientechnologies.orient.core.sql.executor.OResultSet;
 import com.orientechnologies.orient.core.sql.parser.OLocalResultSet;
 import com.orientechnologies.orient.core.sql.parser.OLocalResultSetLifecycleDecorator;
 import com.orientechnologies.orient.core.sql.parser.OStatement;
-import com.orientechnologies.orient.core.storage.OBasicTransaction;
 import com.orientechnologies.orient.core.storage.ORawBuffer;
 import com.orientechnologies.orient.core.storage.ORecordCallback;
+import com.orientechnologies.orient.core.storage.ORecordMetadata;
 import com.orientechnologies.orient.core.storage.OStorage;
 import com.orientechnologies.orient.core.storage.OStorageInfo;
 import com.orientechnologies.orient.core.storage.cluster.OOfflineClusterException;
 import com.orientechnologies.orient.core.storage.impl.local.OAbstractPaginatedStorage;
-import com.orientechnologies.orient.core.storage.impl.local.OMicroTransaction;
-import com.orientechnologies.orient.core.storage.impl.local.paginated.ORecordSerializationContext;
+import com.orientechnologies.orient.core.storage.impl.local.OFreezableStorageComponent;
+import com.orientechnologies.orient.core.storage.ridbag.sbtree.OSBTreeCollectionManager;
 import com.orientechnologies.orient.core.tx.OTransactionAbstract;
+<<<<<<< HEAD
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Map.Entry;
+=======
+import com.orientechnologies.orient.core.tx.OTransactionInternal;
+import com.orientechnologies.orient.core.tx.OTransactionOptimistic;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.text.SimpleDateFormat;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.concurrent.Callable;
+>>>>>>> develop
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -207,15 +239,37 @@ public class ODatabaseDocumentEmbedded extends ODatabaseDocumentAbstract
 
       localCache.startup();
 
-      loadMetadata(this.sharedContext);
+      loadMetadata();
 
       installHooksEmbedded();
-      if (this.getMetadata().getCommandCache().isEnabled())
-        registerHook(new OCommandCacheHook(this), ORecordHook.HOOK_POSITION.REGULAR);
 
       user = null;
 
       initialized = true;
+    } catch (OException e) {
+      ODatabaseRecordThreadLocal.instance().remove();
+      throw e;
+    } catch (Exception e) {
+      ODatabaseRecordThreadLocal.instance().remove();
+      throw OException.wrapException(
+          new ODatabaseException("Cannot open database url=" + getURL()), e);
+    }
+  }
+
+  public void internalOpen(final OAuthenticationInfo authenticationInfo) {
+    try {
+      OSecurityInternal security = sharedContext.getSecurity();
+
+      if (user == null || user.getVersion() != security.getVersion(this)) {
+        final OSecurityUser usr;
+
+        usr = security.securityAuthenticate(this, authenticationInfo);
+        if (usr != null) user = new OImmutableUser(security.getVersion(this), usr);
+        else user = null;
+
+        checkSecurity(ORule.ResourceGeneric.DATABASE, ORole.PERMISSION_READ);
+      }
+
     } catch (OException e) {
       ODatabaseRecordThreadLocal.instance().remove();
       throw e;
@@ -238,10 +292,10 @@ public class ODatabaseDocumentEmbedded extends ODatabaseDocumentAbstract
       if (user == null
           || user.getVersion() != security.getVersion(this)
           || !user.getName().equalsIgnoreCase(iUserName)) {
-        final OUser usr;
+        final OSecurityUser usr;
 
         if (checkPassword) {
-          usr = security.authenticate(this, iUserName, iUserPassword);
+          usr = security.securityAuthenticate(this, iUserName, iUserPassword);
         } else {
           usr = security.getUser(this, iUserName);
         }
@@ -288,6 +342,15 @@ public class ODatabaseDocumentEmbedded extends ODatabaseDocumentAbstract
 
   /** {@inheritDoc} */
   public void internalCreate(OrientDBConfig config, OSharedContext ctx) {
+    ORecordSerializer serializer = ORecordSerializerFactory.instance().getDefaultRecordSerializer();
+    if (serializer.toString().equals("ORecordDocument2csv"))
+      throw new ODatabaseException(
+          "Impossible to create the database with ORecordDocument2csv serializer");
+    storage.setRecordSerializer(serializer.toString(), serializer.getCurrentVersion());
+    storage.setProperty(OStatement.CUSTOM_STRICT_SQL, "true");
+
+    this.setSerializer(serializer);
+
     this.sharedContext = ctx;
     this.status = STATUS.OPEN;
     // THIS IF SHOULDN'T BE NEEDED, CREATE HAPPEN ONLY IN EMBEDDED
@@ -296,9 +359,6 @@ public class ODatabaseDocumentEmbedded extends ODatabaseDocumentAbstract
     metadata = new OMetadataDefault(this);
     installHooksEmbedded();
     createMetadata(ctx);
-
-    if (this.getMetadata().getCommandCache().isEnabled())
-      registerHook(new OCommandCacheHook(this), ORecordHook.HOOK_POSITION.REGULAR);
   }
 
   public void callOnCreateListeners() {
@@ -321,14 +381,7 @@ public class ODatabaseDocumentEmbedded extends ODatabaseDocumentAbstract
 
   @Override
   protected void loadMetadata() {
-    loadMetadata(this.sharedContext);
-  }
-
-  @Override
-  protected void loadMetadata(OSharedContext shared) {
     metadata = new OMetadataDefault(this);
-    sharedContext = shared;
-
     metadata.init(sharedContext);
     sharedContext.load(this);
   }
@@ -511,7 +564,7 @@ public class ODatabaseDocumentEmbedded extends ODatabaseDocumentAbstract
    */
   public ODatabaseDocumentInternal copy() {
     ODatabaseDocumentEmbedded database =
-        new ODatabaseDocumentEmbedded(getSharedContext().getStorage());
+        new ODatabaseDocumentEmbedded((OStorage) getSharedContext().getStorage());
     database.init(config, this.sharedContext);
     String user;
     if (getUser() != null) {
@@ -598,6 +651,7 @@ public class ODatabaseDocumentEmbedded extends ODatabaseDocumentAbstract
   public OResultSet query(String query, Map args) {
     checkOpenness();
     checkIfActive();
+<<<<<<< HEAD
 
     InterruptTimerTask commandInterruptTimer = null;
     if (getConfiguration().getValueAsLong(OGlobalConfiguration.COMMAND_TIMEOUT) > 0) {
@@ -610,6 +664,10 @@ public class ODatabaseDocumentEmbedded extends ODatabaseDocumentAbstract
     }
     try {
 
+=======
+    getSharedContext().getOrientDB().startCommand(Optional.empty());
+    try {
+>>>>>>> develop
       OStatement statement = OSQLEngine.parse(query, this);
       if (!statement.isIdempotent()) {
         throw new OCommandExecutionException(
@@ -621,9 +679,13 @@ public class ODatabaseDocumentEmbedded extends ODatabaseDocumentAbstract
       result.addLifecycleListener(this);
       return result;
     } finally {
+<<<<<<< HEAD
       if (commandInterruptTimer != null) {
         commandInterruptTimer.cancel();
       }
+=======
+      getSharedContext().getOrientDB().endCommand();
+>>>>>>> develop
     }
   }
 
@@ -632,6 +694,7 @@ public class ODatabaseDocumentEmbedded extends ODatabaseDocumentAbstract
     checkOpenness();
     checkIfActive();
 
+<<<<<<< HEAD
     InterruptTimerTask commandInterruptTimer = null;
     if (getConfiguration().getValueAsLong(OGlobalConfiguration.COMMAND_TIMEOUT) > 0) {
       commandInterruptTimer = new InterruptTimerTask(Thread.currentThread());
@@ -643,6 +706,10 @@ public class ODatabaseDocumentEmbedded extends ODatabaseDocumentAbstract
     }
     try {
 
+=======
+    getSharedContext().getOrientDB().startCommand(Optional.empty());
+    try {
+>>>>>>> develop
       OStatement statement = OSQLEngine.parse(query, this);
       OResultSet original = statement.execute(this, args, true);
       OLocalResultSetLifecycleDecorator result;
@@ -660,9 +727,13 @@ public class ODatabaseDocumentEmbedded extends ODatabaseDocumentAbstract
       }
       return result;
     } finally {
+<<<<<<< HEAD
       if (commandInterruptTimer != null) {
         commandInterruptTimer.cancel();
       }
+=======
+      getSharedContext().getOrientDB().endCommand();
+>>>>>>> develop
     }
   }
 
@@ -671,6 +742,7 @@ public class ODatabaseDocumentEmbedded extends ODatabaseDocumentAbstract
     checkOpenness();
     checkIfActive();
 
+<<<<<<< HEAD
     InterruptTimerTask commandInterruptTimer = null;
     if (getConfiguration().getValueAsLong(OGlobalConfiguration.COMMAND_TIMEOUT) > 0) {
       commandInterruptTimer = new InterruptTimerTask(Thread.currentThread());
@@ -680,6 +752,9 @@ public class ODatabaseDocumentEmbedded extends ODatabaseDocumentAbstract
               commandInterruptTimer,
               getConfiguration().getValueAsLong(OGlobalConfiguration.COMMAND_TIMEOUT));
     }
+=======
+    getSharedContext().getOrientDB().startCommand(Optional.empty());
+>>>>>>> develop
     try {
 
       OStatement statement = OSQLEngine.parse(query, this);
@@ -697,11 +772,18 @@ public class ODatabaseDocumentEmbedded extends ODatabaseDocumentAbstract
         this.queryStarted(result.getQueryId(), result);
         result.addLifecycleListener(this);
       }
+<<<<<<< HEAD
       return result;
     } finally {
       if (commandInterruptTimer != null) {
         commandInterruptTimer.cancel();
       }
+=======
+
+      return result;
+    } finally {
+      getSharedContext().getOrientDB().endCommand();
+>>>>>>> develop
     }
   }
 
@@ -712,6 +794,7 @@ public class ODatabaseDocumentEmbedded extends ODatabaseDocumentAbstract
     if (!"sql".equalsIgnoreCase(language)) {
       checkSecurity(ORule.ResourceGeneric.COMMAND, ORole.PERMISSION_EXECUTE, language);
     }
+<<<<<<< HEAD
 
     InterruptTimerTask commandInterruptTimer = null;
     if (getConfiguration().getValueAsLong(OGlobalConfiguration.COMMAND_TIMEOUT) > 0) {
@@ -723,6 +806,11 @@ public class ODatabaseDocumentEmbedded extends ODatabaseDocumentAbstract
               getConfiguration().getValueAsLong(OGlobalConfiguration.COMMAND_TIMEOUT));
     }
     try {
+=======
+    getSharedContext().getOrientDB().startCommand(Optional.empty());
+    try {
+
+>>>>>>> develop
       OScriptExecutor executor =
           getSharedContext()
               .getOrientDB()
@@ -730,23 +818,35 @@ public class ODatabaseDocumentEmbedded extends ODatabaseDocumentAbstract
               .getCommandManager()
               .getScriptExecutor(language);
 
+<<<<<<< HEAD
       ((OAbstractPaginatedStorage) this.storage.getUnderlying())
           .pauseConfigurationUpdateNotifications();
+=======
+      ((OAbstractPaginatedStorage) this.storage).pauseConfigurationUpdateNotifications();
+>>>>>>> develop
       OResultSet original;
       try {
         original = executor.execute(this, script, args);
       } finally {
+<<<<<<< HEAD
         ((OAbstractPaginatedStorage) this.storage.getUnderlying())
             .fireConfigurationUpdateNotifications();
+=======
+        ((OAbstractPaginatedStorage) this.storage).fireConfigurationUpdateNotifications();
+>>>>>>> develop
       }
       OLocalResultSetLifecycleDecorator result = new OLocalResultSetLifecycleDecorator(original);
       this.queryStarted(result.getQueryId(), result);
       result.addLifecycleListener(this);
       return result;
     } finally {
+<<<<<<< HEAD
       if (commandInterruptTimer != null) {
         commandInterruptTimer.cancel();
       }
+=======
+      getSharedContext().getOrientDB().endCommand();
+>>>>>>> develop
     }
   }
 
@@ -757,6 +857,7 @@ public class ODatabaseDocumentEmbedded extends ODatabaseDocumentAbstract
     if (!"sql".equalsIgnoreCase(language)) {
       checkSecurity(ORule.ResourceGeneric.COMMAND, ORole.PERMISSION_EXECUTE, language);
     }
+<<<<<<< HEAD
 
     InterruptTimerTask commandInterruptTimer = null;
     if (getConfiguration().getValueAsLong(OGlobalConfiguration.COMMAND_TIMEOUT) > 0) {
@@ -783,6 +884,24 @@ public class ODatabaseDocumentEmbedded extends ODatabaseDocumentAbstract
       } finally {
         ((OAbstractPaginatedStorage) this.storage.getUnderlying())
             .fireConfigurationUpdateNotifications();
+=======
+    getSharedContext().getOrientDB().startCommand(Optional.empty());
+    try {
+
+      OScriptExecutor executor =
+          sharedContext
+              .getOrientDB()
+              .getScriptManager()
+              .getCommandManager()
+              .getScriptExecutor(language);
+      OResultSet original;
+
+      ((OAbstractPaginatedStorage) this.storage).pauseConfigurationUpdateNotifications();
+      try {
+        original = executor.execute(this, script, args);
+      } finally {
+        ((OAbstractPaginatedStorage) this.storage).fireConfigurationUpdateNotifications();
+>>>>>>> develop
       }
 
       OLocalResultSetLifecycleDecorator result = new OLocalResultSetLifecycleDecorator(original);
@@ -790,26 +909,35 @@ public class ODatabaseDocumentEmbedded extends ODatabaseDocumentAbstract
       result.addLifecycleListener(this);
       return result;
     } finally {
+<<<<<<< HEAD
       if (commandInterruptTimer != null) {
         commandInterruptTimer.cancel();
       }
+=======
+      getSharedContext().getOrientDB().endCommand();
+>>>>>>> develop
     }
   }
 
   public OLocalResultSetLifecycleDecorator query(OExecutionPlan plan, Map<Object, Object> params) {
     checkOpenness();
     checkIfActive();
+    getSharedContext().getOrientDB().startCommand(Optional.empty());
+    try {
 
-    OBasicCommandContext ctx = new OBasicCommandContext();
-    ctx.setDatabase(this);
-    ctx.setInputParameters(params);
+      OBasicCommandContext ctx = new OBasicCommandContext();
+      ctx.setDatabase(this);
+      ctx.setInputParameters(params);
 
-    OLocalResultSet result = new OLocalResultSet((OInternalExecutionPlan) plan);
-    OLocalResultSetLifecycleDecorator decorator = new OLocalResultSetLifecycleDecorator(result);
-    this.queryStarted(decorator.getQueryId(), decorator);
-    decorator.addLifecycleListener(this);
+      OLocalResultSet result = new OLocalResultSet((OInternalExecutionPlan) plan);
+      OLocalResultSetLifecycleDecorator decorator = new OLocalResultSetLifecycleDecorator(result);
+      this.queryStarted(decorator.getQueryId(), decorator);
+      decorator.addLifecycleListener(this);
 
-    return decorator;
+      return decorator;
+    } finally {
+      getSharedContext().getOrientDB().endCommand();
+    }
   }
 
   public OrientDBConfig getConfig() {
@@ -847,18 +975,6 @@ public class ODatabaseDocumentEmbedded extends ODatabaseDocumentAbstract
     throw new UnsupportedOperationException();
   }
 
-  protected OMicroTransaction beginMicroTransaction() {
-    final OAbstractPaginatedStorage abstractPaginatedStorage =
-        (OAbstractPaginatedStorage) getStorage().getUnderlying();
-
-    if (microTransaction == null)
-      microTransaction = new OMicroTransaction(abstractPaginatedStorage, this);
-
-    microTransaction.begin();
-    microTransaction.setNoTxLocks(((OTransactionAbstract) getTransaction()).getInternalLocks());
-    return microTransaction;
-  }
-
   @Override
   public int addBlobCluster(final String iClusterName, final Object... iParameters) {
     int id;
@@ -894,54 +1010,23 @@ public class ODatabaseDocumentEmbedded extends ODatabaseDocumentAbstract
 
     ORecord record = identifiable.getRecord();
     if (record == null) return;
-
-    final OMicroTransaction microTx = beginMicroTransaction();
-    try {
-      Set<ORecord> records = ORecordInternal.getDirtyManager(record).getUpdateRecords();
-      if (records != null) {
-        for (ORecord rec : records) {
-          microTx.saveRecord(rec, null, ODatabase.OPERATION_MODE.SYNCHRONOUS, false, null, null);
-        }
+    if (record instanceof ODocument) {
+      if (record.getInternalStatus() == ORecordElement.STATUS.NOT_LOADED) {
+        ((ODocument) record).reload();
       }
-
-      Set<ORecord> newRecords = ORecordInternal.getDirtyManager(record).getNewRecords();
-      if (newRecords != null) {
-        for (ORecord rec : newRecords) {
-          microTx.saveRecord(rec, null, ODatabase.OPERATION_MODE.SYNCHRONOUS, false, null, null);
-        }
-      }
-      microTx.deleteRecord(record, iMode);
-    } catch (Exception e) {
-      endMicroTransaction(false);
-      throw e;
     }
-    endMicroTransaction(true);
-    return;
-  }
-
-  private void endMicroTransaction(boolean success) {
-    assert microTransaction != null;
-
+    OTransactionAbstract trans = (OTransactionAbstract) this.currentTx;
     try {
-      if (success) {
-        try {
-          microTransaction.commit();
-          OLiveQueryHook.notifyForTxChanges(this);
-          OLiveQueryHookV2.notifyForTxChanges(this);
-        } catch (Exception e) {
-          microTransaction.rollbackAfterFailedCommit();
-          OLiveQueryHook.removePendingDatabaseOps(this);
-          OLiveQueryHookV2.removePendingDatabaseOps(this);
-          throw e;
-        }
-      } else {
-        microTransaction.rollback();
-        OLiveQueryHook.removePendingDatabaseOps(this);
-        OLiveQueryHookV2.removePendingDatabaseOps(this);
-      }
+      OTransactionOptimistic tx = new OTransactionOptimistic(this);
+      tx.setNoTxLocks(trans.getInternalLocks());
+      this.currentTx = tx;
+      tx.begin();
+      tx.deleteRecord(record, iMode);
+      commit();
     } finally {
-      if (!microTransaction.isActive()) microTransaction = null;
+      this.currentTx = trans;
     }
+    return;
   }
 
   @Override
@@ -968,7 +1053,7 @@ public class ODatabaseDocumentEmbedded extends ODatabaseDocumentAbstract
           changed = true;
         }
         if (clazz.isOuser()) {
-          changed = OUser.encodePassword(doc);
+          changed = OUser.encodePassword(this, doc);
         }
         if (clazz.isTriggered()) {
           triggerChanged = OClassTrigger.onRecordBeforeCreate(doc, this);
@@ -1017,7 +1102,7 @@ public class ODatabaseDocumentEmbedded extends ODatabaseDocumentAbstract
           changed = true;
         }
         if (clazz.isOuser()) {
-          changed = OUser.encodePassword(doc);
+          changed = OUser.encodePassword(this, doc);
         }
         if (clazz.isTriggered()) {
           triggerChanged = OClassTrigger.onRecordBeforeUpdate(doc, this);
@@ -1086,9 +1171,9 @@ public class ODatabaseDocumentEmbedded extends ODatabaseDocumentAbstract
 
     if (record instanceof OElement) {
       if (((OElement) record).isVertex()) {
-        OVertexDelegate.deleteLinks(((OElement) record).asVertex().get());
+        OVertexDocument.deleteLinks(((OElement) record).asVertex().get());
       } else if (((OElement) record).isEdge()) {
-        OEdgeDelegate.deleteLinks(((OElement) record).asEdge().get());
+        OEdgeDocument.deleteLinks(((OElement) record).asEdge().get());
       }
     }
 
@@ -1150,15 +1235,18 @@ public class ODatabaseDocumentEmbedded extends ODatabaseDocumentAbstract
 
   public void afterCreateOperations(final OIdentifiable id) {
     if (id instanceof ODocument) {
-      ODocument doc = (ODocument) id;
-      OImmutableClass clazz = ODocumentInternal.getImmutableSchemaClass(this, doc);
+      final ODocument doc = (ODocument) id;
+      final OImmutableClass clazz = ODocumentInternal.getImmutableSchemaClass(this, doc);
       if (clazz != null) {
         OClassIndexManager.checkIndexesAfterCreate(doc, this);
         if (clazz.isFunction()) {
           this.getSharedContext().getFunctionLibrary().createdFunction(doc);
-          sharedContext.getOrientDB().getScriptManager().close(this.getName());
         }
+<<<<<<< HEAD
         if (clazz.isOuser() || clazz.isOrole() || clazz.isOSecurityPolicy()) {
+=======
+        if (clazz.isOuser() || clazz.isOrole() || clazz.isSecurityPolicy()) {
+>>>>>>> develop
           sharedContext.getSecurity().incrementVersion(this);
         }
         if (clazz.isSequence()) {
@@ -1172,10 +1260,8 @@ public class ODatabaseDocumentEmbedded extends ODatabaseDocumentAbstract
         if (clazz.isTriggered()) {
           OClassTrigger.onRecordAfterCreate(doc, this);
         }
-
         getSharedContext().getViewManager().recordAdded(clazz, doc, this);
       }
-
       OLiveQueryHook.addOp(doc, ORecordOperation.CREATED, this);
       OLiveQueryHookV2.addOp(doc, ORecordOperation.CREATED, this);
     }
@@ -1190,9 +1276,12 @@ public class ODatabaseDocumentEmbedded extends ODatabaseDocumentAbstract
         OClassIndexManager.checkIndexesAfterUpdate((ODocument) id, this);
         if (clazz.isFunction()) {
           this.getSharedContext().getFunctionLibrary().updatedFunction(doc);
-          sharedContext.getOrientDB().getScriptManager().close(this.getName());
         }
+<<<<<<< HEAD
         if (clazz.isOuser() || clazz.isOrole() || clazz.isOSecurityPolicy()) {
+=======
+        if (clazz.isOuser() || clazz.isOrole() || clazz.isSecurityPolicy()) {
+>>>>>>> develop
           sharedContext.getSecurity().incrementVersion(this);
         }
         if (clazz.isSequence()) {
@@ -1220,7 +1309,6 @@ public class ODatabaseDocumentEmbedded extends ODatabaseDocumentAbstract
         OClassIndexManager.checkIndexesAfterDelete(doc, this);
         if (clazz.isFunction()) {
           this.getSharedContext().getFunctionLibrary().droppedFunction(doc);
-          sharedContext.getOrientDB().getScriptManager().close(this.getName());
         }
         if (clazz.isSequence()) {
           ((OSequenceLibraryProxy) getMetadata().getSequenceLibrary())
@@ -1314,47 +1402,24 @@ public class ODatabaseDocumentEmbedded extends ODatabaseDocumentAbstract
       boolean iForceCreate,
       ORecordCallback<? extends Number> iRecordCreatedCallback,
       ORecordCallback<Integer> iRecordUpdatedCallback) {
-
-    ORecord toRet = null;
-    ODirtyManager dirtyManager = ORecordInternal.getDirtyManager(iRecord);
-    Set<ORecord> newRecord = dirtyManager.getNewRecords();
-    Set<ORecord> updatedRecord = dirtyManager.getUpdateRecords();
-    dirtyManager.clearForSave();
-    if (iRecord.getIdentity().isNew()) {
-      if (newRecord == null) newRecord = Collections.newSetFromMap(new IdentityHashMap<>());
-      newRecord.add(iRecord);
-    } else {
-      if (updatedRecord == null) updatedRecord = Collections.newSetFromMap(new IdentityHashMap<>());
-      updatedRecord.add(iRecord);
-    }
-
-    final OMicroTransaction microTx = beginMicroTransaction();
+    OTransactionAbstract trans = (OTransactionAbstract) this.currentTx;
     try {
-      if (newRecord != null) {
-        for (ORecord rn : newRecord) {
-          String cluster;
-          if (iRecord == rn) cluster = iClusterName;
-          else cluster = getClusterName(rn);
-          microTx.saveRecord(
-              rn, cluster, iMode, iForceCreate, iRecordCreatedCallback, iRecordUpdatedCallback);
-        }
-      }
-      if (updatedRecord != null) {
-        for (ORecord rn : updatedRecord) {
-          microTx.saveRecord(
-              rn,
-              iClusterName,
-              iMode,
-              iForceCreate,
-              iRecordCreatedCallback,
-              iRecordUpdatedCallback);
-        }
-      }
-    } catch (Exception e) {
-      endMicroTransaction(false);
-      throw e;
+      OTransactionOptimistic tx = new OTransactionOptimistic(this);
+      tx.setNoTxLocks(trans.getInternalLocks());
+      this.currentTx = tx;
+      tx.begin();
+
+      tx.saveRecord(
+          iRecord,
+          iClusterName,
+          iMode,
+          iForceCreate,
+          iRecordCreatedCallback,
+          iRecordUpdatedCallback);
+      commit();
+    } finally {
+      this.currentTx = trans;
     }
-    endMicroTransaction(true);
 
     return iRecord;
   }
@@ -1415,29 +1480,17 @@ public class ODatabaseDocumentEmbedded extends ODatabaseDocumentAbstract
     checkIfActive();
 
     getMetadata().makeThreadLocalSchemaSnapshot();
-    ORecordSerializationContext.pushContext();
     try {
       checkSecurity(
           ORule.ResourceGeneric.CLUSTER,
           ORole.PERMISSION_READ,
           getClusterNameById(rid.getClusterId()));
 
-      // either regular or micro tx must be active or both inactive
-      assert !(getTransaction().isActive()
-          && (microTransaction != null && microTransaction.isActive()));
-
       // SEARCH IN LOCAL TX
       ORecord record = getTransaction().getRecord(rid);
-      if (record == OBasicTransaction.DELETED_RECORD)
+      if (record == OTransactionAbstract.DELETED_RECORD)
         // DELETED IN TX
         return null;
-
-      if (record == null) {
-        if (microTransaction != null && microTransaction.isActive()) {
-          record = microTransaction.getRecord(rid);
-          if (record == OBasicTransaction.DELETED_RECORD) return null;
-        }
-      }
 
       if (record == null && !ignoreCache)
         // SEARCH INTO THE CACHE
@@ -1445,7 +1498,7 @@ public class ODatabaseDocumentEmbedded extends ODatabaseDocumentAbstract
 
       if (record != null) {
         if (iRecord != null) {
-          iRecord.fromStream(record.toStream());
+          ORecordInternal.fromStream(iRecord, record.toStream(), this);
           ORecordInternal.setVersion(iRecord, record.getVersion());
           record = iRecord;
         }
@@ -1511,7 +1564,11 @@ public class ODatabaseDocumentEmbedded extends ODatabaseDocumentAbstract
 
         if (beforeReadOperations(iRecord)) return null;
 
+<<<<<<< HEAD
         iRecord.fromStream(recordBuffer.buffer);
+=======
+        ORecordInternal.fromStream(iRecord, recordBuffer.buffer, this);
+>>>>>>> develop
 
         afterReadOperations(iRecord);
         if (iUpdateCache) getLocalCache().updateRecord(iRecord);
@@ -1547,7 +1604,6 @@ public class ODatabaseDocumentEmbedded extends ODatabaseDocumentAbstract
                     + ")"),
             t);
     } finally {
-      ORecordSerializationContext.pullContext();
       getMetadata().clearThreadLocalSchemaSnapshot();
     }
   }
@@ -1563,9 +1619,9 @@ public class ODatabaseDocumentEmbedded extends ODatabaseDocumentAbstract
     OTransactionAbstract transaction = (OTransactionAbstract) getTransaction();
     if (!transaction.isLockedRecord(iRecord)) {
       if (lockingStrategy == OStorage.LOCKING_STRATEGY.EXCLUSIVE_LOCK)
-        ((OAbstractPaginatedStorage) getStorage().getUnderlying()).acquireWriteLock(rid, timeout);
+        ((OAbstractPaginatedStorage) getStorage()).acquireWriteLock(rid, timeout);
       else if (lockingStrategy == OStorage.LOCKING_STRATEGY.SHARED_LOCK)
-        ((OAbstractPaginatedStorage) getStorage().getUnderlying()).acquireReadLock(rid, timeout);
+        ((OAbstractPaginatedStorage) getStorage()).acquireReadLock(rid, timeout);
       else throw new IllegalStateException("Unsupported locking strategy " + lockingStrategy);
     }
     transaction.trackLockedRecord(iRecord.getIdentity(), lockingStrategy);
@@ -1578,9 +1634,9 @@ public class ODatabaseDocumentEmbedded extends ODatabaseDocumentAbstract
     OStorage.LOCKING_STRATEGY strategy = transaction.trackUnlockRecord(rid);
 
     if (strategy == OStorage.LOCKING_STRATEGY.EXCLUSIVE_LOCK)
-      ((OAbstractPaginatedStorage) getStorage().getUnderlying()).releaseWriteLock(rid);
+      ((OAbstractPaginatedStorage) getStorage()).releaseWriteLock(rid);
     else if (strategy == OStorage.LOCKING_STRATEGY.SHARED_LOCK)
-      ((OAbstractPaginatedStorage) getStorage().getUnderlying()).releaseReadLock(rid);
+      ((OAbstractPaginatedStorage) getStorage()).releaseReadLock(rid);
   }
 
   @Override
@@ -1762,7 +1818,412 @@ public class ODatabaseDocumentEmbedded extends ODatabaseDocumentAbstract
   }
 
   @Override
+<<<<<<< HEAD
   public TimerTask createInterruptTimerTask() {
     return new InterruptTimerTask(Thread.currentThread());
+=======
+  public int addCluster(final String iClusterName, final Object... iParameters) {
+    checkIfActive();
+    return getStorage().addCluster(iClusterName, iParameters);
+  }
+
+  @Override
+  public int addCluster(final String iClusterName, final int iRequestedId) {
+    checkIfActive();
+    return getStorage().addCluster(iClusterName, iRequestedId);
+  }
+
+  public ORecordConflictStrategy getConflictStrategy() {
+    checkIfActive();
+    return getStorageInfo().getRecordConflictStrategy();
+  }
+
+  public ODatabaseDocumentEmbedded setConflictStrategy(final String iStrategyName) {
+    checkIfActive();
+    getStorage()
+        .setConflictStrategy(
+            Orient.instance().getRecordConflictStrategy().getStrategy(iStrategyName));
+    return this;
+  }
+
+  public ODatabaseDocumentEmbedded setConflictStrategy(final ORecordConflictStrategy iResolver) {
+    checkIfActive();
+    getStorage().setConflictStrategy(iResolver);
+    return this;
+  }
+
+  @Override
+  public long getClusterRecordSizeByName(final String clusterName) {
+    checkIfActive();
+    try {
+      return getStorage().getClusterRecordsSizeByName(clusterName);
+    } catch (Exception e) {
+      throw OException.wrapException(
+          new ODatabaseException("Error on reading records size for cluster '" + clusterName + "'"),
+          e);
+    }
+  }
+
+  @Override
+  public long getClusterRecordSizeById(final int clusterId) {
+    checkIfActive();
+    try {
+      return getStorage().getClusterRecordsSizeById(clusterId);
+    } catch (Exception e) {
+      throw OException.wrapException(
+          new ODatabaseException(
+              "Error on reading records size for cluster with id '" + clusterId + "'"),
+          e);
+    }
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public long countClusterElements(int iClusterId, boolean countTombstones) {
+    final String name = getClusterNameById(iClusterId);
+    if (name == null) {
+      return 0;
+    }
+    checkSecurity(ORule.ResourceGeneric.CLUSTER, ORole.PERMISSION_READ, name);
+    checkIfActive();
+    return getStorage().count(iClusterId, countTombstones);
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public long countClusterElements(int[] iClusterIds, boolean countTombstones) {
+    checkIfActive();
+    String name;
+    for (int iClusterId : iClusterIds) {
+      name = getClusterNameById(iClusterId);
+      checkSecurity(ORule.ResourceGeneric.CLUSTER, ORole.PERMISSION_READ, name);
+    }
+    return getStorage().count(iClusterIds, countTombstones);
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public long countClusterElements(final String iClusterName) {
+    checkSecurity(ORule.ResourceGeneric.CLUSTER, ORole.PERMISSION_READ, iClusterName);
+    checkIfActive();
+
+    final int clusterId = getClusterIdByName(iClusterName);
+    if (clusterId < 0)
+      throw new IllegalArgumentException("Cluster '" + iClusterName + "' was not found");
+    return getStorage().count(clusterId);
+  }
+
+  @Override
+  public boolean dropCluster(final String iClusterName) {
+    checkIfActive();
+    final int clusterId = getClusterIdByName(iClusterName);
+    OSchemaProxy schema = metadata.getSchema();
+    OClass clazz = schema.getClassByClusterId(clusterId);
+    if (clazz != null) clazz.removeClusterId(clusterId);
+    if (schema.getBlobClusters().contains(clusterId)) schema.removeBlobCluster(iClusterName);
+    getLocalCache().freeCluster(clusterId);
+    checkForClusterPermissions(iClusterName);
+    return dropClusterInternal(iClusterName);
+  }
+
+  protected boolean dropClusterInternal(final String iClusterName) {
+    return getStorage().dropCluster(iClusterName);
+  }
+
+  @Override
+  public boolean dropCluster(final int clusterId) {
+    checkIfActive();
+
+    checkSecurity(
+        ORule.ResourceGeneric.CLUSTER, ORole.PERMISSION_DELETE, getClusterNameById(clusterId));
+
+    OSchemaProxy schema = metadata.getSchema();
+    final OClass clazz = schema.getClassByClusterId(clusterId);
+    if (clazz != null) clazz.removeClusterId(clusterId);
+    getLocalCache().freeCluster(clusterId);
+    if (schema.getBlobClusters().contains(clusterId))
+      schema.removeBlobCluster(getClusterNameById(clusterId));
+
+    checkForClusterPermissions(getClusterNameById(clusterId));
+
+    final String clusterName = getClusterNameById(clusterId);
+    if (clusterName == null) {
+      return false;
+    }
+
+    final ORecordIteratorCluster<ODocument> iteratorCluster = browseCluster(clusterName);
+    if (iteratorCluster == null) {
+      return false;
+    }
+
+    while (iteratorCluster.hasNext()) {
+      final ODocument document = iteratorCluster.next();
+      document.delete();
+    }
+
+    return dropClusterInternal(clusterId);
+  }
+
+  public boolean dropClusterInternal(int clusterId) {
+    return getStorage().dropCluster(clusterId);
+  }
+
+  @Override
+  public long getSize() {
+    checkIfActive();
+    return getStorage().getSize();
+  }
+
+  public ODatabaseStats getStats() {
+    ODatabaseStats stats = new ODatabaseStats();
+    stats.loadedRecords = loadedRecordsCount;
+    stats.minLoadRecordTimeMs = minRecordLoadMs;
+    stats.maxLoadRecordTimeMs = minRecordLoadMs;
+    stats.averageLoadRecordTimeMs =
+        loadedRecordsCount == 0 ? 0 : (this.totalRecordLoadMs / loadedRecordsCount);
+
+    stats.prefetchedRidbagsCount = ridbagPrefetchCount;
+    stats.minRidbagPrefetchTimeMs = minRidbagPrefetchMs;
+    stats.maxRidbagPrefetchTimeMs = maxRidbagPrefetchMs;
+    stats.ridbagPrefetchTimeMs = totalRidbagPrefetchMs;
+    return stats;
+  }
+
+  public void addRidbagPrefetchStats(long execTimeMs) {
+    this.ridbagPrefetchCount++;
+    totalRidbagPrefetchMs += execTimeMs;
+    if (this.ridbagPrefetchCount == 1) {
+      this.minRidbagPrefetchMs = execTimeMs;
+      this.maxRidbagPrefetchMs = execTimeMs;
+    } else {
+      this.minRidbagPrefetchMs = Math.min(this.minRidbagPrefetchMs, execTimeMs);
+      this.maxRidbagPrefetchMs = Math.max(this.maxRidbagPrefetchMs, execTimeMs);
+    }
+  }
+
+  public void resetRecordLoadStats() {
+    this.loadedRecordsCount = 0L;
+    this.totalRecordLoadMs = 0L;
+    this.minRecordLoadMs = 0L;
+    this.maxRecordLoadMs = 0L;
+    this.ridbagPrefetchCount = 0L;
+    this.totalRidbagPrefetchMs = 0L;
+    this.minRidbagPrefetchMs = 0L;
+    this.maxRidbagPrefetchMs = 0L;
+  }
+
+  @Override
+  public String incrementalBackup(final String path) throws UnsupportedOperationException {
+    checkOpenness();
+    checkIfActive();
+    checkSecurity(ORule.ResourceGeneric.DATABASE, "backup", ORole.PERMISSION_EXECUTE);
+
+    return getStorage().incrementalBackup(path, null);
+  }
+
+  @Override
+  public ORecordMetadata getRecordMetadata(final ORID rid) {
+    checkIfActive();
+    return getStorage().getRecordMetadata(rid);
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public void freeze(final boolean throwException) {
+    checkOpenness();
+    if (!(getStorage() instanceof OFreezableStorageComponent)) {
+      OLogManager.instance()
+          .error(
+              this,
+              "Only local paginated storage supports freeze. If you are using remote client please use OServerAdmin instead",
+              null);
+
+      return;
+    }
+
+    final long startTime = Orient.instance().getProfiler().startChrono();
+
+    final OFreezableStorageComponent storage = getFreezableStorage();
+    if (storage != null) {
+      storage.freeze(throwException);
+    }
+
+    Orient.instance()
+        .getProfiler()
+        .stopChrono(
+            "db." + getName() + ".freeze", "Time to freeze the database", startTime, "db.*.freeze");
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public void freeze() {
+    freeze(false);
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public void release() {
+    checkOpenness();
+    if (!(getStorage() instanceof OFreezableStorageComponent)) {
+      OLogManager.instance()
+          .error(
+              this,
+              "Only local paginated storage supports release. If you are using remote client please use OServerAdmin instead",
+              null);
+      return;
+    }
+
+    final long startTime = Orient.instance().getProfiler().startChrono();
+
+    final OFreezableStorageComponent storage = getFreezableStorage();
+    if (storage != null) {
+      storage.release();
+    }
+
+    Orient.instance()
+        .getProfiler()
+        .stopChrono(
+            "db." + getName() + ".release",
+            "Time to release the database",
+            startTime,
+            "db.*.release");
+  }
+
+  private OFreezableStorageComponent getFreezableStorage() {
+    OStorage s = getStorage();
+    if (s instanceof OFreezableStorageComponent) return (OFreezableStorageComponent) s;
+    else {
+      OLogManager.instance()
+          .error(
+              this, "Storage of type " + s.getType() + " does not support freeze operation", null);
+      return null;
+    }
+  }
+
+  @Override
+  public List<String> backup(
+      final OutputStream out,
+      final Map<String, Object> options,
+      final Callable<Object> callable,
+      final OCommandOutputListener iListener,
+      final int compressionLevel,
+      final int bufferSize)
+      throws IOException {
+    checkOpenness();
+    checkSecurity(ORule.ResourceGeneric.DATABASE, "backup", ORole.PERMISSION_EXECUTE);
+    return getStorage().backup(out, options, callable, iListener, compressionLevel, bufferSize);
+  }
+
+  @Override
+  public void restore(
+      final InputStream in,
+      final Map<String, Object> options,
+      final Callable<Object> callable,
+      final OCommandOutputListener iListener)
+      throws IOException {
+    checkOpenness();
+
+    getStorage().restore(in, options, callable, iListener);
+
+    if (!isClosed()) {
+      loadMetadata();
+      sharedContext.reload(this);
+    }
+  }
+
+  /** {@inheritDoc} */
+  public OSBTreeCollectionManager getSbTreeCollectionManager() {
+    return getStorage().getSBtreeCollectionManager();
+  }
+
+  @Override
+  public void reload() {
+    checkIfActive();
+
+    if (this.isClosed()) {
+      throw new ODatabaseException("Cannot reload a closed db");
+    }
+    metadata.reload();
+    getStorage().reload();
+  }
+
+  @Override
+  public void internalCommit(OTransactionInternal transaction) {
+    this.getStorage().commit(transaction);
+  }
+
+  public void internalClose(boolean recycle) {
+    if (status != STATUS.OPEN) return;
+
+    checkIfActive();
+
+    try {
+      closeActiveQueries();
+      localCache.shutdown();
+
+      if (isClosed()) {
+        status = STATUS.CLOSED;
+        return;
+      }
+
+      try {
+        rollback(true);
+      } catch (Exception e) {
+        OLogManager.instance().error(this, "Exception during rollback of active transaction", e);
+      }
+
+      callOnCloseListeners();
+
+      if (currentIntent != null) {
+        currentIntent.end(this);
+        currentIntent = null;
+      }
+
+      status = STATUS.CLOSED;
+      if (!recycle) {
+        sharedContext = null;
+
+        if (getStorage() != null) getStorage().close();
+      }
+
+    } finally {
+      // ALWAYS RESET TL
+      ODatabaseRecordThreadLocal.instance().remove();
+    }
+  }
+
+  @Override
+  public long[] getClusterDataRange(int currentClusterId) {
+    return getStorage().getClusterDataRange(currentClusterId);
+  }
+
+  @Override
+  public void setDefaultClusterId(int addCluster) {
+    getStorage().setDefaultClusterId(addCluster);
+  }
+
+  @Override
+  public long getLastClusterPosition(int clusterId) {
+    return getStorage().getLastClusterPosition(clusterId);
+  }
+
+  @Override
+  public String getClusterRecordConflictStrategy(int clusterId) {
+    return storage.getClusterRecordConflictStrategy(clusterId);
+  }
+
+  @Override
+  public int[] getClustersIds(Set<String> filterClusters) {
+    checkIfActive();
+    return getStorage().getClustersIds(filterClusters);
+  }
+
+  public void startEsclusiveMetadataChange() {
+    ((OAbstractPaginatedStorage) storage).startDDL();
+  }
+
+  public void endEsclusiveMetadataChange() {
+    ((OAbstractPaginatedStorage) storage).endDDL();
+>>>>>>> develop
   }
 }

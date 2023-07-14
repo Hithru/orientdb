@@ -21,16 +21,11 @@
 package com.orientechnologies.orient.core.index;
 
 import com.orientechnologies.orient.core.collate.OCollate;
-import com.orientechnologies.orient.core.config.OStorageConfiguration;
-import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
-import com.orientechnologies.orient.core.db.ODatabaseRecordThreadLocal;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OClassImpl;
 import com.orientechnologies.orient.core.metadata.schema.OProperty;
 import com.orientechnologies.orient.core.metadata.schema.OType;
-import com.orientechnologies.orient.core.storage.OStorage;
 import java.util.List;
-import java.util.Locale;
 import java.util.regex.Pattern;
 
 /**
@@ -66,13 +61,24 @@ public class OIndexDefinitionFactory {
     checkTypes(oClass, fieldNames, types);
 
     if (fieldNames.size() == 1) {
+      OCollate collate = null;
+      OType linkedType = null;
+      OType type = types.get(0);
+      String field = fieldNames.get(0);
+      final String fieldName =
+          OClassImpl.decodeClassName(adjustFieldName(oClass, extractFieldName(field)));
+      if (collates != null) collate = collates.get(0);
+      OProperty property = oClass.getProperty(fieldName);
+      if (property != null) {
+        if (collate == null) {
+          collate = property.getCollate();
+        }
+        linkedType = property.getLinkedType();
+      }
+
+      final OPropertyMapIndexDefinition.INDEX_BY indexBy = extractMapIndexSpecifier(field);
       return createSingleFieldIndexDefinition(
-          oClass,
-          fieldNames.get(0),
-          types.get(0),
-          collates == null ? null : collates.get(0),
-          indexKind,
-          algorithm);
+          oClass.getName(), fieldName, type, linkedType, collate, indexKind, indexBy);
     } else {
       return createMultipleFieldIndexDefinition(
           oClass, fieldNames, types, collates, indexKind, algorithm);
@@ -120,11 +126,24 @@ public class OIndexDefinitionFactory {
 
     for (int i = 0, fieldsToIndexSize = fieldsToIndex.size(); i < fieldsToIndexSize; i++) {
       OCollate collate = null;
+      OType linkedType = null;
+      OType type = types.get(i);
       if (collates != null) collate = collates.get(i);
+      String field = fieldsToIndex.get(i);
+      final String fieldName =
+          OClassImpl.decodeClassName(adjustFieldName(oClass, extractFieldName(field)));
+      OProperty property = oClass.getProperty(fieldName);
+      if (property != null) {
+        if (collate == null) {
+          collate = property.getCollate();
+        }
+        linkedType = property.getLinkedType();
+      }
+      final OPropertyMapIndexDefinition.INDEX_BY indexBy = extractMapIndexSpecifier(field);
 
       compositeIndex.addIndex(
           createSingleFieldIndexDefinition(
-              oClass, fieldsToIndex.get(i), types.get(i), collate, indexKind, algorithm));
+              className, fieldName, type, linkedType, collate, indexKind, indexBy));
     }
     return compositeIndex;
   }
@@ -150,13 +169,14 @@ public class OIndexDefinitionFactory {
     }
   }
 
-  private static OIndexDefinition createSingleFieldIndexDefinition(
-      final OClass oClass,
-      final String field,
+  public static OIndexDefinition createSingleFieldIndexDefinition(
+      final String className,
+      final String fieldName,
       final OType type,
+      final OType linkedType,
       OCollate collate,
       final String indexKind,
-      final String algorithm) {
+      final OPropertyMapIndexDefinition.INDEX_BY indexBy) {
     // TODO: let index implementations name their preferences_
     if (type.equals(OType.EMBEDDED)) {
       if (indexKind.equals("FULLTEXT")) {
@@ -164,27 +184,30 @@ public class OIndexDefinitionFactory {
             "Fulltext index does not support embedded types: " + type);
       }
     }
-    final String fieldName =
-        OClassImpl.decodeClassName(adjustFieldName(oClass, extractFieldName(field)));
+
     final OIndexDefinition indexDefinition;
 
-    final OProperty propertyToIndex = oClass.getProperty(fieldName);
     final OType indexType;
     if (type == OType.EMBEDDEDMAP || type == OType.LINKMAP) {
-      final OPropertyMapIndexDefinition.INDEX_BY indexBy = extractMapIndexSpecifier(field);
+
+      if (indexBy == null) {
+        throw new IllegalArgumentException(
+            "Illegal field name format, should be '<property> [by key|value]' but was '"
+                + fieldName
+                + '\'');
+      }
       if (indexBy.equals(OPropertyMapIndexDefinition.INDEX_BY.KEY)) indexType = OType.STRING;
       else {
         if (type == OType.LINKMAP) indexType = OType.LINK;
         else {
-          indexType = propertyToIndex.getLinkedType();
+          indexType = linkedType;
           if (indexType == null)
             throw new OIndexException(
                 "Linked type was not provided."
                     + " You should provide linked type for embedded collections that are going to be indexed.");
         }
       }
-      indexDefinition =
-          new OPropertyMapIndexDefinition(oClass.getName(), fieldName, indexType, indexBy);
+      indexDefinition = new OPropertyMapIndexDefinition(className, fieldName, indexType, indexBy);
     } else if (type.equals(OType.EMBEDDEDLIST)
         || type.equals(OType.EMBEDDEDSET)
         || type.equals(OType.LINKLIST)
@@ -193,20 +216,17 @@ public class OIndexDefinitionFactory {
       else if (type.equals(OType.LINKLIST)) {
         indexType = OType.LINK;
       } else {
-        indexType = propertyToIndex.getLinkedType();
+        indexType = linkedType;
         if (indexType == null)
           throw new OIndexException(
               "Linked type was not provided."
                   + " You should provide linked type for embedded collections that are going to be indexed.");
       }
-      indexDefinition = new OPropertyListIndexDefinition(oClass.getName(), fieldName, indexType);
+      indexDefinition = new OPropertyListIndexDefinition(className, fieldName, indexType);
     } else if (type.equals(OType.LINKBAG)) {
-      indexDefinition = new OPropertyRidBagIndexDefinition(oClass.getName(), fieldName);
+      indexDefinition = new OPropertyRidBagIndexDefinition(className, fieldName);
     } else {
-      indexDefinition = new OPropertyIndexDefinition(oClass.getName(), fieldName, type);
-    }
-    if (collate == null && propertyToIndex != null) {
-      collate = propertyToIndex.getCollate();
+      indexDefinition = new OPropertyIndexDefinition(className, fieldName, type);
     }
     if (collate != null) {
       indexDefinition.setCollate(collate);
@@ -221,12 +241,10 @@ public class OIndexDefinitionFactory {
       return OPropertyMapIndexDefinition.INDEX_BY.KEY;
     }
     if (fieldNameParts.length == 3) {
-      final Locale locale = getServerLocale();
 
-      if ("by".equals(fieldNameParts[1].toLowerCase(locale)))
+      if ("by".equals(fieldNameParts[1].toLowerCase()))
         try {
-          return OPropertyMapIndexDefinition.INDEX_BY.valueOf(
-              fieldNameParts[2].toUpperCase(locale));
+          return OPropertyMapIndexDefinition.INDEX_BY.valueOf(fieldNameParts[2].toUpperCase());
         } catch (IllegalArgumentException iae) {
           throw new IllegalArgumentException(
               "Illegal field name format, should be '<property> [by key|value]' but was '"
@@ -239,13 +257,6 @@ public class OIndexDefinitionFactory {
         "Illegal field name format, should be '<property> [by key|value]' but was '"
             + fieldName
             + '\'');
-  }
-
-  private static Locale getServerLocale() {
-    ODatabaseDocumentInternal db = ODatabaseRecordThreadLocal.instance().get();
-    OStorage storage = db.getStorage();
-    OStorageConfiguration configuration = storage.getConfiguration();
-    return configuration.getLocaleInstance();
   }
 
   private static String adjustFieldName(final OClass clazz, final String fieldName) {

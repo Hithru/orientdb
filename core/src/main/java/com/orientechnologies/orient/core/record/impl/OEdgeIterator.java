@@ -26,11 +26,7 @@ import com.orientechnologies.orient.core.db.ODatabaseRecordThreadLocal;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.iterator.OLazyWrapperIterator;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
-import com.orientechnologies.orient.core.record.ODirection;
-import com.orientechnologies.orient.core.record.OEdge;
-import com.orientechnologies.orient.core.record.OElement;
-import com.orientechnologies.orient.core.record.ORecord;
-import com.orientechnologies.orient.core.record.OVertex;
+import com.orientechnologies.orient.core.record.*;
 import java.util.Iterator;
 
 /** @author Luigi Dell'Aquila */
@@ -105,7 +101,7 @@ public class OEdgeIterator extends OLazyWrapperIterator<OEdge> {
       ODatabaseDocumentInternal db = ODatabaseRecordThreadLocal.instance().getIfDefined();
       OClass clazz = null;
       if (db != null && connection.getValue() != null) {
-        clazz = db.getMetadata().getSchema().getClass(connection.getValue());
+        clazz = db.getMetadata().getImmutableSchemaSnapshot().getClass(connection.getValue());
       }
       if (connection.getKey() == ODirection.OUT) {
         edge =

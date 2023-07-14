@@ -24,6 +24,12 @@ public class OFromClause extends SimpleNode {
     }
   }
 
+  public void toGenericStatement(StringBuilder builder) {
+    if (item != null) {
+      item.toGenericStatement(builder);
+    }
+  }
+
   public OFromItem getItem() {
     return item;
   }

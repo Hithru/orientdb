@@ -29,7 +29,6 @@ import com.orientechnologies.orient.core.db.record.ORecordLazyList;
 import com.orientechnologies.orient.core.db.record.ORecordLazySet;
 import com.orientechnologies.orient.core.exception.OCommandExecutionException;
 import com.orientechnologies.orient.core.id.ORID;
-import com.orientechnologies.orient.core.intent.OIntentMassiveInsert;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OProperty;
 import com.orientechnologies.orient.core.metadata.schema.OType;
@@ -191,11 +190,12 @@ public class OCommandExecutorSQLCreateLink extends OCommandExecutorSQLAbstract {
 
     final ODatabaseDocument db = (ODatabaseDocument) database.getDatabaseOwner();
 
-    final OClass sourceClass = database.getMetadata().getSchema().getClass(sourceClassName);
+    OClass sourceClass =
+        database.getMetadata().getImmutableSchemaSnapshot().getClass(sourceClassName);
     if (sourceClass == null)
       throw new OCommandExecutionException("Source class '" + sourceClassName + "' not found");
 
-    final OClass destClass = database.getMetadata().getSchema().getClass(destClassName);
+    OClass destClass = database.getMetadata().getImmutableSchemaSnapshot().getClass(destClassName);
     if (destClass == null)
       throw new OCommandExecutionException("Destination class '" + destClassName + "' not found");
 
@@ -226,7 +226,6 @@ public class OCommandExecutorSQLCreateLink extends OCommandExecutorSQLAbstract {
 
     if (progressListener != null) progressListener.onBegin(this, totRecords, false);
 
-    database.declareIntent(new OIntentMassiveInsert());
     try {
       // BROWSE ALL THE RECORDS OF THE SOURCE CLASS
       for (ODocument doc : db.browseClass(sourceClass.getName())) {
@@ -319,6 +318,7 @@ public class OCommandExecutorSQLCreateLink extends OCommandExecutorSQLAbstract {
         if (inverse) {
           // REMOVE THE OLD PROPERTY IF ANY
           OProperty prop = destClass.getProperty(linkName);
+          destClass = database.getMetadata().getSchema().getClass(destClassName);
           if (prop != null) destClass.dropProperty(linkName);
 
           if (linkType == null) linkType = multipleRelationship ? OType.LINKSET : OType.LINK;
@@ -330,6 +330,7 @@ public class OCommandExecutorSQLCreateLink extends OCommandExecutorSQLAbstract {
 
           // REMOVE THE OLD PROPERTY IF ANY
           OProperty prop = sourceClass.getProperty(linkName);
+          sourceClass = database.getMetadata().getSchema().getClass(sourceClassName);
           if (prop != null) sourceClass.dropProperty(linkName);
 
           // CREATE THE PROPERTY
@@ -344,11 +345,7 @@ public class OCommandExecutorSQLCreateLink extends OCommandExecutorSQLAbstract {
 
       throw OException.wrapException(
           new OCommandExecutionException("Error on creation of links"), e);
-
-    } finally {
-      database.declareIntent(null);
     }
-
     return total;
   }
 

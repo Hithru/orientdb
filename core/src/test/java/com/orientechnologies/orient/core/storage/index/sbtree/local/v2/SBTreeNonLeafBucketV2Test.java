@@ -28,7 +28,11 @@ public class SBTreeNonLeafBucketV2Test {
     final OPointer pointer = bufferPool.acquireDirect(true, Intention.TEST);
 
     OCachePointer cachePointer = new OCachePointer(pointer, bufferPool, 0, 0);
+<<<<<<< HEAD
     OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false);
+=======
+    OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false, null);
+>>>>>>> develop
     cacheEntry.acquireExclusiveLock();
     cachePointer.incrementReferrer();
 
@@ -64,7 +68,11 @@ public class SBTreeNonLeafBucketV2Test {
     final OPointer pointer = bufferPool.acquireDirect(true, Intention.TEST);
 
     OCachePointer cachePointer = new OCachePointer(pointer, bufferPool, 0, 0);
+<<<<<<< HEAD
     OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false);
+=======
+    OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false, null);
+>>>>>>> develop
     cacheEntry.acquireExclusiveLock();
     cachePointer.incrementReferrer();
 
@@ -135,7 +143,11 @@ public class SBTreeNonLeafBucketV2Test {
     final OPointer pointer = bufferPool.acquireDirect(true, Intention.TEST);
 
     OCachePointer cachePointer = new OCachePointer(pointer, bufferPool, 0, 0);
+<<<<<<< HEAD
     OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false);
+=======
+    OCacheEntry cacheEntry = new OCacheEntryImpl(0, 0, cachePointer, false, null);
+>>>>>>> develop
     cacheEntry.acquireExclusiveLock();
 
     cachePointer.incrementReferrer();

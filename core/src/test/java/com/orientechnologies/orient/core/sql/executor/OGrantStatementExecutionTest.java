@@ -1,14 +1,14 @@
 package com.orientechnologies.orient.core.sql.executor;
 
+import com.orientechnologies.orient.core.OCreateDatabaseUtil;
 import com.orientechnologies.orient.core.db.ODatabaseInternal;
 import com.orientechnologies.orient.core.db.ODatabaseSession;
-import com.orientechnologies.orient.core.db.ODatabaseType;
 import com.orientechnologies.orient.core.db.OrientDB;
 import com.orientechnologies.orient.core.db.OrientDBConfig;
 import com.orientechnologies.orient.core.metadata.security.ORole;
 import com.orientechnologies.orient.core.metadata.security.ORule;
 import com.orientechnologies.orient.core.metadata.security.OSecurityInternal;
-import com.orientechnologies.orient.core.metadata.security.OSecurityPolicy;
+import com.orientechnologies.orient.core.metadata.security.OSecurityPolicyImpl;
 import com.orientechnologies.orient.core.metadata.security.OSecurityRole;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -34,8 +34,8 @@ public class OGrantStatementExecutionTest {
 
   @Before
   public void before() {
-    orient.create("test", ODatabaseType.MEMORY);
-    this.db = orient.open("test", "admin", "admin");
+    OCreateDatabaseUtil.createDatabase("test", orient, OCreateDatabaseUtil.TYPE_MEMORY);
+    this.db = orient.open("test", "admin", OCreateDatabaseUtil.NEW_ADMIN_PASSWORD);
   }
 
   @After
@@ -65,7 +65,7 @@ public class OGrantStatementExecutionTest {
 
     db.createClass("Person");
 
-    OSecurityPolicy policy = security.createSecurityPolicy(db, "testPolicy");
+    OSecurityPolicyImpl policy = security.createSecurityPolicy(db, "testPolicy");
     policy.setActive(true);
     policy.setReadRule("name = 'foo'");
     security.saveSecurityPolicy(db, policy);

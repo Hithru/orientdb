@@ -71,12 +71,24 @@ public class ORole extends OIdentity implements OSecurityRole {
   public ORole() {}
 
   public ORole(final String iName, final ORole iParent, final ALLOW_MODES iAllowMode) {
+    this(iName, iParent, iAllowMode, null);
+  }
+
+  public ORole(
+      final String iName,
+      final ORole iParent,
+      final ALLOW_MODES iAllowMode,
+      Map<String, OSecurityPolicy> policies) {
     super(CLASS_NAME);
     document.field("name", iName);
 
     parentRole = iParent;
-    document.field("inheritedRole", iParent != null ? iParent.getDocument() : null);
-    //    setMode(iAllowMode);
+    document.field("inheritedRole", iParent != null ? iParent.getIdentity() : null);
+    if (policies != null) {
+      Map<String, OIdentifiable> p = new HashMap<>();
+      policies.forEach((k, v) -> p.put(k, ((OSecurityPolicyImpl) v).getElement()));
+      document.setProperty("policies", p);
+    }
 
     updateRolesDocumentContent();
   }
@@ -360,7 +372,7 @@ public class ORole extends OIdentity implements OSecurityRole {
 
   public ORole setParentRole(final OSecurityRole iParent) {
     this.parentRole = (ORole) iParent;
-    document.field("inheritedRole", parentRole != null ? parentRole.getDocument() : null);
+    document.field("inheritedRole", parentRole != null ? parentRole.getIdentity() : null);
     return this;
   }
 
@@ -425,5 +437,31 @@ public class ORole extends OIdentity implements OSecurityRole {
 
   private ODocument updateRolesDocumentContent() {
     return document.field("rules", getRules());
+  }
+
+  @Override
+  public Map<String, OSecurityPolicy> getPolicies() {
+    Map<String, OIdentifiable> policies = document.getProperty("policies");
+    if (policies == null) {
+      return null;
+    }
+    Map<String, OSecurityPolicy> result = new HashMap<String, OSecurityPolicy>();
+    policies
+        .entrySet()
+        .forEach(x -> result.put(x.getKey(), new OSecurityPolicyImpl(x.getValue().getRecord())));
+    return result;
+  }
+
+  @Override
+  public OSecurityPolicy getPolicy(String resource) {
+    Map<String, OIdentifiable> policies = document.getProperty("policies");
+    if (policies == null) {
+      return null;
+    }
+    OIdentifiable entry = policies.get(resource);
+    if (entry == null) {
+      return null;
+    }
+    return new OSecurityPolicyImpl(entry.getRecord());
   }
 }

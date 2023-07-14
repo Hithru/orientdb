@@ -48,6 +48,19 @@ public class OAlterClusterStatement extends ODDLStatement {
   }
 
   @Override
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append("ALTER CLUSTER ");
+    name.toGenericStatement(builder);
+    if (starred) {
+      builder.append("*");
+    }
+    builder.append(" ");
+    attributeName.toGenericStatement(builder);
+    builder.append(" ");
+    attributeValue.toGenericStatement(builder);
+  }
+
+  @Override
   public OAlterClusterStatement copy() {
     OAlterClusterStatement result = new OAlterClusterStatement(-1);
     result.name = name == null ? null : name.copy();
@@ -78,13 +91,6 @@ public class OAlterClusterStatement extends ODDLStatement {
 
     final OStorage storage = ((ODatabaseDocumentInternal) ctx.getDatabase()).getStorage();
     for (final int clusterId : clustersToUpdate) {
-      if (attributeName.getStringValue().equalsIgnoreCase("status")
-          || attributeName.getStringValue().equalsIgnoreCase("name"))
-        // REMOVE CACHE OF COMMAND RESULTS IF ACTIVE
-        getDatabase()
-            .getMetadata()
-            .getCommandCache()
-            .invalidateResultsOfCluster(storage.getPhysicalClusterNameById(clusterId));
       storage.setClusterAttribute(clusterId, attribute, finalValue);
 
       OResultInternal resultItem = new OResultInternal();
@@ -118,17 +124,17 @@ public class OAlterClusterStatement extends ODDLStatement {
   }
 
   private List<Integer> getClusters(OCommandContext ctx) {
-    OStorage storage = ((ODatabaseDocumentInternal) ctx.getDatabase()).getStorage();
+    ODatabaseDocumentInternal database = (ODatabaseDocumentInternal) ctx.getDatabase();
     if (starred) {
       List<Integer> result = new ArrayList<>();
-      for (String clusterName : storage.getClusterNames()) {
+      for (String clusterName : database.getClusterNames()) {
         if (clusterName.startsWith(name.getStringValue())) {
-          result.add(storage.getClusterIdByName(clusterName));
+          result.add(database.getClusterIdByName(clusterName));
         }
       }
       return result;
     } else {
-      final int clusterId = ctx.getDatabase().getClusterIdByName(name.getStringValue());
+      final int clusterId = database.getClusterIdByName(name.getStringValue());
       if (clusterId <= 0) {
         throw new OCommandExecutionException("Cannot find cluster " + name);
       }

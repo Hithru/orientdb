@@ -21,7 +21,6 @@ package com.orientechnologies.orient.core.command.script;
 
 import com.orientechnologies.common.collection.OMultiValue;
 import com.orientechnologies.common.concur.ONeedRetryException;
-import com.orientechnologies.common.concur.resource.OPartitionedObjectPool;
 import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.common.io.OIOUtils;
 import com.orientechnologies.common.log.OLogManager;
@@ -129,7 +128,7 @@ public class OCommandExecutorScript extends OCommandExecutorAbstract
 
   private String preParse(String parserText, final Map<Object, Object> iArgs)
       throws ParseException {
-    final boolean strict = getDatabase().getStorage().getConfiguration().isStrictSql();
+    final boolean strict = getDatabase().getStorageInfo().getConfiguration().isStrictSql();
     if (strict) {
       parserText = addSemicolons(parserText);
 
@@ -140,7 +139,8 @@ public class OCommandExecutorScript extends OCommandExecutorAbstract
         if (db == null) {
           bytes = parserText.getBytes();
         } else {
-          bytes = parserText.getBytes(getDatabase().getStorage().getConfiguration().getCharset());
+          bytes =
+              parserText.getBytes(getDatabase().getStorageInfo().getConfiguration().getCharset());
         }
       } catch (UnsupportedEncodingException e) {
         OLogManager.instance()
@@ -149,7 +149,7 @@ public class OCommandExecutorScript extends OCommandExecutorAbstract
                 "Invalid charset for database "
                     + getDatabase()
                     + " "
-                    + getDatabase().getStorage().getConfiguration().getCharset());
+                    + getDatabase().getStorageInfo().getConfiguration().getCharset());
 
         bytes = parserText.getBytes();
       }
@@ -162,7 +162,7 @@ public class OCommandExecutorScript extends OCommandExecutorAbstract
         if (db == null) {
           osql = new OrientSql(is);
         } else {
-          osql = new OrientSql(is, db.getStorage().getConfiguration().getCharset());
+          osql = new OrientSql(is, db.getStorageInfo().getConfiguration().getCharset());
         }
       } catch (UnsupportedEncodingException e) {
         OLogManager.instance()
@@ -171,7 +171,7 @@ public class OCommandExecutorScript extends OCommandExecutorAbstract
                 "Invalid charset for database "
                     + getDatabase()
                     + " "
-                    + getDatabase().getStorage().getConfiguration().getCharset());
+                    + getDatabase().getStorageInfo().getConfiguration().getCharset());
         osql = new OrientSql(is);
       }
       List<OStatement> statements = osql.parseScript();
@@ -214,9 +214,7 @@ public class OCommandExecutorScript extends OCommandExecutorAbstract
     final OScriptManager scriptManager = db.getSharedContext().getOrientDB().getScriptManager();
     CompiledScript compiledScript = request.getCompiledScript();
 
-    final OPartitionedObjectPool.PoolEntry<ScriptEngine> entry =
-        scriptManager.acquireDatabaseEngine(db.getName(), language);
-    final ScriptEngine scriptEngine = entry.object;
+    final ScriptEngine scriptEngine = scriptManager.acquireDatabaseEngine(db.getName(), language);
     try {
 
       if (compiledScript == null) {
@@ -256,7 +254,7 @@ public class OCommandExecutorScript extends OCommandExecutorAbstract
         scriptManager.unbind(scriptEngine, binding, iContext, iArgs);
       }
     } finally {
-      scriptManager.releaseDatabaseEngine(language, db.getName(), entry);
+      scriptManager.releaseDatabaseEngine(language, db.getName(), scriptEngine);
     }
   }
 
@@ -442,7 +440,6 @@ public class OCommandExecutorScript extends OCommandExecutorAbstract
       } catch (OTransactionException e) {
         // THIS CASE IS ON UPSERT
         context.setVariable("retries", retry);
-        getDatabase().getLocalCache().clear();
         if (retry >= maxRetry) throw e;
 
         waitForNextRetry();
@@ -450,7 +447,6 @@ public class OCommandExecutorScript extends OCommandExecutorAbstract
       } catch (ORecordDuplicatedException e) {
         // THIS CASE IS ON UPSERT
         context.setVariable("retries", retry);
-        getDatabase().getLocalCache().clear();
         if (retry >= maxRetry) throw e;
 
         waitForNextRetry();
@@ -458,12 +454,10 @@ public class OCommandExecutorScript extends OCommandExecutorAbstract
       } catch (ORecordNotFoundException e) {
         // THIS CASE IS ON UPSERT
         context.setVariable("retries", retry);
-        getDatabase().getLocalCache().clear();
         if (retry >= maxRetry) throw e;
 
       } catch (ONeedRetryException e) {
         context.setVariable("retries", retry);
-        getDatabase().getLocalCache().clear();
         if (retry >= maxRetry) throw e;
 
         waitForNextRetry();

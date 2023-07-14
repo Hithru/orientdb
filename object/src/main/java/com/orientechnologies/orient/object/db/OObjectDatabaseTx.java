@@ -25,7 +25,6 @@ import com.orientechnologies.common.concur.lock.OLockException;
 import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.common.util.OCommonConst;
-import com.orientechnologies.orient.core.Orient;
 import com.orientechnologies.orient.core.command.OCommandRequest;
 import com.orientechnologies.orient.core.command.script.OCommandScriptException;
 import com.orientechnologies.orient.core.config.OGlobalConfiguration;
@@ -112,6 +111,7 @@ public class OObjectDatabaseTx extends ODatabaseWrapperAbstract<ODatabaseDocumen
   protected boolean automaticSchemaGeneration;
   protected OMetadataObject metadata;
 
+  @Deprecated
   public OObjectDatabaseTx(final String iURL) {
     super(new ODatabaseDocumentTx(iURL));
     underlying.setDatabaseOwner(this);
@@ -728,20 +728,18 @@ public class OObjectDatabaseTx extends ODatabaseWrapperAbstract<ODatabaseDocumen
   }
 
   @Override
-  public OObjectDatabaseTx rollback(boolean force) throws OTransactionException {
-    // BY PASS DOCUMENT DB
+  public OObjectDatabaseTx rollback(final boolean force) throws OTransactionException {
+    // BYPASS DOCUMENT DB
     underlying.rollback(force);
 
     if (!underlying.getTransaction().isActive()) {
       // COPY ALL TX ENTRIES
-      final List<ORecordOperation> newEntries;
       if (getTransaction().getRecordOperations() != null) {
-        newEntries = new ArrayList<ORecordOperation>();
+        final List<ORecordOperation> newEntries = new ArrayList<>();
         for (ORecordOperation entry : getTransaction().getRecordOperations())
           if (entry.type == ORecordOperation.CREATED) newEntries.add(entry);
-      } else newEntries = null;
+      }
     }
-
     return this;
   }
 
@@ -882,9 +880,7 @@ public class OObjectDatabaseTx extends ODatabaseWrapperAbstract<ODatabaseDocumen
 
   @Override
   public OObjectDatabaseTx setConflictStrategy(final String iStrategyName) {
-    getStorage()
-        .setConflictStrategy(
-            Orient.instance().getRecordConflictStrategy().getStrategy(iStrategyName));
+    underlying.setConflictStrategy(iStrategyName);
     return this;
   }
 

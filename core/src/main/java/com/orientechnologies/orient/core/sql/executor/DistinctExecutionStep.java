@@ -3,7 +3,11 @@ package com.orientechnologies.orient.core.sql.executor;
 import com.orientechnologies.common.concur.OTimeoutException;
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.config.OGlobalConfiguration;
+<<<<<<< HEAD
 import com.orientechnologies.orient.core.db.ODatabase;
+=======
+import com.orientechnologies.orient.core.db.ODatabaseSession;
+>>>>>>> develop
 import com.orientechnologies.orient.core.exception.OCommandExecutionException;
 import com.orientechnologies.orient.core.id.ORID;
 import java.util.HashSet;
@@ -26,7 +30,11 @@ public class DistinctExecutionStep extends AbstractExecutionStep {
 
   public DistinctExecutionStep(OCommandContext ctx, boolean profilingEnabled) {
     super(ctx, profilingEnabled);
+<<<<<<< HEAD
     ODatabase db = ctx == null ? null : ctx.getDatabase();
+=======
+    ODatabaseSession db = ctx == null ? null : ctx.getDatabase();
+>>>>>>> develop
 
     maxElementsAllowed =
         db == null

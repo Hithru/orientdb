@@ -2,9 +2,8 @@ package com.orientechnologies.orient.core.tx;
 
 import static org.junit.Assert.assertEquals;
 
-import com.orientechnologies.orient.core.db.ODatabaseType;
+import com.orientechnologies.orient.core.OCreateDatabaseUtil;
 import com.orientechnologies.orient.core.db.OrientDB;
-import com.orientechnologies.orient.core.db.OrientDBConfig;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OProperty;
@@ -23,9 +22,9 @@ public class TransactionQueryIndexTests {
 
   @Before
   public void before() {
-    orientDB = new OrientDB("embedded:", OrientDBConfig.defaultConfig());
-    orientDB.create("test", ODatabaseType.MEMORY);
-    database = orientDB.open("test", "admin", "admin");
+    orientDB =
+        OCreateDatabaseUtil.createDatabase("test", "embedded:", OCreateDatabaseUtil.TYPE_MEMORY);
+    database = orientDB.open("test", "admin", OCreateDatabaseUtil.NEW_ADMIN_PASSWORD);
   }
 
   @Test
@@ -44,7 +43,6 @@ public class TransactionQueryIndexTests {
     res.close();
     res = database.query("select from Test where test='aaaaa' ");
 
-    System.out.println(res.getExecutionPlan().get().prettyPrint(0, 0));
     assertEquals(0L, res.stream().count());
     res.close();
   }
@@ -67,7 +65,6 @@ public class TransactionQueryIndexTests {
     res.close();
     res = database.query("select from Test2 where foo='aaaaa' and bar = 'aaa'");
 
-    System.out.println(res.getExecutionPlan().get().prettyPrint(0, 0));
     assertEquals(0L, res.stream().count());
     res.close();
   }

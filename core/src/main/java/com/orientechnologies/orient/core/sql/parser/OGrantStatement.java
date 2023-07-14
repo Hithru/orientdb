@@ -7,7 +7,7 @@ import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
 import com.orientechnologies.orient.core.exception.OCommandExecutionException;
 import com.orientechnologies.orient.core.metadata.security.ORole;
 import com.orientechnologies.orient.core.metadata.security.OSecurityInternal;
-import com.orientechnologies.orient.core.metadata.security.OSecurityPolicy;
+import com.orientechnologies.orient.core.metadata.security.OSecurityPolicyImpl;
 import com.orientechnologies.orient.core.sql.executor.OInternalResultSet;
 import com.orientechnologies.orient.core.sql.executor.OResultInternal;
 import com.orientechnologies.orient.core.sql.executor.OResultSet;
@@ -41,7 +41,7 @@ public class OGrantStatement extends OSimpleExecStatement {
       role.save();
     } else {
       OSecurityInternal security = db.getSharedContext().getSecurity();
-      OSecurityPolicy policy = security.getSecurityPolicy(db, policyName.getStringValue());
+      OSecurityPolicyImpl policy = security.getSecurityPolicy(db, policyName.getStringValue());
       security.setSecurityPolicy(db, role, securityResource.toString(), policy);
     }
 
@@ -85,6 +85,21 @@ public class OGrantStatement extends OSimpleExecStatement {
     securityResource.toString(params, builder);
     builder.append(" TO ");
     actor.toString(params, builder);
+  }
+
+  @Override
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append("GRANT ");
+    if (permission != null) {
+      permission.toGenericStatement(builder);
+    } else {
+      builder.append("POLICY ");
+      policyName.toGenericStatement(builder);
+    }
+    builder.append(" ON ");
+    securityResource.toGenericStatement(builder);
+    builder.append(" TO ");
+    actor.toGenericStatement(builder);
   }
 
   @Override

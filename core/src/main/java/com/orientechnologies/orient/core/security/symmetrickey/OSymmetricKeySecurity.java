@@ -30,11 +30,13 @@ import com.orientechnologies.orient.core.metadata.security.ORestrictedOperation;
 import com.orientechnologies.orient.core.metadata.security.ORole;
 import com.orientechnologies.orient.core.metadata.security.OSecurityInternal;
 import com.orientechnologies.orient.core.metadata.security.OSecurityPolicy;
+import com.orientechnologies.orient.core.metadata.security.OSecurityPolicyImpl;
 import com.orientechnologies.orient.core.metadata.security.OSecurityResourceProperty;
 import com.orientechnologies.orient.core.metadata.security.OSecurityRole;
 import com.orientechnologies.orient.core.metadata.security.OSecurityUser;
 import com.orientechnologies.orient.core.metadata.security.OToken;
 import com.orientechnologies.orient.core.metadata.security.OUser;
+import com.orientechnologies.orient.core.metadata.security.auth.OAuthenticationInfo;
 import com.orientechnologies.orient.core.record.ORecord;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.security.OSecurityManager;
@@ -56,6 +58,12 @@ public class OSymmetricKeySecurity implements OSecurityInternal {
 
   public OSymmetricKeySecurity(final OSecurityInternal iDelegate) {
     this.delegate = iDelegate;
+  }
+
+  @Override
+  public OSecurityUser securityAuthenticate(
+      ODatabaseSession session, String userName, String password) {
+    return authenticate(session, userName, password);
   }
 
   public OUser authenticate(
@@ -83,13 +91,13 @@ public class OSymmetricKeySecurity implements OSecurityInternal {
           dbName, "OSymmetricKeySecurity.authenticate() User '" + username + "' is not active");
 
     try {
-      OUserSymmetricKeyConfig userConfig = new OUserSymmetricKeyConfig(user);
+      OUserSymmetricKeyConfig userConfig = new OUserSymmetricKeyConfig(user.getDocument());
 
       OSymmetricKey sk = OSymmetricKey.fromConfig(userConfig);
 
       String decryptedUsername = sk.decryptAsString(password);
 
-      if (OSecurityManager.instance().checkPassword(username, decryptedUsername)) return user;
+      if (OSecurityManager.checkPassword(username, decryptedUsername)) return user;
     } catch (Exception ex) {
       throw OException.wrapException(
           new OSecurityAccessException(
@@ -248,22 +256,22 @@ public class OSymmetricKeySecurity implements OSecurityInternal {
 
   @Override
   public void setSecurityPolicy(
-      ODatabaseSession session, OSecurityRole role, String resource, OSecurityPolicy policy) {
+      ODatabaseSession session, OSecurityRole role, String resource, OSecurityPolicyImpl policy) {
     delegate.setSecurityPolicy(session, role, resource, policy);
   }
 
   @Override
-  public OSecurityPolicy createSecurityPolicy(ODatabaseSession session, String name) {
+  public OSecurityPolicyImpl createSecurityPolicy(ODatabaseSession session, String name) {
     return delegate.createSecurityPolicy(session, name);
   }
 
   @Override
-  public OSecurityPolicy getSecurityPolicy(ODatabaseSession session, String name) {
+  public OSecurityPolicyImpl getSecurityPolicy(ODatabaseSession session, String name) {
     return delegate.getSecurityPolicy(session, name);
   }
 
   @Override
-  public void saveSecurityPolicy(ODatabaseSession session, OSecurityPolicy policy) {
+  public void saveSecurityPolicy(ODatabaseSession session, OSecurityPolicyImpl policy) {
     delegate.saveSecurityPolicy(session, policy);
   }
 
@@ -347,6 +355,12 @@ public class OSymmetricKeySecurity implements OSecurityInternal {
   public Set<OSecurityResourceProperty> getAllFilteredProperties(
       ODatabaseDocumentInternal database) {
     return delegate.getAllFilteredProperties(database);
+  }
+
+  @Override
+  public OSecurityUser securityAuthenticate(
+      ODatabaseSession session, OAuthenticationInfo authenticationInfo) {
+    return delegate.securityAuthenticate(session, authenticationInfo);
   }
 
   @Override

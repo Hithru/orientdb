@@ -54,25 +54,6 @@ public class OIndexDictionary extends OIndexOneValue {
         binaryFormatVersion);
   }
 
-  public OIndexOneValue put(Object key, final OIdentifiable value) {
-
-    key = getCollatingValue(key);
-
-    acquireSharedLock();
-    try {
-      while (true) {
-        try {
-          doPut(storage, key, value.getIdentity());
-          return this;
-        } catch (OInvalidIndexEngineIdException e) {
-          doReloadIndexEngine();
-        }
-      }
-    } finally {
-      releaseSharedLock();
-    }
-  }
-
   @Override
   public void doPut(OAbstractPaginatedStorage storage, Object key, ORID rid)
       throws OInvalidIndexEngineIdException {

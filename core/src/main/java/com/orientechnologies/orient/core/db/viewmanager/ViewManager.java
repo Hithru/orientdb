@@ -1,11 +1,9 @@
 package com.orientechnologies.orient.core.db.viewmanager;
 
-import com.orientechnologies.common.concur.lock.OInterruptedException;
 import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.common.log.OLogManager;
-import com.orientechnologies.common.util.OPair;
+import com.orientechnologies.orient.core.collate.OCollate;
 import com.orientechnologies.orient.core.command.OBasicCommandContext;
-import com.orientechnologies.orient.core.db.ODatabase;
 import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
 import com.orientechnologies.orient.core.db.ODatabaseSession;
 import com.orientechnologies.orient.core.db.OLiveQueryResultListener;
@@ -13,17 +11,22 @@ import com.orientechnologies.orient.core.db.OScenarioThreadLocal;
 import com.orientechnologies.orient.core.db.OrientDBInternal;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocumentEmbedded;
+import com.orientechnologies.orient.core.exception.OConfigurationException;
+import com.orientechnologies.orient.core.index.OClassIndexManager;
 import com.orientechnologies.orient.core.index.OCompositeIndexDefinition;
 import com.orientechnologies.orient.core.index.OIndex;
 import com.orientechnologies.orient.core.index.OIndexDefinition;
+import com.orientechnologies.orient.core.index.OIndexDefinitionFactory;
 import com.orientechnologies.orient.core.index.OIndexManagerAbstract;
-import com.orientechnologies.orient.core.index.OPropertyIndexDefinition;
+import com.orientechnologies.orient.core.index.OPropertyMapIndexDefinition.INDEX_BY;
 import com.orientechnologies.orient.core.metadata.schema.OImmutableClass;
 import com.orientechnologies.orient.core.metadata.schema.OSchema;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.metadata.schema.OView;
 import com.orientechnologies.orient.core.metadata.schema.OViewConfig;
+import com.orientechnologies.orient.core.metadata.schema.OViewConfig.OViewIndexConfig.OIndexConfigProperty;
 import com.orientechnologies.orient.core.metadata.schema.OViewImpl;
+import com.orientechnologies.orient.core.metadata.schema.OViewRemovedMetadata;
 import com.orientechnologies.orient.core.record.OElement;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.executor.OResult;
@@ -34,21 +37,18 @@ import com.orientechnologies.orient.core.sql.parser.OSelectStatement;
 import com.orientechnologies.orient.core.sql.parser.OStatement;
 import com.orientechnologies.orient.core.sql.parser.OStatementCache;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
+import java.util.Set;
 import java.util.TimerTask;
 import java.util.UUID;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -58,8 +58,11 @@ public class ViewManager {
   private final OrientDBInternal orientDB;
   private final String dbName;
   private boolean viewsExist = false;
+<<<<<<< HEAD
 
   Map<String, Lock> locks = new ConcurrentHashMap<>();
+=======
+>>>>>>> develop
 
   /**
    * To retain clusters that are being used in queries until the queries are closed.
@@ -79,16 +82,14 @@ public class ViewManager {
    */
   private final ConcurrentMap<String, AtomicInteger> viewIndexVisitors = new ConcurrentHashMap<>();
 
-  private final ConcurrentMap<String, String> oldIndexesPerViews = new ConcurrentHashMap<>();
   private final List<String> indexesToDrop = Collections.synchronizedList(new ArrayList<>());
 
-  private final Map<String, Long> lastUpdateTimestampForView = new HashMap<>();
+  private final ConcurrentMap<String, Long> lastUpdateTimestampForView = new ConcurrentHashMap<>();
 
-  private final Map<String, Long> lastChangePerClass = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, Long> lastChangePerClass = new ConcurrentHashMap<>();
+  private final Set<String> refreshing = Collections.synchronizedSet(new HashSet<>());
 
-  private volatile String lastUpdatedView = null;
   private volatile TimerTask timerTask;
-  private volatile Future<?> lastTask;
   private volatile boolean closed = false;
 
   public ViewManager(OrientDBInternal orientDb, String dbName) {
@@ -108,7 +109,7 @@ public class ViewManager {
         });
   }
 
-  private synchronized void registerLiveUpdates(ODatabaseSession db) {
+  private void registerLiveUpdates(ODatabaseSession db) {
     boolean liveViewsExist = false;
     Collection<OView> views = db.getMetadata().getSchema().getViews();
     for (OView view : views) {
@@ -116,11 +117,12 @@ public class ViewManager {
     }
   }
 
-  public synchronized boolean registerLiveUpdateFor(ODatabaseSession db, String viewName) {
+  public boolean registerLiveUpdateFor(ODatabaseSession db, String viewName) {
     OView view = db.getMetadata().getSchema().getView(viewName);
     viewsExist = true;
     boolean registered = false;
-    if (view.getUpdateStrategy() != null
+    if (view != null
+        && view.getUpdateStrategy() != null
         && view.getUpdateStrategy().equalsIgnoreCase(OViewConfig.UPDATE_STRATEGY_LIVE)) {
       db.live(view.getQuery(), new ViewUpdateListener(view.getName()));
       registered = true;
@@ -130,6 +132,12 @@ public class ViewManager {
   }
 
   public void load() {
+    closed = false;
+    init();
+    start();
+  }
+
+  public void create() {
     closed = false;
     init();
     start();
@@ -145,31 +153,31 @@ public class ViewManager {
           @Override
           public void run() {
             if (closed) return;
-            lastTask =
-                orientDB.executeNoAuthorization(
-                    dbName,
-                    (db) -> {
-                      ViewManager.this.updateViews((ODatabaseDocumentInternal) db);
-                      return null;
-                    });
+            orientDB.executeNoAuthorization(
+                dbName,
+                (db) -> {
+                  ViewManager.this.updateViews((ODatabaseDocumentInternal) db);
+                  return null;
+                });
           }
         };
-    this.orientDB.scheduleOnce(timerTask, 1000);
+    this.orientDB.schedule(timerTask, 1000, 1000);
   }
 
   private void updateViews(ODatabaseDocumentInternal db) {
     try {
-      cleanUnusedViewClusters(db);
-      cleanUnusedViewIndexes(db);
-      OView view = getNextViewToUpdate(db);
-      if (view != null) {
-        updateView(view, db);
-      }
-      // When the run is finished schedule the next run.
-      schedule();
+      OView view;
+      do {
+        cleanUnusedViewClusters(db);
+        cleanUnusedViewIndexes(db);
+        view = getNextViewToUpdate(db);
+        if (view != null) {
+          updateView(view, db);
+        }
+      } while (view != null && !closed);
+
     } catch (Exception e) {
-      OLogManager.instance().warn(this, "Failed to update views");
-      e.printStackTrace();
+      OLogManager.instance().warn(this, "Failed to update views", e);
     }
   }
 
@@ -177,113 +185,112 @@ public class ViewManager {
     if (timerTask != null) {
       timerTask.cancel();
     }
-    if (lastTask != null) {
-      try {
-        try {
-          lastTask.get(20, TimeUnit.SECONDS);
-        } catch (TimeoutException e) {
-          lastTask.cancel(true);
-          lastTask.get();
-        }
-
-      } catch (InterruptedException e) {
-        throw OException.wrapException(
-            new OInterruptedException("Terminated while waiting update view to finis"), e);
-      } catch (ExecutionException e) {
-        OLogManager.instance().warn(this, "Issue terminating view update background operations", e);
-      }
-    }
-
     closed = true;
   }
 
-  public synchronized void cleanUnusedViewClusters(ODatabaseDocument db) {
-    List<Integer> toRemove = new ArrayList<>();
-    for (Integer cluster : clustersToDrop) {
-      AtomicInteger visitors = viewCluserVisitors.get(cluster);
-      if (visitors == null || visitors.get() <= 0) {
-        toRemove.add(cluster);
+  public void cleanUnusedViewClusters(ODatabaseDocument db) {
+    if (((ODatabaseDocumentEmbedded) db).getStorage().isIcrementalBackupRunning()) {
+      // backup is running handle delete the next run
+      return;
+    }
+    List<Integer> clusters = new ArrayList<>();
+    synchronized (this) {
+      Iterator<Integer> iter = clustersToDrop.iterator();
+      while (iter.hasNext()) {
+        Integer cluster = iter.next();
+        AtomicInteger visitors = viewCluserVisitors.get(cluster);
+        if (visitors == null || visitors.get() <= 0) {
+          iter.remove();
+          clusters.add(cluster);
+        }
       }
     }
-    for (Integer cluster : toRemove) {
-      viewCluserVisitors.remove(cluster);
-      clustersToDrop.remove(cluster);
-      oldClustersPerViews.remove(cluster);
+    for (Integer cluster : clusters) {
       db.dropCluster(cluster);
+      viewCluserVisitors.remove(cluster);
+      oldClustersPerViews.remove(cluster);
     }
   }
 
-  public synchronized void cleanUnusedViewIndexes(ODatabaseDocumentInternal db) {
-    List<String> toRemove = new ArrayList<>();
-    for (String index : indexesToDrop) {
-      AtomicInteger visitors = viewIndexVisitors.get(index);
-      if (visitors == null || visitors.get() <= 0) {
-        toRemove.add(index);
+  public void cleanUnusedViewIndexes(ODatabaseDocumentInternal db) {
+    if (((ODatabaseDocumentEmbedded) db).getStorage().isIcrementalBackupRunning()) {
+      // backup is running handle delete the next run
+      return;
+    }
+    List<String> indexes = new ArrayList<>();
+    synchronized (this) {
+      Iterator<String> iter = indexesToDrop.iterator();
+      while (iter.hasNext()) {
+        String index = iter.next();
+        AtomicInteger visitors = viewIndexVisitors.get(index);
+        if (visitors == null || visitors.get() <= 0) {
+          iter.remove();
+          indexes.add(index);
+        }
       }
     }
-    for (String index : toRemove) {
-      viewIndexVisitors.remove(index);
-      indexesToDrop.remove(index);
-      oldIndexesPerViews.remove(index);
+    for (String index : indexes) {
       db.getMetadata().getIndexManagerInternal().dropIndex(db, index);
+      viewIndexVisitors.remove(index);
     }
   }
 
-  public synchronized OView getNextViewToUpdate(ODatabase db) {
-    OSchema schema = db.getMetadata().getSchema();
+  public OView getNextViewToUpdate(ODatabaseDocumentInternal db) {
+    OSchema schema = db.getMetadata().getImmutableSchemaSnapshot();
 
-    List<String> names =
-        schema.getViews().stream().map(x -> x.getName()).sorted().collect(Collectors.toList());
-    if (names.isEmpty()) {
+    Collection<OView> views = schema.getViews();
+
+    if (views.isEmpty()) {
       return null;
     }
-    for (String name : names) {
-      if (!buildOnThisNode(db, name)) {
+    for (OView view : views) {
+      if (!buildOnThisNode(db, view)) {
         continue;
       }
-      if (isLiveUpdate(db, name)) {
+      if (isLiveUpdate(db, view)) {
         continue;
       }
-      if (!isUpdateExpiredFor(name, db)) {
+      if (!isUpdateExpiredFor(view, db)) {
         continue;
       }
-      if (!needsUpdateBasedOnWatchRules(name, db)) {
+      if (!needsUpdateBasedOnWatchRules(view, db)) {
         continue;
       }
-      if (lastUpdatedView == null || name.compareTo(lastUpdatedView) > 0) {
-        lastUpdatedView = name;
-        return schema.getView(name);
+      if (isViewRefreshing(view)) {
+        continue;
       }
+      return db.getMetadata().getSchema().getView(view.getName());
     }
 
-    lastUpdatedView = null;
     return null;
   }
 
-  private boolean isLiveUpdate(ODatabase db, String viewName) {
-    OView view = db.getMetadata().getSchema().getView(viewName);
+  private boolean isViewRefreshing(OView view) {
+    return this.refreshing.contains(view.getName());
+  }
+
+  private boolean isLiveUpdate(ODatabaseDocumentInternal db, OView view) {
     return OViewConfig.UPDATE_STRATEGY_LIVE.equalsIgnoreCase(view.getUpdateStrategy());
   }
 
-  protected boolean buildOnThisNode(ODatabase db, String name) {
+  protected boolean buildOnThisNode(ODatabaseDocumentInternal db, OView name) {
     return true;
   }
 
   /**
    * Checks if the view could need an update based on watch rules
    *
-   * @param name view name
+   * @param view view name
    * @param db db instance
    * @return true if there are no watch rules for this view; true if there are watch rules and some
    *     of them happened since last update; true if the view was never updated; false otherwise.
    */
-  private boolean needsUpdateBasedOnWatchRules(String name, ODatabase db) {
-    OView view = db.getMetadata().getSchema().getView(name);
+  private boolean needsUpdateBasedOnWatchRules(OView view, ODatabaseDocumentInternal db) {
     if (view == null) {
       return false;
     }
 
-    Long lastViewUpdate = lastUpdateTimestampForView.get(name);
+    Long lastViewUpdate = lastUpdateTimestampForView.get(view.getName());
     if (lastViewUpdate == null) {
       return true;
     }
@@ -306,76 +313,121 @@ public class ViewManager {
     return false;
   }
 
-  private boolean isUpdateExpiredFor(String viewName, ODatabase db) {
-    Long lastUpdate = lastUpdateTimestampForView.get(viewName);
+  private boolean isUpdateExpiredFor(OView view, ODatabaseDocumentInternal db) {
+    Long lastUpdate = lastUpdateTimestampForView.get(view.getName());
     if (lastUpdate == null) {
       return true;
     }
-    OView view = db.getMetadata().getSchema().getView(viewName);
     int updateInterval = view.getUpdateIntervalSeconds();
     return lastUpdate + (updateInterval * 1000) < System.currentTimeMillis();
   }
 
-  public synchronized void updateView(OView view, ODatabaseDocumentInternal db) {
-    lastUpdateTimestampForView.put(view.getName(), System.currentTimeMillis());
-
-    int cluster = db.addCluster(getNextClusterNameFor(view, db));
-
-    String viewName = view.getName();
-    String query = view.getQuery();
-    String originRidField = view.getOriginRidField();
-    String clusterName = db.getClusterNameById(cluster);
-
-    List<OIndex> indexes = createNewIndexesForView(view, cluster, db);
-
+  public void updateView(OView view, ODatabaseDocumentInternal db) {
     OScenarioThreadLocal.executeAsDistributed(
-        new Callable<Object>() {
-          @Override
-          public Object call() {
-
-            OResultSet rs = db.query(query);
-            while (rs.hasNext()) {
-              OResult item = rs.next();
-              addItemToView(item, db, originRidField, viewName, clusterName, indexes);
-            }
-
-            return null;
-          }
+        () -> {
+          this.updateViewInternal(view, db);
+          return null;
         });
+  }
 
-    view = db.getMetadata().getSchema().getView(view.getName());
-    if (view == null) {
-      // the view was dropped in the meantime
-      db.dropCluster(clusterName);
-      indexes.forEach(x -> x.delete());
+  public void updateViewInternal(OView view, ODatabaseDocumentInternal db) {
+    if (((ODatabaseDocumentEmbedded) db).getStorage().isIcrementalBackupRunning() || closed) {
+      // backup is running handle rebuild the next run
       return;
     }
-    lockView(view);
-    view.addClusterId(cluster);
-    for (int i : view.getClusterIds()) {
-      if (i != cluster) {
-        clustersToDrop.add(i);
-        viewCluserVisitors.put(i, new AtomicInteger(0));
-        oldClustersPerViews.put(i, view.getName());
-        view.removeClusterId(i);
+    String viewName = view.getName();
+    try {
+      synchronized (this) {
+        if (refreshing.contains(viewName)) {
+          return;
+        }
+        refreshing.add(viewName);
       }
+
+      OLogManager.instance().info(this, "Starting refresh of view '%s'", viewName);
+      lastUpdateTimestampForView.put(viewName, System.currentTimeMillis());
+      String clusterName = createNextClusterNameFor(view, db);
+      int cluster = db.getClusterIdByName(clusterName);
+
+      String query = view.getQuery();
+      String originRidField = view.getOriginRidField();
+      List<OIndex> indexes = createNewIndexesForView(view, cluster, db);
+
+      try {
+        fillView(db, viewName, query, originRidField, clusterName, indexes);
+      } catch (RuntimeException e) {
+        for (OIndex index : indexes) {
+          db.getMetadata().getIndexManagerInternal().dropIndex(db, index.getName());
+        }
+        db.dropCluster(cluster);
+        throw e;
+      }
+
+      view = db.getMetadata().getSchema().getView(viewName);
+      if (view == null) {
+        // the view was dropped in the meantime
+        clustersToDrop.add(cluster);
+        indexes.forEach(x -> indexesToDrop.add(x.getName()));
+        return;
+      }
+      OViewRemovedMetadata oldMetadata =
+          ((OViewImpl) view).replaceViewClusterAndIndex(cluster, indexes);
+      OLogManager.instance()
+          .info(
+              this,
+              "Replaced for view '%s' clusters '%s' with '%s'",
+              viewName,
+              Arrays.stream(oldMetadata.getClusters())
+                  .mapToObj((i) -> i + " => " + db.getClusterNameById(i))
+                  .collect(Collectors.toList())
+                  .toString(),
+              cluster + " => " + db.getClusterNameById(cluster));
+      OLogManager.instance()
+          .info(
+              this,
+              "Replaced for view '%s' indexes '%s' with '%s'",
+              viewName,
+              oldMetadata.getIndexes().toString(),
+              indexes.stream().map((i) -> i.getName()).collect(Collectors.toList()).toString());
+      for (int i : oldMetadata.getClusters()) {
+        clustersToDrop.add(i);
+        oldClustersPerViews.put(i, viewName);
+      }
+      oldMetadata
+          .getIndexes()
+          .forEach(
+              idx -> {
+                indexesToDrop.add(idx);
+              });
+
+      OLogManager.instance().info(this, "Finished refresh of view '%s'", viewName);
+    } finally {
+      refreshing.remove(viewName);
     }
-
-    final OViewImpl viewImpl = ((OViewImpl) view);
-    viewImpl
-        .getInactiveIndexes()
-        .forEach(
-            idx -> {
-              indexesToDrop.add(idx);
-              viewIndexVisitors.put(idx, new AtomicInteger(0));
-              oldIndexesPerViews.put(idx, viewName);
-            });
-    viewImpl.inactivateIndexes();
-    viewImpl.addActiveIndexes(indexes.stream().map(x -> x.getName()).collect(Collectors.toList()));
-
-    unlockView(view);
     cleanUnusedViewIndexes(db);
     cleanUnusedViewClusters(db);
+  }
+
+  private void fillView(
+      ODatabaseDocumentInternal db,
+      String viewName,
+      String query,
+      String originRidField,
+      String clusterName,
+      List<OIndex> indexes) {
+    int iterationCount = 0;
+    db.begin();
+    try (OResultSet rs = db.query(query)) {
+      while (rs.hasNext()) {
+        OResult item = rs.next();
+        addItemToView(item, db, originRidField, viewName, clusterName, indexes);
+        if (iterationCount % 100 == 0) {
+          db.commit();
+          db.begin();
+        }
+      }
+    }
+    db.commit();
   }
 
   private void addItemToView(
@@ -385,26 +437,16 @@ public class ViewManager {
       String viewName,
       String clusterName,
       List<OIndex> indexes) {
+    db.begin();
     OElement newRow = copyElement(item, db);
     if (originRidField != null) {
       newRow.setProperty(originRidField, item.getIdentity().orElse(item.getProperty("@rid")));
       newRow.setProperty("@view", viewName);
     }
     db.save(newRow, clusterName);
-
-    indexes.forEach(idx -> idx.put(indexedKeyFor(idx, newRow), newRow));
-  }
-
-  private Object indexedKeyFor(OIndex idx, OElement newRow) {
-    List<String> fieldsToIndex = idx.getDefinition().getFieldsToIndex();
-    if (fieldsToIndex.size() == 1) {
-      return idx.getDefinition().createValue((Object) newRow.getProperty(fieldsToIndex.get(0)));
-    }
-    Object[] vals = new Object[fieldsToIndex.size()];
-    for (int i = 0; i < fieldsToIndex.size(); i++) {
-      vals[i] = newRow.getProperty(fieldsToIndex.get(i));
-    }
-    return idx.getDefinition().createValue(vals);
+    OClassIndexManager.addIndexesEntries(
+        (ODatabaseDocumentInternal) db, (ODocument) newRow, indexes);
+    db.commit();
   }
 
   private List<OIndex> createNewIndexesForView(
@@ -430,18 +472,32 @@ public class ViewManager {
   }
 
   private OIndexDefinition createIndexDefinition(
-      String viewName, List<OPair<String, OType>> requiredIndexesInfo) {
+      String viewName, List<OIndexConfigProperty> requiredIndexesInfo) {
     if (requiredIndexesInfo.size() == 1) {
-      return new OPropertyIndexDefinition(
-          viewName, requiredIndexesInfo.get(0).getKey(), requiredIndexesInfo.get(0).getValue());
+      String fieldName = requiredIndexesInfo.get(0).getName();
+      OType fieldType = requiredIndexesInfo.get(0).getType();
+      OType linkedType = requiredIndexesInfo.get(0).getLinkedType();
+      OCollate collate = requiredIndexesInfo.get(0).getCollate();
+      INDEX_BY index_by = requiredIndexesInfo.get(0).getIndexBy();
+      return OIndexDefinitionFactory.createSingleFieldIndexDefinition(
+          viewName, fieldName, fieldType, linkedType, collate, null, index_by);
     }
     OCompositeIndexDefinition result = new OCompositeIndexDefinition(viewName);
-    for (OPair<String, OType> pair : requiredIndexesInfo) {
-      result.addIndex(new OPropertyIndexDefinition(viewName, pair.getKey(), pair.getValue()));
+    for (OIndexConfigProperty pair : requiredIndexesInfo) {
+      String fieldName = pair.getName();
+      OType fieldType = pair.getType();
+      OType linkedType = pair.getLinkedType();
+      OCollate collate = pair.getCollate();
+      INDEX_BY index_by = pair.getIndexBy();
+      OIndexDefinition definition =
+          OIndexDefinitionFactory.createSingleFieldIndexDefinition(
+              viewName, fieldName, fieldType, linkedType, collate, null, index_by);
+      result.addIndex(definition);
     }
     return result;
   }
 
+<<<<<<< HEAD
   private synchronized void unlockView(OView view) {
     Lock lock = locks.get(view.getName());
     if (lock == null) {
@@ -461,12 +517,21 @@ public class ViewManager {
   }
 
   private String getNextClusterNameFor(OView view, ODatabase db) {
+=======
+  private String createNextClusterNameFor(OView view, ODatabaseSession db) {
+>>>>>>> develop
     int i = 0;
     String viewName = view.getName();
     while (true) {
-      String clusterName = viewName.toLowerCase(Locale.ENGLISH) + (i++);
-      if (!db.getClusterNames().contains(clusterName)) {
-        return clusterName;
+      String clusterName = "v_" + i++ + "_" + viewName.toLowerCase(Locale.ENGLISH);
+
+      if (!db.existsCluster(clusterName)) {
+        try {
+          db.addCluster(clusterName);
+          return clusterName;
+        } catch (OConfigurationException e) {
+          // Ignore and retry
+        }
       }
     }
   }
@@ -485,7 +550,12 @@ public class ViewManager {
     orientDB.executeNoAuthorization(
         dbName,
         (databaseSession) -> {
-          if (!buildOnThisNode(databaseSession, name)) {
+          if (!buildOnThisNode(
+              (ODatabaseDocumentInternal) databaseSession,
+              ((ODatabaseDocumentInternal) databaseSession)
+                  .getMetadata()
+                  .getSchema()
+                  .getView(name))) {
             return null;
           }
           try {
@@ -498,12 +568,13 @@ public class ViewManager {
             if (listener != null) {
               listener.onError(name, e);
             }
+            OLogManager.instance().warn(this, "Failed to update views", e);
           }
           return null;
         });
   }
 
-  public synchronized void startUsingViewCluster(Integer cluster) {
+  public void startUsingViewCluster(Integer cluster) {
     AtomicInteger item = viewCluserVisitors.get(cluster);
     if (item == null) {
       item = new AtomicInteger(0);
@@ -512,7 +583,7 @@ public class ViewManager {
     item.incrementAndGet();
   }
 
-  public synchronized void endUsingViewCluster(Integer cluster) {
+  public void endUsingViewCluster(Integer cluster) {
     AtomicInteger item = viewCluserVisitors.get(cluster);
     if (item == null) {
       return;

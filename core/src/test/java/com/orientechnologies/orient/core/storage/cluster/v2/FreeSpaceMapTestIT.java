@@ -2,7 +2,10 @@ package com.orientechnologies.orient.core.storage.cluster.v2;
 
 import com.orientechnologies.common.io.OFileUtils;
 import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
+<<<<<<< HEAD
 import com.orientechnologies.orient.core.db.ODatabaseType;
+=======
+>>>>>>> develop
 import com.orientechnologies.orient.core.db.OrientDB;
 import com.orientechnologies.orient.core.db.OrientDBConfig;
 import com.orientechnologies.orient.core.storage.cache.OWriteCache;
@@ -42,7 +45,12 @@ public class FreeSpaceMapTestIT {
     dbName = "freeSpaceMapTest";
 
     orientDB = new OrientDB("plocal:" + buildDirectory, OrientDBConfig.defaultConfig());
+<<<<<<< HEAD
     orientDB.create(dbName, ODatabaseType.PLOCAL);
+=======
+    orientDB.execute(
+        "create database " + dbName + " plocal users ( admin identified by 'admin' role admin)");
+>>>>>>> develop
 
     final ODatabaseDocumentInternal databaseDocumentTx =
         (ODatabaseDocumentInternal) orientDB.open(dbName, "admin", "admin");

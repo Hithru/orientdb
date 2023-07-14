@@ -26,6 +26,385 @@
 
 This document contains the last changes of OrientDB Community Edition.
 
+
+-----------------------------------------------------------------------------------------------------------------------------------
+VERSION 3.2.19 - (May, 11 2023)
+- Release Notes: https://github.com/orientechnologies/orientdb/wiki/OrientDB-3.2-Release-Notes#3219---11-May-2023
+
+# Changes
+
+## Core
+
+- Correct the class for scanning vertex on graph repair, issue #9970
+- Reduced some dependencies from external libraries
+- Removed not needed implementations in native logic
+- Removed the need to load a native library to check some system settings
+- Moved sources in main modules to avoid split packages, issue #8001
+- Minor fix for new internal experimental configuration store
+- Revert upgrade of minor dependency that cause issues on older OS
+- Minor fixes from static analisys
+- Make sure to unblock other storage open operations only when migration is complete, issue #9974
+
+## Distributed
+
+- Deduplication and semplification of distributed logic
+- Removed operation waiting flow not needed anymore
+- Avoid startup failure in case of rebalancing failure
+- Avoid that failure on load of database block the server starting
+- Add command to fetch distributed configuration from SQL
+
+
+
+-----------------------------------------------------------------------------------------------------------------------------------
+VERSION 3.2.18 - (April, 13 2023)
+- Release Notes: https://github.com/orientechnologies/orientdb/wiki/OrientDB-3.2-Release-Notes#3218---13-April-2023
+
+# Changes
+
+## Core
+- Add a specific executor, for all the io operations
+- Make sure to use the context executor for all background ops
+- Fix automatically remove null links on write of embedded ridbags, issue #9767
+- Make sure to use the plugin class loader to load the plugin class
+- Avoid repeated distributed database shutdowns
+- Fix race in registering installing database to guard against concurrent installs
+- Upgrated dependencies
+- Minor fix on embedded storage reload
+- Increased separation of schema logic for remote and embedded cases
+
+
+## Remote
+- Corrected edge iteration in remote after commit, with relative test case issue #9805
+
+## Gremlin
+- Upgrated to the last release of gremlin libraries
+
+## Agent
+- Removed not needed dependencies, to reduce the agent bundle size
+
+
+-----------------------------------------------------------------------------------------------------------------------------------
+VERSION 3.2.17 - (March, 9 2023)
+- Release Notes: https://github.com/orientechnologies/orientdb/wiki/OrientDB-3.2-Release-Notes#3217---9-March-2023
+
+# Changes
+
+## Core 
+- update dependencies 
+- make sure to make view query wait for drop and create operations
+- changed security checks for the import logic to avoid sprious failures
+- optimizatons in disk cache implementation 
+- pre-check cluster existence to avoid storage to go in read only mode in case of duplicate cluster
+- add check to avoid failure when engines are unloaded, issue #9629
+- removed not used configurations
+- moved cleanup of old structures out of the view refresh window
+- replaced global executor with context executor
+- use correct index in immutable view metadata
+- add configuration for define the max number of threas for the context executor
+
+## Server
+- make sure to print the right protocol for studio address when ssl is enabled
+
+## Client
+- minor fix on view metadata serialization and deserializatin over network
+
+## Distributed
+
+- Removed not used single cluster management in distributed sync
+
+## Spatial
+
+- Fix spacial function filtering when used trough the new query engine
+
+
+-----------------------------------------------------------------------------------------------------------------------------------
+VERSION 3.2.16 - (February, 8 2023)
+- Release Notes: https://github.com/orientechnologies/orientdb/wiki/OrientDB-3.2-Release-Notes#3216---8-February-2023
+
+# Core
+- removed the need to buffer changes before adding the to the tx
+- make sure to stop scheduling of view refresh before closing the OrientDB instance
+- improved refreshing and cleaning of views
+- minor fix to handle misstyped records in delta serialization
+- minor correction on metadata snapshot logic on release of index manager lock
+- make sure to use transaction aware stream also with legacy index implementations, issue #9914
+- reduced the number of times the storage goes in read only mode, and allow to delete not empty datastructures
+- make sure that on index load the schema snapshot are available, issue #9915
+- changes in index manager and view implementation to avoid cross locking during updates
+- avoid to re-index new cluster when swapping the cluster in views.
+- make sure to initialize the timeout checker before the system db
+
+# Remote
+- made remote index changes go through the transaction instead of the query
+
+# Distributed
+- make sure to have the correct transaction in the context for distributed phases execution
+- managed correctly the check of all value of a unique index during first phase checks
+
+-----------------------------------------------------------------------------------------------------------------------------------
+VERSION 3.2.15 - (Jennuary, 17 2023)
+- Release Notes: https://github.com/orientechnologies/orientdb/wiki/OrientDB-3.2-Release-Notes#3215---17-January-2023
+
+# Core
+- give more clear error when view metadata are not correct on view creation
+- improved validation of embedded types to avoid use of vertices and edges in embedded
+- handle additional case for shape type conversion in query engine
+- removed not needed synchronization in views structures
+- reduced logging of the security module
+- minor fix for no-tx changes on lucene indexes
+- removed duplicate logic in index implementation
+- reduced the thread local lookups and database isClosed checks
+- removed some locale translate done only on specific use cases
+- avoid to update the index manager when there are no changes
+- replaced storage error state lock with atomic reference
+- removed server and client dependency from lucene module
+
+# Distributed
+- minor fix on view creation and refresh in case of distributed environment
+
+-----------------------------------------------------------------------------------------------------------------------------------
+VERSION 3.2.14 - (December, 23 2022)
+- Release Notes: https://github.com/orientechnologies/orientdb/wiki/OrientDB-3.2-Release-Notes#3214---23-December-2022
+
+# Core
+- Optimization on graph delete operations (issue #9821)
+- Fix on remote deserialization of specific exception
+- Fix on index logic for multi-page split
+- Fix limit of index key size, now it fail with a user message when the key is over the maximum size (10Kb)
+- Optimization in index write
+- Optimization of security checks in writes
+- Fix wrongly oversize WAL records
+- Fix views locking logic to update the view atomically
+- Fix failing schedule of view if previous view fail to refresh
+- Add support of indexing of embedded types in views
+- Fixed script poll release issue  
+
+-----------------------------------------------------------------------------------------------------------------------------------
+VERSION 3.2.13 - (December, 1 2022)
+- Release Notes: https://github.com/orientechnologies/orientdb/wiki/OrientDB-3.2-Release-Notes#3213---1-December-2022
+
+# Core
+- Make sure to use high level transactions in all index change cases
+- Made index rebuild batch changes in transaction
+- Fix view unlocking in case of refresh error
+- Optimized update of vertices that use ridbag trees
+- Fix regression on OResult hash code, issue #9900
+- Ignore index corrupted errors on drop
+- Batched view refreshing in transaction
+- Optimized of usage of read/write lock in storage
+- Fix check of index type also on chained indexes 
+- Reduced usage of modifiable schema to reduce contention on read/write lock
+- Fix waiting for last task in ViewManager close
+- Fix running of ddl while incremental backup is running do not block anymore other write operations.
+- Fix invalid cluster id do not make storage readonly
+
+# Distributed
+- Fix in handling of node missing on refresh
+
+-----------------------------------------------------------------------------------------------------------------------------------
+VERSION 3.2.12 - (November, 10 2022)
+- Release Notes: https://github.com/orientechnologies/orientdb/wiki/OrientDB-3.2-Release-Notes#3212---10-November-2022
+
+# Core 
+- Add timeout check in next query page fetching
+- Updated dependencies
+- Optimized Security Policies checks
+- Optimized query engine property fetching and filtering
+- Removed not used anymore dependencies
+- Fix in truncate clusters logic
+- Improved string caching logic
+- Made the direct memory pointer soft reference to retain it and reduce the allocation overhead
+- Add a correct error message when opening a not existing database in a in memory context
+- Fix regression in sql function execution after refactor, issue #9888
+- Optimization in storage record reading
+- Fix OClass.setCustom() in ditributed setup
+
+# Console
+- Fix regression database creation, issue #9889
+
+# Enterprise
+- Limited the maximum number of metrics kept in memory
+- Made query statements metrics ognostic of values
+
+-----------------------------------------------------------------------------------------------------------------------------------
+VERSION 3.2.11 - (October, 19 2022)
+- Release Notes: https://github.com/orientechnologies/orientdb/wiki/OrientDB-3.2-Release-Notes#3211---19-October-2022
+
+# Core 
+ - Use correct configuration to run javascript functions on truffle script engine of graal
+ - Minimize duplicate logic in index searching for query engine
+ - Add caching of graal Context with relative database functions
+ - Reduced allocations in query engine
+ - Add possibility to unload cached information for specific script executor
+ - Optimized the cluster computation in query engine
+ - Disabled the sharding check logic for distributed
+ - Removed dependencies not used anymore
+ - Correct query interrupt based on command timeout configuration
+ - Minor updates of dependencies 
+
+-----------------------------------------------------------------------------------------------------------------------------------
+VERSION 3.2.10 - (September, 15 2022)
+- Release Notes: https://github.com/orientechnologies/orientdb/wiki/OrientDB-3.2-Release-Notes#3210---15-September-2022
+
+# Core
+ - Make put of index everytime transactional
+ - Converted all left put operations to use transaction directly
+ - Fix logging of log messages with exceptions
+ - Refactor for simplify index creation logic
+ - Optimization in index write logic
+ - Optimization in ridbag write logic
+ - Optimization in page write logic
+ - Optimization in script pool 
+ - Disabled write operations without atomic operation
+ - Fixes in Json parsing
+ - Re-enabled computation of record sizes for cluster issue #9870
+ - Replaced custom lock implementation with jdk implementation
+ - Avoid to read null values from json for ridbags
+
+# Client
+ - Automatically start a transaction in the client side if a script started it server side
+
+# Lucene
+ - Correct lucene remove after transactional index operations refactor
+ - Make sure rebuild of lucene works after refactor
+
+# Distributed
+ - Fix copyStream to not terminate on 0 byte read
+ - Mark HA STATUS idempotent so it can be used from SQL API.
+ - Include individual DB status across cluster in HA STATUS result
+ - Add exception details to some logging that lost stack traces.
+
+-----------------------------------------------------------------------------------------------------------------------------------
+VERSION 3.2.9 - (August, 11 2022)
+- Release Notes: https://github.com/orientechnologies/orientdb/wiki/OrientDB-3.2-Release-Notes#329---11-August-2022
+
+# Core
+- Make sure to drop the database also when drop listeners fail
+- Improve thread pool executors to scale up and down properly
+- Make sure to release lock on close of failed storage
+- Removed background thread to mark storage broken not needed anymore
+- Add missing file extension from list of database files extensions to allow proper cleanup on delete
+- Remove no needed refresh of immutable metadata during index metadata load
+- Avoid that wrong validation value make a database read only
+- Corrected regression on btree v3 value replace
+- Refactor to  simplify  index v3 logic
+- Prevent Live Query thread hot looping on idle queue.
+
+# Distributed
+- Improved distributed hosts change notification after client optimization
+
+# Remote
+- Release session lock in any case of error
+
+# Etl
+- Make sure to close context on process shutdown
+
+-----------------------------------------------------------------------------------------------------------------------------------
+VERSION 3.2.8 - (June, 26 2022)
+- Release Notes: https://github.com/orientechnologies/orientdb/wiki/OrientDB-3.2-Release-Notes#328---26-June-2022
+
+# Core
+- avoid to make the storage read only in case of error in record serialization
+- correct iterable value set during update operations issue #9781
+- avoid to put storage in read only in case of errors during read operations
+- fixed multivalue composite index queries to not return duplicates
+- correct indexes rebalancing causing error on delete operations
+
+# Console
+- local creation of a database in plocal with console old command will create a admin user
+
+# Distributed 
+- unblock distributed request handling in case of install error, issue #9815
+- Cap string length in binary channels
+
+# Lucene
+- Support parameterised metadata in Lucene queries
+- make sure that lucene parsing exception do not set the storage in read only mode, issue #9498
+- Fix the locking in the Lucene indexer
+
+-----------------------------------------------------------------------------------------------------------------------------------
+VERSION 3.2.7 - (June, 8 2022)
+- Release Notes: https://github.com/orientechnologies/orientdb/wiki/OrientDB-3.2-Release-Notes#327---8-June-2022
+
+# Core
+- fixed delete of lucene indexes 
+- make sure to do a clean metadata re-init after incremental backup database restore
+- handle thread interruption while data read and write with correct exception
+- Speed up of record updates.
+- remove edges with in or out null during bonsai repair,issue  #9806
+- minor correction in composite index creation query
+
+# Distributed
+- cloned distributed lock keys that may contain a record id for avoid mutation
+- properly handle database instance used by lucene indexes while distributed sync
+- Install ShutdownLogManager in distributed mode
+
+
+-----------------------------------------------------------------------------------------------------------------------------------
+VERSION 3.2.6 - (April, 28 2022)
+- Release Notes: https://github.com/orientechnologies/orientdb/wiki/OrientDB-3.2-Release-Notes#326---28-April-2022
+
+# Changes
+
+## Core
+- LSN of latest applied record returned during restore
+- Binary compatibility issue was fixed
+- Update jackson dependency to the latest release
+- Disabled memory pre-allocation by default
+- Ported fix for shortest path, issue #9774
+- Minor update of dependency version
+- Storage state lock was replaced by standard JDK lock
+
+## Distributed
+
+- Minor fix for distributed on deploy database backup in case of source folder and dest folder in different volumes
+- Fixes on network layer between nodes
+
+-----------------------------------------------------------------------------------------------------------------------------------
+VERSION 3.2.5 - (February, 14 2022)
+- Release Notes: https://github.com/orientechnologies/orientdb/wiki/OrientDB-3.2-Release-Notes#325---14-february-2022
+
+# Changes
+
+## Core
+- Restore flag is triggered once physical restore is started.
+- Tracking of consistency of atomic operation on restore was added.
+- If Unsafe is present it is used for memory allocation/de-allocation.
+- Fix toJson() with spaces in map key names.
+- Prevention of recursive flow of exception is case of internal error.
+- DWL files do not trigger errors during the database backup.
+- Fix ORDER BY with LET
+
+## Distributed
+- Minor fix in distributed stat collecting logic
+- Check to avoid distributed backup path to be in the same location of databases
+- Minor refactor to avoid to do version promises for not changed records
+
+
+-----------------------------------------------------------------------------------------------------------------------------------
+VERSION 3.2.4 - (December, 28 2021)
+- Release Notes: https://github.com/orientechnologies/orientdb/wiki/OrientDB-3.2-Release-Notes#324---28-december-2021
+
+-----------------------------------------------------------------------------------------------------------------------------------
+VERSION 3.2.3 - (November, 16 2021)
+- Release Notes: https://github.com/orientechnologies/orientdb/wiki/OrientDB-3.2-Release-Notes#323---16-november-2021
+
+-----------------------------------------------------------------------------------------------------------------------------------
+VERSION 3.2.2 - (September, 21 2021)
+- Release Notes: https://github.com/orientechnologies/orientdb/wiki/OrientDB-3.2-Release-Notes#322---21-september-2021
+
+-----------------------------------------------------------------------------------------------------------------------------------
+VERSION 3.2.1 - (September, 8 2021)
+- Release Notes: https://github.com/orientechnologies/orientdb/wiki/OrientDB-3.2-Release-Notes#321---8-september-2021
+
+-----------------------------------------------------------------------------------------------------------------------------------
+VERSION 3.2.0 - (April, 29 2021)
+- Release Notes: https://github.com/orientechnologies/orientdb/wiki/OrientDB-3.2-Release-Notes#320---29-april-2021
+
+
+
+
+
 -----------------------------------------------------------------------------------------------------------------------------------
 VERSION 3.1.13  - (September, 28 2021)
 - Release Notes: https://github.com/orientechnologies/orientdb/wiki/OrientDB-3.1-Release-Notes#3113---28-september-2021

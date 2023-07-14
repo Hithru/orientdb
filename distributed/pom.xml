@@ -20,15 +20,18 @@
    ~  */
    -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <groupId>com.orientechnologies</groupId>
         <artifactId>orientdb-parent</artifactId>
+<<<<<<< HEAD
         <version>3.1.14-SNAPSHOT</version>
+=======
+        <version>3.2.20-SNAPSHOT</version>
+>>>>>>> develop
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -37,38 +40,74 @@
     <name>OrientDB Distributed Server</name>
 
     <properties>
+<<<<<<< HEAD
         <hz.version>3.12.8</hz.version>
+=======
+        <hz.version>3.12.13</hz.version>
+>>>>>>> develop
         <javac.src.version>1.6</javac.src.version>
         <javac.target.version>1.6</javac.target.version>
         <jar.manifest.mainclass>com.orientechnologies.orient.server.OServerMain</jar.manifest.mainclass>
-        <osgi.import>com.hazelcast.*;resolution:=optional,*</osgi.import>
-        <osgi.export>com.orientechnologies.orient.server.hazelcast.*,com.orientechnologies.orient.server.distributed.impl.*
-        </osgi.export>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <argLine>-ea
-            -Xmx${heapSize}
-            -Dstorage.diskCache.bufferSize=4096
-            -Dindex.flushAfterCreate=false
-            -Dstorage.makeFullCheckpointAfterCreate=false
-            -Dmemory.directMemory.trackMode=true
-            -Dstorage.makeFullCheckpointAfterOpen=false
-            -Dstorage.makeFullCheckpointAfterClusterCreate=false
-            -Dstorage.wal.syncOnPageFlush=false
-            -Dserver.backwardCompatibility=false
-            -Dstorage.configuration.syncOnUpdate=false
-            -Ddb.makeFullCheckpointOnIndexChange=false
-            -Ddb.makeFullCheckpointOnSchemaChange=false
-            -Dhazelcast.wait.seconds.before.join=3
-            -Djava.util.logging.manager=com.orientechnologies.common.log.ShutdownLogManager
-            -Dstorage.diskCache.checksumMode=storeAndThrow
-            -Dindex.allowManualIndexes=false
-                -Dsecurity.warningDefaultUsers=false
-        </argLine>
         <exclude.test.distributed>NONE</exclude.test.distributed>
         <project.rootdir>${project.basedir}/../</project.rootdir>
     </properties>
 
     <profiles>
+        <profile>
+            <id>java8</id>
+            <activation>
+                <jdk>1.8</jdk>
+            </activation>
+            <properties>
+                <argLine>-ea
+                    -Xmx${heapSize}
+                    -Dstorage.diskCache.bufferSize=4096
+                    -Dindex.flushAfterCreate=false
+                    -Dstorage.makeFullCheckpointAfterCreate=false
+                    -Dmemory.directMemory.trackMode=true
+                    -Dstorage.makeFullCheckpointAfterOpen=false
+                    -Dstorage.makeFullCheckpointAfterClusterCreate=false
+                    -Dstorage.wal.syncOnPageFlush=false
+                    -Dserver.backwardCompatibility=false
+                    -Dstorage.configuration.syncOnUpdate=false
+                    -Ddb.makeFullCheckpointOnIndexChange=false
+                    -Ddb.makeFullCheckpointOnSchemaChange=false
+                    -Dhazelcast.wait.seconds.before.join=3
+                    -Djava.util.logging.manager=com.orientechnologies.common.log.ShutdownLogManager
+                    -Dstorage.diskCache.checksumMode=storeAndThrow
+                    -Dsecurity.warningDefaultUsers=false
+                </argLine>
+            </properties>
+        </profile>
+        <profile>
+            <id>java11</id>
+            <activation>
+                <jdk>[11,)</jdk>
+            </activation>
+            <properties>
+                <argLine>-ea
+                    -Xmx${heapSize}
+                    -Dstorage.diskCache.bufferSize=4096
+                    -Dindex.flushAfterCreate=false
+                    -Dstorage.makeFullCheckpointAfterCreate=false
+                    -Dmemory.directMemory.trackMode=true
+                    -Dstorage.makeFullCheckpointAfterOpen=false
+                    -Dstorage.makeFullCheckpointAfterClusterCreate=false
+                    -Dstorage.wal.syncOnPageFlush=false
+                    -Dserver.backwardCompatibility=false
+                    -Dstorage.configuration.syncOnUpdate=false
+                    -Ddb.makeFullCheckpointOnIndexChange=false
+                    -Ddb.makeFullCheckpointOnSchemaChange=false
+                    -Dhazelcast.wait.seconds.before.join=3
+                    -Djava.util.logging.manager=com.orientechnologies.common.log.ShutdownLogManager
+                    -Dstorage.diskCache.checksumMode=storeAndThrow
+                    -Dsecurity.warningDefaultUsers=false
+                    --add-opens jdk.unsupported/sun.misc=ALL-UNNAMED
+                    --add-opens java.base/sun.security.x509=ALL-UNNAMED
+                </argLine>
+            </properties>
+        </profile>
         <profile>
             <id>crash-tests</id>
             <build>
@@ -85,16 +124,51 @@
             </build>
         </profile>
         <profile>
-            <id>new-coordinator</id>
+            <id>secondary-tests</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>${surefire.version}</version>
+                        <configuration>
+                            <includes>
+                                <include>**/*ST.java</include>
+                            </includes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>it-k8s</id>
             <build>
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-failsafe-plugin</artifactId>
-                        <version>${surefire.version}</version>
                         <configuration>
+                            <includes>
+                                <include>**/BasicSyncIT.java</include>
+                                <include>**/SimpleQueryDistributedIT.java</include>
+                                <include>**/ReverseStartSyncIT.java</include>
+                                <include>**/ConcurrentIndexDefinitionIT.java</include>
+                                <include>**/SimpleMultiNodeConnectIT.java</include>
+                                <include>**/SimpleLiveQueryDistributedIT.java</include>
+                                <include>**/SimpleIndexDistributedIT.java</include>
+                                <include>**/UniqueCompositeIndexDistributedIT.java</include>
+                            </includes>
                             <systemPropertyVariables>
-                                <distributed.replicationProtocol.version>2</distributed.replicationProtocol.version>
+                                <kubeConfig />
+                                <orientdbLabel>orientdb</orientdbLabel>
+                                <orientdbHttpPort>2480</orientdbHttpPort>
+                                <orientdbBinaryPort>2424</orientdbBinaryPort>
+                                <orientdbHazelcastPort>2434</orientdbHazelcastPort>
+                                <orientdbDockerImage />
+                                <orientdbVolumeSize>2</orientdbVolumeSize>
+                                <databaseVolumeStorageClass />
+                                <configVolumeStorageClass />
+                                <kubernetesNamespace>orientdb</kubernetesNamespace>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>
@@ -138,9 +212,42 @@
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-kubernetes</artifactId>
+<<<<<<< HEAD
             <version>1.5.3</version>
             <scope>runtime</scope>
         </dependency>
+=======
+            <version>1.5.6</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.kubernetes</groupId>
+            <artifactId>client-java</artifactId>
+            <version>11.0.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-text</artifactId>
+            <version>1.10.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>4.8.0</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- Required by the Kubernetes java client -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>2.0.6</version>
+            <scope>test</scope>
+        </dependency>
+
+
+>>>>>>> develop
     </dependencies>
 
     <build>
@@ -166,6 +273,8 @@
                     <excludes>
                         <exclude>${exclude.test.distributed}</exclude>
                     </excludes>
+                    <reuseForks>false</reuseForks>
+                    <forkCount>1</forkCount>
                 </configuration>
 
                 <dependencies>
@@ -183,6 +292,7 @@
                 <configuration>
                     <reuseForks>false</reuseForks>
                     <forkCount>1</forkCount>
+                    <useModulePath>false</useModulePath>
                 </configuration>
             </plugin>
         </plugins>

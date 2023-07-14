@@ -5,6 +5,7 @@ import com.orientechnologies.orient.core.db.ODatabaseSession;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.id.ORID;
 import com.orientechnologies.orient.core.metadata.function.OFunction;
+import com.orientechnologies.orient.core.metadata.security.auth.OAuthenticationInfo;
 import com.orientechnologies.orient.core.record.ORecord;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import java.util.List;
@@ -15,33 +16,39 @@ public interface OSecurityInternal {
   boolean isAllowed(
       ODatabaseSession session, Set<OIdentifiable> iAllowAll, Set<OIdentifiable> iAllowOperation);
 
+  @Deprecated
   OIdentifiable allowUser(
       ODatabaseSession session,
       ODocument iDocument,
       ORestrictedOperation iOperationType,
       String iUserName);
 
+  @Deprecated
   OIdentifiable allowRole(
       ODatabaseSession session,
       ODocument iDocument,
       ORestrictedOperation iOperationType,
       String iRoleName);
 
+  @Deprecated
   OIdentifiable denyUser(
       ODatabaseSession session,
       ODocument iDocument,
       ORestrictedOperation iOperationType,
       String iUserName);
 
+  @Deprecated
   OIdentifiable denyRole(
       ODatabaseSession session,
       ODocument iDocument,
       ORestrictedOperation iOperationType,
       String iRoleName);
 
+  @Deprecated
   OIdentifiable allowIdentity(
       ODatabaseSession session, ODocument iDocument, String iAllowFieldName, OIdentifiable iId);
 
+  @Deprecated
   OIdentifiable disallowIdentity(
       ODatabaseSession session, ODocument iDocument, String iAllowFieldName, OIdentifiable iId);
 
@@ -98,7 +105,7 @@ public interface OSecurityInternal {
    * @param policy The security policy
    */
   void setSecurityPolicy(
-      ODatabaseSession session, OSecurityRole role, String resource, OSecurityPolicy policy);
+      ODatabaseSession session, OSecurityRole role, String resource, OSecurityPolicyImpl policy);
 
   /**
    * creates and saves an empty security policy
@@ -107,11 +114,11 @@ public interface OSecurityInternal {
    * @param name the policy name
    * @return
    */
-  OSecurityPolicy createSecurityPolicy(ODatabaseSession session, String name);
+  OSecurityPolicyImpl createSecurityPolicy(ODatabaseSession session, String name);
 
-  OSecurityPolicy getSecurityPolicy(ODatabaseSession session, String name);
+  OSecurityPolicyImpl getSecurityPolicy(ODatabaseSession session, String name);
 
-  void saveSecurityPolicy(ODatabaseSession session, OSecurityPolicy policy);
+  void saveSecurityPolicy(ODatabaseSession session, OSecurityPolicyImpl policy);
 
   void deleteSecurityPolicy(ODatabaseSession session, String name);
 
@@ -189,4 +196,9 @@ public interface OSecurityInternal {
    * @return
    */
   Set<OSecurityResourceProperty> getAllFilteredProperties(ODatabaseDocumentInternal database);
+
+  OSecurityUser securityAuthenticate(ODatabaseSession session, String userName, String password);
+
+  OSecurityUser securityAuthenticate(
+      ODatabaseSession session, OAuthenticationInfo authenticationInfo);
 }

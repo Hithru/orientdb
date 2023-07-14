@@ -8,7 +8,7 @@ package com.orientechnologies.orient.core.sql.parser;
 
 import com.orientechnologies.orient.core.command.OBasicCommandContext;
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.db.ODatabase;
+import com.orientechnologies.orient.core.db.ODatabaseSession;
 import com.orientechnologies.orient.core.sql.OCommandSQLParsingException;
 import com.orientechnologies.orient.core.sql.executor.OInternalExecutionPlan;
 import com.orientechnologies.orient.core.sql.executor.OResult;
@@ -218,6 +218,87 @@ public class OSelectStatement extends OStatement {
     }
   }
 
+  public void toGenericStatement(StringBuilder builder) {
+
+    builder.append("SELECT");
+    if (projection != null) {
+      builder.append(" ");
+      projection.toGenericStatement(builder);
+    }
+    if (target != null) {
+      builder.append(" FROM ");
+      target.toGenericStatement(builder);
+    }
+
+    if (letClause != null) {
+      builder.append(" ");
+      letClause.toGenericStatement(builder);
+    }
+
+    if (whereClause != null) {
+      builder.append(" WHERE ");
+      whereClause.toGenericStatement(builder);
+    }
+
+    if (groupBy != null) {
+      builder.append(" ");
+      groupBy.toGenericStatement(builder);
+    }
+
+    if (orderBy != null) {
+      builder.append(" ");
+      orderBy.toGenericStatement(builder);
+    }
+
+    if (unwind != null) {
+      builder.append(" ");
+      unwind.toGenericStatement(builder);
+    }
+
+    if (skip != null) {
+      skip.toGenericStatement(builder);
+    }
+
+    if (limit != null) {
+      limit.toGenericStatement(builder);
+    }
+
+    if (lockRecord != null) {
+      builder.append(" LOCK ");
+      switch (lockRecord) {
+        case DEFAULT:
+          builder.append("DEFAULT");
+          break;
+        case EXCLUSIVE_LOCK:
+          builder.append("RECORD");
+          break;
+        case SHARED_LOCK:
+          builder.append("SHARED");
+          break;
+        case NONE:
+          builder.append("NONE");
+          break;
+      }
+    }
+
+    if (fetchPlan != null) {
+      builder.append(" ");
+      fetchPlan.toGenericStatement(builder);
+    }
+
+    if (timeout != null) {
+      timeout.toGenericStatement(builder);
+    }
+
+    if (Boolean.TRUE.equals(parallel)) {
+      builder.append(" PARALLEL");
+    }
+
+    if (Boolean.TRUE.equals(noCache)) {
+      builder.append(" NOCACHE");
+    }
+  }
+
   public void validate() throws OCommandSQLParsingException {
     if (projection != null) {
       projection.validate();
@@ -253,7 +334,7 @@ public class OSelectStatement extends OStatement {
 
   @Override
   public OResultSet execute(
-      ODatabase db, Object[] args, OCommandContext parentCtx, boolean usePlanCache) {
+      ODatabaseSession db, Object[] args, OCommandContext parentCtx, boolean usePlanCache) {
     OBasicCommandContext ctx = new OBasicCommandContext();
     if (parentCtx != null) {
       ctx.setParentWithoutOverridingChild(parentCtx);
@@ -279,7 +360,7 @@ public class OSelectStatement extends OStatement {
 
   @Override
   public OResultSet execute(
-      ODatabase db, Map params, OCommandContext parentCtx, boolean usePlanCache) {
+      ODatabaseSession db, Map params, OCommandContext parentCtx, boolean usePlanCache) {
     OBasicCommandContext ctx = new OBasicCommandContext();
     if (parentCtx != null) {
       ctx.setParentWithoutOverridingChild(parentCtx);
@@ -301,6 +382,7 @@ public class OSelectStatement extends OStatement {
     OSelectExecutionPlanner planner = new OSelectExecutionPlanner(this);
     OInternalExecutionPlan result = planner.createExecutionPlan(ctx, enableProfiling, true);
     result.setStatement(this.originalStatement);
+    result.setGenericStatement(this.toGenericStatement());
     return result;
   }
 
@@ -309,6 +391,7 @@ public class OSelectStatement extends OStatement {
     OSelectExecutionPlanner planner = new OSelectExecutionPlanner(this);
     OInternalExecutionPlan result = planner.createExecutionPlan(ctx, enableProfiling, false);
     result.setStatement(this.originalStatement);
+    result.setGenericStatement(this.toGenericStatement());
     return result;
   }
 

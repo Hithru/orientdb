@@ -10,12 +10,10 @@ import java.util.Set;
 public interface OAtomicOperation {
   long getOperationUnitId();
 
-  OCacheEntry loadPageForWrite(
-      long fileId, long pageIndex, boolean checkPinnedPages, int pageCount, boolean verifyChecksum)
+  OCacheEntry loadPageForWrite(long fileId, long pageIndex, int pageCount, boolean verifyChecksum)
       throws IOException;
 
-  OCacheEntry loadPageForRead(long fileId, long pageIndex, boolean checkPinnedPages, int pageCount)
-      throws IOException;
+  OCacheEntry loadPageForRead(long fileId, long pageIndex) throws IOException;
 
   void addMetadata(OAtomicOperationMetadata<?> metadata);
 
@@ -42,6 +40,8 @@ public interface OAtomicOperation {
   boolean isFileExists(String fileName);
 
   String fileNameById(long fileId);
+
+  long fileIdByName(String name);
 
   void truncateFile(long fileId) throws IOException;
 

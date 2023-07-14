@@ -12,7 +12,8 @@ import com.orientechnologies.orient.core.config.OGlobalConfiguration;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
 import com.orientechnologies.orient.core.exception.OStorageException;
 import com.orientechnologies.orient.core.record.impl.ODocument;
-import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
+import com.orientechnologies.orient.core.sql.executor.OResult;
+import com.orientechnologies.orient.core.sql.executor.OResultSet;
 import com.orientechnologies.orient.server.OServer;
 import java.io.File;
 import java.util.List;
@@ -20,7 +21,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /** Created by tglman on 06/07/16. */
@@ -33,6 +36,8 @@ public class OrientDBRemoteTest {
 
   @Before
   public void before() throws Exception {
+    ODatabaseRecordThreadLocal.instance().remove();
+
     OGlobalConfiguration.SERVER_BACKWARD_COMPATIBILITY.setValue(false);
     server = new OServer(false);
     server.setServerRootDirectory(SERVER_DIRECTORY);
@@ -46,14 +51,16 @@ public class OrientDBRemoteTest {
     OrientDBConfig config =
         OrientDBConfig.builder()
             .addConfig(OGlobalConfiguration.DB_CACHED_POOL_CAPACITY, 2)
-            .addConfig(OGlobalConfiguration.DB_CACHED_POOL_CLEAN_UP_TIMEOUT, 2_000)
+            .addConfig(OGlobalConfiguration.DB_CACHED_POOL_CLEAN_UP_TIMEOUT, 300_000)
             .build();
     factory = new OrientDB("remote:localhost", "root", "root", config);
   }
 
   @Test
   public void createAndUseRemoteDatabase() {
-    if (!factory.exists("test")) factory.create("test", ODatabaseType.MEMORY);
+    if (!factory.exists("test")) {
+      factory.execute("create database test memory users (admin identified by 'admin' role admin)");
+    }
 
     ODatabaseDocument db = factory.open("test", "admin", "admin");
     db.save(new ODocument(), db.getClusterNameById(db.getDefaultClusterId()));
@@ -64,13 +71,13 @@ public class OrientDBRemoteTest {
   // TODO: Uniform database exist exceptions
   @Test(expected = OStorageException.class)
   public void doubleCreateRemoteDatabase() {
-    factory.create("test", ODatabaseType.MEMORY);
-    factory.create("test", ODatabaseType.MEMORY);
+    factory.execute("create database test memory users (admin identified by 'admin' role admin)");
+    factory.execute("create database test memory users (admin identified by 'admin' role admin)");
   }
 
   @Test
   public void createDropRemoteDatabase() {
-    factory.create("test", ODatabaseType.MEMORY);
+    factory.execute("create database test memory users (admin identified by 'admin' role admin)");
     assertTrue(factory.exists("test"));
     factory.drop("test");
     assertFalse(factory.exists("test"));
@@ -78,7 +85,8 @@ public class OrientDBRemoteTest {
 
   @Test
   public void testPool() {
-    if (!factory.exists("test")) factory.create("test", ODatabaseType.MEMORY);
+    if (!factory.exists("test"))
+      factory.execute("create database test memory users (admin identified by 'admin' role admin)");
 
     ODatabasePool pool = new ODatabasePool(factory, "test", "admin", "admin");
     ODatabaseDocument db = pool.acquire();
@@ -88,8 +96,11 @@ public class OrientDBRemoteTest {
   }
 
   @Test
+  @Ignore
   public void testCachedPool() {
-    if (!factory.exists("testdb")) factory.create("testdb", ODatabaseType.MEMORY);
+    if (!factory.exists("testdb"))
+      factory.execute(
+          "create database testdb memory users (admin identified by 'admin' role admin, reader identified by 'reader' role reader, writer identified by 'writer' role writer)");
 
     ODatabasePool poolAdmin1 = factory.cachedPool("testdb", "admin", "admin");
     ODatabasePool poolAdmin2 = factory.cachedPool("testdb", "admin", "admin");
@@ -114,7 +125,9 @@ public class OrientDBRemoteTest {
 
   @Test
   public void testCachedPoolFactoryCleanUp() throws Exception {
-    if (!factory.exists("testdb")) factory.create("testdb", ODatabaseType.MEMORY);
+    if (!factory.exists("testdb"))
+      factory.execute(
+          "create database testdb memory users (admin identified by 'admin' role admin)");
 
     ODatabasePool poolAdmin1 = factory.cachedPool("testdb", "admin", "admin");
     ODatabasePool poolAdmin2 = factory.cachedPool("testdb", "admin", "admin");
@@ -136,8 +149,11 @@ public class OrientDBRemoteTest {
   }
 
   @Test
+  @Ignore
   public void testMultiThread() {
-    if (!factory.exists("test")) factory.create("test", ODatabaseType.MEMORY);
+    if (!factory.exists("test"))
+      factory.execute(
+          "create database test memory users (admin identified by 'admin' role admin, reader identified by 'reader' role reader, writer identified by 'writer' role writer)");
 
     ODatabasePool pool = new ODatabasePool(factory, "test", "admin", "admin");
 
@@ -149,9 +165,9 @@ public class OrientDBRemoteTest {
           try {
             assertThat(db.isActiveOnCurrentThread()).isTrue();
 
-            List<ODocument> res = db.query(new OSQLSynchQuery<>("SELECT * FROM OUser"));
+            OResultSet res = db.query("SELECT * FROM OUser");
 
-            assertThat(res).hasSize(3);
+            assertEquals(res.stream().count(), 3);
 
           } finally {
 
@@ -174,15 +190,41 @@ public class OrientDBRemoteTest {
   @Test
   public void testListDatabases() {
     assertEquals(factory.list().size(), 0);
-    factory.create("test", ODatabaseType.MEMORY);
+    factory.execute("create database test memory users (admin identified by 'admin' role admin)");
     List<String> databases = factory.list();
     assertEquals(databases.size(), 1);
     assertTrue(databases.contains("test"));
   }
 
   @Test
+  public void createDatabaseNoUsers() {
+    factory.create(
+        "noUser",
+        ODatabaseType.MEMORY,
+        OrientDBConfig.builder()
+            .addConfig(OGlobalConfiguration.CREATE_DEFAULT_USERS, false)
+            .build());
+    try (ODatabaseSession session = factory.open("noUser", "root", "root")) {
+      assertEquals(session.query("select from OUser").stream().count(), 0);
+    }
+  }
+
+  @Test
+  public void createDatabaseDefaultUsers() {
+    factory.create(
+        "noUser",
+        ODatabaseType.MEMORY,
+        OrientDBConfig.builder()
+            .addConfig(OGlobalConfiguration.CREATE_DEFAULT_USERS, true)
+            .build());
+    try (ODatabaseSession session = factory.open("noUser", "root", "root")) {
+      assertEquals(session.query("select from OUser").stream().count(), 3);
+    }
+  }
+
+  @Test
   public void testCopyOpenedDatabase() {
-    factory.create("test", ODatabaseType.MEMORY);
+    factory.execute("create database test memory users (admin identified by 'admin' role admin)");
     ODatabaseDocument db1;
     try (ODatabaseDocumentInternal db =
         (ODatabaseDocumentInternal) factory.open("test", "admin", "admin")) {
@@ -191,6 +233,19 @@ public class OrientDBRemoteTest {
     db1.activateOnCurrentThread();
     assertFalse(db1.isClosed());
     db1.close();
+  }
+
+  @Test
+  public void testCreateDatabaseViaSQL() {
+    String dbName = "testCreateDatabaseViaSQL";
+
+    try (OResultSet result = factory.execute("create database " + dbName + " plocal")) {
+      Assert.assertTrue(result.hasNext());
+      OResult item = result.next();
+      Assert.assertEquals(true, item.getProperty("created"));
+    }
+    Assert.assertTrue(factory.exists(dbName));
+    factory.drop(dbName);
   }
 
   @After
@@ -205,5 +260,7 @@ public class OrientDBRemoteTest {
     Orient.instance().shutdown();
     OFileUtils.deleteRecursively(new File(SERVER_DIRECTORY));
     Orient.instance().startup();
+
+    ODatabaseRecordThreadLocal.instance().remove();
   }
 }

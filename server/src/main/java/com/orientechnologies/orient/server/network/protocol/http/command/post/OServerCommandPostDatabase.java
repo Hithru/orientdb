@@ -36,18 +36,13 @@ import com.orientechnologies.orient.core.metadata.security.ORole;
 import com.orientechnologies.orient.core.metadata.security.OUser;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.serialization.serializer.OJSONWriter;
-import com.orientechnologies.orient.core.storage.OStorage;
 import com.orientechnologies.orient.server.network.protocol.http.OHttpRequest;
 import com.orientechnologies.orient.server.network.protocol.http.OHttpResponse;
 import com.orientechnologies.orient.server.network.protocol.http.OHttpUtils;
 import com.orientechnologies.orient.server.network.protocol.http.command.OServerCommandAuthenticatedServerAbstract;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class OServerCommandPostDatabase extends OServerCommandAuthenticatedServerAbstract {
   private static final String[] NAMES = {"POST|database/*"};
@@ -66,6 +61,21 @@ public class OServerCommandPostDatabase extends OServerCommandAuthenticatedServe
     final String storageMode = urlParts[2];
     String url = getStoragePath(databaseName, storageMode);
     final String type = urlParts.length > 3 ? urlParts[3] : "document";
+
+    boolean createAdmin = false;
+    String adminPwd = null;
+    if (iRequest.getContent() != null && !iRequest.getContent().isEmpty()) {
+      // CONTENT REPLACES TEXT
+      if (iRequest.getContent().startsWith("{")) {
+        // JSON PAYLOAD
+        final ODocument doc = new ODocument().fromJSON(iRequest.getContent());
+        if (doc.hasProperty("adminPassword")) {
+          createAdmin = true;
+          adminPwd = doc.getProperty("adminPassword");
+        }
+      }
+    }
+
     if (url != null) {
       if (server.existsDatabase(databaseName)) {
         sendJsonError(
@@ -78,8 +88,19 @@ public class OServerCommandPostDatabase extends OServerCommandAuthenticatedServe
       } else {
         server.createDatabase(
             databaseName, ODatabaseType.valueOf(storageMode.toUpperCase(Locale.ENGLISH)), null);
+
         try (ODatabaseDocumentInternal database =
-            server.openDatabase(databaseName, serverUser, serverPassword, null, false)) {
+            server.openDatabase(databaseName, serverUser, serverPassword, null)) {
+
+          if (createAdmin) {
+            try {
+              database.command("CREATE USER admin IDENTIFIED BY ? ROLE admin", adminPwd);
+            } catch (Exception e) {
+              OLogManager.instance()
+                  .warn(this, "Could not create admin user for database " + databaseName, e);
+            }
+          }
+
           sendDatabaseInfo(iRequest, iResponse, database);
         }
       }
@@ -130,9 +151,8 @@ public class OServerCommandPostDatabase extends OServerCommandAuthenticatedServe
 
     if (db.getClusterNames() != null) {
       json.beginCollection(1, false, "clusters");
-      OStorage storage = db.getStorage();
       for (String clusterName : db.getClusterNames()) {
-        final int clusterId = storage.getClusterIdByName(clusterName);
+        final int clusterId = db.getClusterIdByName(clusterName);
         if (clusterId < 0) {
           continue;
         }
@@ -141,7 +161,7 @@ public class OServerCommandPostDatabase extends OServerCommandAuthenticatedServe
           json.beginObject(2, true, null);
           json.writeAttribute(3, false, "id", clusterId);
           json.writeAttribute(3, false, "name", clusterName);
-          json.writeAttribute(3, false, "records", storage.count(clusterId));
+          json.writeAttribute(3, false, "records", db.countClusterElements(clusterId));
           json.writeAttribute(3, false, "size", "-");
           json.writeAttribute(3, false, "filled", "-");
           json.writeAttribute(3, false, "maxSize", "-");

@@ -105,8 +105,7 @@ public class FindReferencesStep extends AbstractExecutionStep {
 
       ORecord rec = currentIterator.next();
       if (rec instanceof ODocument) {
-        OResultInternal x = new OResultInternal();
-        x.setElement(rec);
+        OResultInternal x = new OResultInternal(rec);
         for (ORID rid : ridsToFind) {
           List<String> resultForRecord = checkObject(Collections.singleton(rid), x, rec, "");
           if (resultForRecord.size() > 0) {
@@ -141,7 +140,8 @@ public class FindReferencesStep extends AbstractExecutionStep {
             targetClusterNames.add(clusterName);
           }
         }
-        OSchema schema = db.getMetadata().getSchema();
+        OSchema schema =
+            ((ODatabaseDocumentInternal) db).getMetadata().getImmutableSchemaSnapshot();
         for (OIdentifier className : this.classes) {
           OClass clazz = schema.getClass(className.getStringValue());
           if (clazz == null) {

@@ -4,15 +4,11 @@ import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.common.util.OCallable;
 import com.orientechnologies.orient.core.config.OContextConfiguration;
 import com.orientechnologies.orient.server.OClientConnection;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.Socket;
 import java.util.Map;
 
-public class OHttpResponseImpl extends OHttpResponse {
+public class OHttpResponseImpl extends OHttpResponseAbstract {
 
   public OHttpResponseImpl(
       OutputStream iOutStream,
@@ -216,7 +212,7 @@ public class OHttpResponseImpl extends OHttpResponse {
   }
 
   @Override
-  protected void checkConnection() throws IOException {
+  public void checkConnection() throws IOException {
     final Socket socket;
     if (getConnection().getProtocol() == null || getConnection().getProtocol().getChannel() == null)
       socket = null;

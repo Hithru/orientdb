@@ -33,6 +33,17 @@ public class OArrayNumberSelector extends SimpleNode {
     }
   }
 
+  @Override
+  public void toGenericStatement(StringBuilder builder) {
+    if (inputValue != null) {
+      inputValue.toGenericStatement(builder);
+    } else if (expressionValue != null) {
+      expressionValue.toGenericStatement(builder);
+    } else if (integer != null) {
+      builder.append(PARAMETER_PLACEHOLDER);
+    }
+  }
+
   public Integer getValue(OIdentifiable iCurrentRecord, Object iResult, OCommandContext ctx) {
     Object result = null;
     if (inputValue != null) {

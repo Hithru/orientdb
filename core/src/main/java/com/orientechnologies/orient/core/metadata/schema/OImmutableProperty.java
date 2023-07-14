@@ -19,9 +19,9 @@
  */
 package com.orientechnologies.orient.core.metadata.schema;
 
+import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.orient.core.collate.OCollate;
 import com.orientechnologies.orient.core.index.OIndex;
-import com.orientechnologies.orient.core.index.OIndexDefinition;
 import com.orientechnologies.orient.core.metadata.schema.validation.ValidationBinaryComparable;
 import com.orientechnologies.orient.core.metadata.schema.validation.ValidationCollectionComparable;
 import com.orientechnologies.orient.core.metadata.schema.validation.ValidationLinkbagComparable;
@@ -33,8 +33,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -67,6 +65,8 @@ public class OImmutableProperty implements OProperty {
   private final boolean readOnly;
   private final Comparable<Object> minComparable;
   private final Comparable<Object> maxComparable;
+  private final Set<OIndex> indexes;
+  private final Collection<OIndex> allIndexes;
 
   public OImmutableProperty(OProperty property, OImmutableClass owner) {
     name = property.getName();
@@ -92,13 +92,19 @@ public class OImmutableProperty implements OProperty {
     this.owner = owner;
     id = property.getId();
     readOnly = property.isReadonly();
-
+    Comparable<Object> minComparable = null;
     if (min != null) {
-      if (type.equals(OType.STRING))
-        minComparable = new ValidationStringComparable((Integer) OType.convert(min, Integer.class));
-      else if (type.equals(OType.BINARY))
-        minComparable = new ValidationBinaryComparable((Integer) OType.convert(min, Integer.class));
-      else if (type.equals(OType.DATE)
+      if (type.equals(OType.STRING)) {
+        Integer conv = safeConvert(min, Integer.class, "min");
+        if (conv != null) {
+          minComparable = new ValidationStringComparable(conv);
+        }
+      } else if (type.equals(OType.BINARY)) {
+        Integer conv = safeConvert(min, Integer.class, "min");
+        if (conv != null) {
+          minComparable = new ValidationBinaryComparable(conv);
+        }
+      } else if (type.equals(OType.DATE)
           || type.equals(OType.BYTE)
           || type.equals(OType.SHORT)
           || type.equals(OType.INTEGER)
@@ -106,35 +112,56 @@ public class OImmutableProperty implements OProperty {
           || type.equals(OType.FLOAT)
           || type.equals(OType.DOUBLE)
           || type.equals(OType.DECIMAL)
-          || type.equals(OType.DATETIME))
-        minComparable = (Comparable<Object>) OType.convert(min, type.getDefaultJavaType());
-      else if (type.equals(OType.EMBEDDEDLIST)
+          || type.equals(OType.DATETIME)) {
+        minComparable = (Comparable<Object>) safeConvert(min, type.getDefaultJavaType(), "min");
+      } else if (type.equals(OType.EMBEDDEDLIST)
           || type.equals(OType.EMBEDDEDSET)
           || type.equals(OType.LINKLIST)
-          || type.equals(OType.LINKSET))
-        minComparable =
-            new ValidationCollectionComparable((Integer) OType.convert(min, Integer.class));
-      else if (type.equals(OType.LINKBAG))
-        minComparable =
-            new ValidationLinkbagComparable((Integer) OType.convert(min, Integer.class));
-      else if (type.equals(OType.EMBEDDEDMAP) || type.equals(OType.LINKMAP))
-        minComparable = new ValidationMapComparable((Integer) OType.convert(min, Integer.class));
-      else minComparable = null;
-    } else minComparable = null;
+          || type.equals(OType.LINKSET)) {
+        Integer conv = safeConvert(min, Integer.class, "min");
+        if (conv != null) {
 
+          minComparable = new ValidationCollectionComparable(conv);
+        }
+      } else if (type.equals(OType.LINKBAG)) {
+        Integer conv = safeConvert(min, Integer.class, "min");
+        if (conv != null) {
+
+          minComparable = new ValidationLinkbagComparable(conv);
+        }
+      } else if (type.equals(OType.EMBEDDEDMAP) || type.equals(OType.LINKMAP)) {
+        Integer conv = safeConvert(min, Integer.class, "min");
+        if (conv != null) {
+
+          minComparable = new ValidationMapComparable(conv);
+        }
+      }
+    }
+    this.minComparable = minComparable;
+    Comparable<Object> maxComparable = null;
     if (max != null) {
-      if (type.equals(OType.STRING))
-        maxComparable = new ValidationStringComparable((Integer) OType.convert(max, Integer.class));
-      else if (type.equals(OType.BINARY))
-        maxComparable = new ValidationBinaryComparable((Integer) OType.convert(max, Integer.class));
-      else if (type.equals(OType.DATE)) {
+      if (type.equals(OType.STRING)) {
+        Integer conv = safeConvert(max, Integer.class, "max");
+        if (conv != null) {
+
+          maxComparable = new ValidationStringComparable(conv);
+        }
+      } else if (type.equals(OType.BINARY)) {
+        Integer conv = safeConvert(max, Integer.class, "max");
+        if (conv != null) {
+
+          maxComparable = new ValidationBinaryComparable(conv);
+        }
+      } else if (type.equals(OType.DATE)) {
         // This is needed because a date is valid in any time range of the day.
-        Date maxDate = (Date) OType.convert(max, OType.DATE.getDefaultJavaType());
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(maxDate);
-        cal.add(Calendar.DAY_OF_MONTH, 1);
-        maxDate = new Date(cal.getTime().getTime() - 1);
-        maxComparable = (Comparable) maxDate;
+        Date maxDate = (Date) safeConvert(max, type.getDefaultJavaType(), "max");
+        if (maxDate != null) {
+          Calendar cal = Calendar.getInstance();
+          cal.setTime(maxDate);
+          cal.add(Calendar.DAY_OF_MONTH, 1);
+          maxDate = new Date(cal.getTime().getTime() - 1);
+          maxComparable = (Comparable) maxDate;
+        }
       } else if (type.equals(OType.BYTE)
           || type.equals(OType.SHORT)
           || type.equals(OType.INTEGER)
@@ -142,23 +169,45 @@ public class OImmutableProperty implements OProperty {
           || type.equals(OType.FLOAT)
           || type.equals(OType.DOUBLE)
           || type.equals(OType.DECIMAL)
-          || type.equals(OType.DATETIME))
-        maxComparable = (Comparable<Object>) OType.convert(max, type.getDefaultJavaType());
-      else if (type.equals(OType.EMBEDDEDLIST)
+          || type.equals(OType.DATETIME)) {
+        maxComparable = (Comparable<Object>) safeConvert(max, type.getDefaultJavaType(), "max");
+      } else if (type.equals(OType.EMBEDDEDLIST)
           || type.equals(OType.EMBEDDEDSET)
           || type.equals(OType.LINKLIST)
-          || type.equals(OType.LINKSET))
-        maxComparable =
-            new ValidationCollectionComparable((Integer) OType.convert(max, Integer.class));
-      else if (type.equals(OType.LINKBAG))
-        maxComparable =
-            new ValidationLinkbagComparable((Integer) OType.convert(max, Integer.class));
-      else if (type.equals(OType.EMBEDDEDMAP) || type.equals(OType.LINKMAP))
-        maxComparable = new ValidationMapComparable((Integer) OType.convert(max, Integer.class));
-      else maxComparable = null;
-    } else {
-      maxComparable = null;
+          || type.equals(OType.LINKSET)) {
+        Integer conv = safeConvert(max, Integer.class, "max");
+        if (conv != null) {
+
+          maxComparable = new ValidationCollectionComparable(conv);
+        }
+      } else if (type.equals(OType.LINKBAG)) {
+        Integer conv = safeConvert(max, Integer.class, "max");
+        if (conv != null) {
+
+          maxComparable = new ValidationLinkbagComparable(conv);
+        }
+      } else if (type.equals(OType.EMBEDDEDMAP) || type.equals(OType.LINKMAP)) {
+        Integer conv = safeConvert(max, Integer.class, "max");
+        if (conv != null) {
+          maxComparable = new ValidationMapComparable(conv);
+        }
+      }
     }
+    this.maxComparable = maxComparable;
+    this.indexes = property.getIndexes();
+    this.allIndexes = property.getAllIndexes();
+  }
+
+  private <T> T safeConvert(Object value, Class<T> target, String type) {
+    T mc;
+    try {
+      mc = (T) OType.convert(value, target);
+    } catch (RuntimeException e) {
+      OLogManager.instance()
+          .error(this, "Error initializing %s value check on property %s", e, type, fullName);
+      mc = null;
+    }
+    return mc;
   }
 
   @Override
@@ -325,26 +374,17 @@ public class OImmutableProperty implements OProperty {
 
   @Override
   public Set<OIndex> getIndexes() {
-    return owner.getInvolvedIndexes(name);
+    return indexes;
   }
 
   @Override
   public OIndex getIndex() {
-    Set<OIndex> indexes = owner.getInvolvedIndexes(name);
-    if (indexes != null && !indexes.isEmpty()) return indexes.iterator().next();
-    return null;
+    return indexes.iterator().next();
   }
 
   @Override
   public Collection<OIndex> getAllIndexes() {
-    final Set<OIndex> indexes = owner.getIndexes();
-    final List<OIndex> indexList = new LinkedList<OIndex>();
-    for (final OIndex index : indexes) {
-      final OIndexDefinition indexDefinition = index.getDefinition();
-      if (indexDefinition.getFields().contains(name)) indexList.add(index);
-    }
-
-    return indexList;
+    return this.allIndexes;
   }
 
   @Override

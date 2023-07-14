@@ -11,7 +11,6 @@ import com.orientechnologies.orient.core.db.record.ORecordLazyList;
 import com.orientechnologies.orient.core.db.record.ORecordLazySet;
 import com.orientechnologies.orient.core.exception.OCommandExecutionException;
 import com.orientechnologies.orient.core.id.ORID;
-import com.orientechnologies.orient.core.intent.OIntentMassiveInsert;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OProperty;
 import com.orientechnologies.orient.core.metadata.schema.OType;
@@ -78,14 +77,20 @@ public class OCreateLinkStatement extends OSimpleExecStatement {
 
     final ODatabaseDocument db = (ODatabaseDocument) database.getDatabaseOwner();
 
-    final OClass sourceClass =
-        database.getMetadata().getSchema().getClass(getSourceClass().getStringValue());
+    OClass sourceClass =
+        database
+            .getMetadata()
+            .getImmutableSchemaSnapshot()
+            .getClass(getSourceClass().getStringValue());
     if (sourceClass == null)
       throw new OCommandExecutionException(
           "Source class '" + getSourceClass().getStringValue() + "' not found");
 
-    final OClass destClass =
-        database.getMetadata().getSchema().getClass(getDestClass().getStringValue());
+    OClass destClass =
+        database
+            .getMetadata()
+            .getImmutableSchemaSnapshot()
+            .getClass(getDestClass().getStringValue());
     if (destClass == null)
       throw new OCommandExecutionException(
           "Destination class '" + getDestClass().getStringValue() + "' not found");
@@ -93,7 +98,7 @@ public class OCreateLinkStatement extends OSimpleExecStatement {
     Object value;
 
     String cmd = "select from ";
-    if (!ODocumentHelper.ATTRIBUTE_RID.equals(destField)) {
+    if (destField != null && !ODocumentHelper.ATTRIBUTE_RID.equals(destField.value)) {
       cmd = "select from " + getDestClass() + " where " + destField + " = ";
     }
 
@@ -111,7 +116,6 @@ public class OCreateLinkStatement extends OSimpleExecStatement {
       multipleRelationship = linkType == OType.LINKSET || linkType == OType.LINKLIST;
     else multipleRelationship = false;
 
-    database.declareIntent(new OIntentMassiveInsert());
     try {
       // BROWSE ALL THE RECORDS OF THE SOURCE CLASS
       for (ODocument doc : db.browseClass(sourceClass.getName())) {
@@ -129,13 +133,15 @@ public class OCreateLinkStatement extends OSimpleExecStatement {
             // SEARCH THE DESTINATION RECORD
             target = null;
 
-            if (!ODocumentHelper.ATTRIBUTE_RID.equals(destField) && value instanceof String)
+            if (destField != null
+                && !ODocumentHelper.ATTRIBUTE_RID.equals(destField.value)
+                && value instanceof String)
               if (((String) value).length() == 0) value = null;
               else value = "'" + value + "'";
 
-            OResultSet rs = database.query(cmd + value);
-            result = toList(rs);
-            rs.close();
+            try (OResultSet rs = database.query(cmd + value)) {
+              result = toList(rs);
+            }
 
             if (result == null || result.size() == 0) value = null;
             else if (result.size() > 1)
@@ -203,6 +209,7 @@ public class OCreateLinkStatement extends OSimpleExecStatement {
         if (inverse) {
           // REMOVE THE OLD PROPERTY IF ANY
           OProperty prop = destClass.getProperty(linkName);
+          destClass = db.getMetadata().getSchema().getClass(getDestClass().getStringValue());
           if (prop != null) destClass.dropProperty(linkName);
 
           if (linkType == null) linkType = multipleRelationship ? OType.LINKSET : OType.LINK;
@@ -214,6 +221,7 @@ public class OCreateLinkStatement extends OSimpleExecStatement {
 
           // REMOVE THE OLD PROPERTY IF ANY
           OProperty prop = sourceClass.getProperty(linkName);
+          sourceClass = db.getMetadata().getSchema().getClass(getDestClass().getStringValue());
           if (prop != null) sourceClass.dropProperty(linkName);
 
           // CREATE THE PROPERTY
@@ -223,8 +231,6 @@ public class OCreateLinkStatement extends OSimpleExecStatement {
     } catch (Exception e) {
       throw OException.wrapException(
           new OCommandExecutionException("Error on creation of links"), e);
-    } finally {
-      database.declareIntent(null);
     }
     return total;
   }
@@ -261,6 +267,33 @@ public class OCreateLinkStatement extends OSimpleExecStatement {
       destField.toString(params, builder);
     } else {
       destRecordAttr.toString(params, builder);
+    }
+    if (inverse) {
+      builder.append(" INVERSE");
+    }
+  }
+
+  @Override
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append("CREATE LINK ");
+    name.toGenericStatement(builder);
+    builder.append(" TYPE ");
+    type.toGenericStatement(builder);
+    builder.append(" FROM ");
+    sourceClass.toGenericStatement(builder);
+    builder.append(".");
+    if (sourceField != null) {
+      sourceField.toGenericStatement(builder);
+    } else {
+      sourceRecordAttr.toGenericStatement(builder);
+    }
+    builder.append(" TO ");
+    destClass.toGenericStatement(builder);
+    builder.append(".");
+    if (destField != null) {
+      destField.toGenericStatement(builder);
+    } else {
+      destRecordAttr.toGenericStatement(builder);
     }
     if (inverse) {
       builder.append(" INVERSE");

@@ -6,6 +6,10 @@ import com.orientechnologies.common.collection.OMultiValue;
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
+<<<<<<< HEAD
+=======
+import com.orientechnologies.orient.core.sql.executor.OIndexSearchInfo;
+>>>>>>> develop
 import com.orientechnologies.orient.core.sql.executor.OResult;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -153,6 +157,18 @@ public class OContainsAnyCondition extends OBooleanExpression {
     } else if (rightBlock != null) {
       builder.append("(");
       rightBlock.toString(params, builder);
+      builder.append(")");
+    }
+  }
+
+  public void toGenericStatement(StringBuilder builder) {
+    left.toGenericStatement(builder);
+    builder.append(" CONTAINSANY ");
+    if (right != null) {
+      right.toGenericStatement(builder);
+    } else if (rightBlock != null) {
+      builder.append("(");
+      rightBlock.toGenericStatement(builder);
       builder.append(")");
     }
   }
@@ -350,6 +366,36 @@ public class OContainsAnyCondition extends OBooleanExpression {
       return false;
     }
     return true;
+  }
+
+  @Override
+  public boolean isIndexAware(OIndexSearchInfo info) {
+    if (left.isBaseIdentifier()) {
+      if (info.getField().equals(left.getDefaultAlias().getStringValue())) {
+        if (right.isEarlyCalculated(info.getCtx())) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  @Override
+  public OExpression resolveKeyFrom(OBinaryCondition additional) {
+    if (getRight() != null) {
+      return getRight();
+    } else {
+      throw new UnsupportedOperationException("Cannot execute index query with " + this);
+    }
+  }
+
+  @Override
+  public OExpression resolveKeyTo(OBinaryCondition additional) {
+    if (getRight() != null) {
+      return getRight();
+    } else {
+      throw new UnsupportedOperationException("Cannot execute index query with " + this);
+    }
   }
 }
 /* JavaCC - OriginalChecksum=7992ab9e8e812c6d9358ede8b67b4506 (do not edit this line) */

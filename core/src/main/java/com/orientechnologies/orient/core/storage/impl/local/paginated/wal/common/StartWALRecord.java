@@ -4,6 +4,7 @@ import com.orientechnologies.orient.core.storage.impl.local.paginated.wal.OLogSe
 import com.orientechnologies.orient.core.storage.impl.local.paginated.wal.OWALRecord;
 
 public final class StartWALRecord implements OWALRecord {
+<<<<<<< HEAD
   private volatile OperationIdLSN operationIdLSN;
 
   @Override
@@ -19,6 +20,18 @@ public final class StartWALRecord implements OWALRecord {
   @Override
   public void setOperationIdLsn(OLogSequenceNumber lsn, int operationId) {
     this.operationIdLSN = new OperationIdLSN(operationId, lsn);
+=======
+  private volatile OLogSequenceNumber logSequenceNumber;
+
+  @Override
+  public OLogSequenceNumber getLsn() {
+    return logSequenceNumber;
+  }
+
+  @Override
+  public void setLsn(OLogSequenceNumber lsn) {
+    this.logSequenceNumber = lsn;
+>>>>>>> develop
   }
 
   @Override

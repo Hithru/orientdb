@@ -6,13 +6,11 @@ import com.orientechnologies.orient.core.db.OScenarioThreadLocal;
 import com.orientechnologies.orient.core.id.ORecordId;
 import com.orientechnologies.orient.core.index.OIndex;
 import com.orientechnologies.orient.core.index.OIndexDefinition;
-import com.orientechnologies.orient.core.index.OIndexManagerAbstract;
 import com.orientechnologies.orient.core.index.OIndexManagerShared;
 import com.orientechnologies.orient.core.index.OSimpleKeyIndexDefinition;
 import com.orientechnologies.orient.core.record.ORecordInternal;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.OCommandExecutorSQLCreateIndex;
-import com.orientechnologies.orient.core.storage.OAutoshardedStorage;
 import com.orientechnologies.orient.core.storage.OStorage;
 import com.orientechnologies.orient.server.distributed.impl.ODatabaseDocumentDistributed;
 
@@ -24,13 +22,12 @@ public class OIndexManagerDistributed extends OIndexManagerShared {
   }
 
   @Override
-  public OIndexManagerAbstract load(ODatabaseDocumentInternal database) {
+  public void load(ODatabaseDocumentInternal database) {
     OScenarioThreadLocal.executeAsDistributed(
         () -> {
           super.load(database);
           return null;
         });
-    return this;
   }
 
   public OIndex createIndex(
@@ -116,18 +113,17 @@ public class OIndexManagerDistributed extends OIndexManagerShared {
 
     ORecordInternal.setIdentity(
         getDocument(),
-        new ORecordId(database.getStorage().getConfiguration().getIndexMgrRecordId()));
+        new ORecordId(database.getStorageInfo().getConfiguration().getIndexMgrRecordId()));
 
     if (progressListener != null) progressListener.onCompletition(this, true);
 
     reload();
 
-    return super.preProcessBeforeReturn(database, super.getIndex(database, iName));
+    return super.getIndex(database, iName);
   }
 
   private boolean isDistributedCommand(ODatabaseDocumentInternal database) {
-    return database.getStorage().isDistributed()
-        && !((OAutoshardedStorage) database.getStorage()).isLocalEnv();
+    return !database.isLocalEnv();
   }
 
   public void dropIndex(ODatabaseDocumentInternal database, final String iIndexName) {
@@ -145,7 +141,7 @@ public class OIndexManagerDistributed extends OIndexManagerShared {
     sendCommand(database, dropIndexDDL);
     ORecordInternal.setIdentity(
         getDocument(),
-        new ORecordId(database.getStorage().getConfiguration().getIndexMgrRecordId()));
+        new ORecordId(database.getStorageInfo().getConfiguration().getIndexMgrRecordId()));
 
     reload();
   }

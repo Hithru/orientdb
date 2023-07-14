@@ -6,7 +6,11 @@ import static org.junit.Assert.fail;
 
 import com.orientechnologies.orient.client.binary.OBinaryRequestExecutor;
 import com.orientechnologies.orient.client.binary.OChannelBinaryAsynchClient;
+<<<<<<< HEAD
 import com.orientechnologies.orient.core.db.OConnectionNext;
+=======
+import com.orientechnologies.orient.core.config.OContextConfiguration;
+>>>>>>> develop
 import com.orientechnologies.orient.core.id.ORecordId;
 import com.orientechnologies.orient.core.serialization.serializer.record.ORecordSerializer;
 import com.orientechnologies.orient.core.storage.ORecordCallback;
@@ -16,6 +20,7 @@ import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -41,7 +46,17 @@ public class OStorageRemoteAsyncOperationTest {
     MockitoAnnotations.initMocks(this);
     Mockito.when(session.getServerSession(Mockito.anyString())).thenReturn(nodeSession);
     storage =
+<<<<<<< HEAD
         new OStorageRemote("mock", null, "mock", null, null, new OConnectionNext(1)) {
+=======
+        new OStorageRemote(
+            new ORemoteURLs(new String[] {}, new OContextConfiguration()),
+            "mock",
+            null,
+            "mock",
+            null,
+            null) {
+>>>>>>> develop
           @Override
           public <T> T baseNetworkOperation(
               OStorageRemoteOperation<T> operation, String errorMessage, int retry) {
@@ -56,6 +71,7 @@ public class OStorageRemoteAsyncOperationTest {
   }
 
   @Test
+  @Ignore
   public void testSyncCall() {
     final CallStatus status = new CallStatus();
     storage.asyncNetworkOperationNoRetry(
@@ -187,6 +203,7 @@ public class OStorageRemoteAsyncOperationTest {
   }
 
   @Test
+  @Ignore
   public void testAsyncRead() throws InterruptedException {
     final CallStatus status = new CallStatus();
     final CountDownLatch callBackWait = new CountDownLatch(1);

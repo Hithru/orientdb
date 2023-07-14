@@ -23,7 +23,6 @@ import com.orientechnologies.common.listener.OProgressListener;
 import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.common.util.OArrays;
 import com.orientechnologies.common.util.OCommonConst;
-import com.orientechnologies.orient.core.command.OCommandResultListener;
 import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
 import com.orientechnologies.orient.core.db.ODatabaseInternal;
 import com.orientechnologies.orient.core.db.ODatabaseRecordThreadLocal;
@@ -47,11 +46,12 @@ import com.orientechnologies.orient.core.metadata.security.OSecurityShared;
 import com.orientechnologies.orient.core.record.OElement;
 import com.orientechnologies.orient.core.record.ORecord;
 import com.orientechnologies.orient.core.record.impl.ODocument;
+<<<<<<< HEAD
+=======
+import com.orientechnologies.orient.core.sharding.auto.OAutoShardingClusterSelectionStrategy;
+>>>>>>> develop
 import com.orientechnologies.orient.core.sql.executor.OResult;
 import com.orientechnologies.orient.core.sql.executor.OResultSet;
-import com.orientechnologies.orient.core.sql.query.OSQLAsynchQuery;
-import com.orientechnologies.orient.core.storage.OCluster;
-import com.orientechnologies.orient.core.storage.OStorage;
 import com.orientechnologies.orient.core.storage.impl.local.OAbstractPaginatedStorage;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -702,7 +702,7 @@ public abstract class OClassImpl implements OClass {
     }
   }
 
-  protected abstract OClass removeBaseClassInternal(final OClass baseClass);
+  public abstract OClass removeBaseClassInternal(final OClass baseClass);
 
   public float getOverSize() {
     acquireSchemaReadLock();
@@ -782,19 +782,11 @@ public abstract class OClassImpl implements OClass {
 
   @Override
   public int hashCode() {
-    int sh = hashCode;
-    if (sh != 0) return sh;
-
-    acquireSchemaReadLock();
-    try {
-      sh = hashCode;
-      if (sh != 0) return sh;
-
-      calculateHashCode();
-      return hashCode;
-    } finally {
-      releaseSchemaReadLock();
+    String name = this.name;
+    if (name != null) {
+      return name.hashCode();
     }
+    return 0;
   }
 
   public int compareTo(final OClass o) {
@@ -837,7 +829,9 @@ public abstract class OClassImpl implements OClass {
     try {
 
       for (int id : clusterIds) {
+        if (id < 0) continue;
         final String clusterName = db.getClusterNameById(id);
+        if (clusterName == null) continue;
         db.checkForClusterPermissions(clusterName);
 
         final ORecordIteratorCluster<ORecord> iteratorCluster = db.browseCluster(clusterName);
@@ -1042,13 +1036,6 @@ public abstract class OClassImpl implements OClass {
 
   public abstract OClassImpl setEncryption(final String iValue);
 
-  protected void setEncryptionInternal(ODatabaseDocumentInternal database, final String value) {
-    for (int cl : getClusterIds()) {
-      final OStorage storage = database.getStorage();
-      storage.setClusterAttribute(cl, OCluster.ATTRIBUTES.ENCRYPTION, value);
-    }
-  }
-
   public OIndex createIndex(final String iName, final INDEX_TYPE iType, final String... fields) {
     return createIndex(iName, iType.name(), fields);
   }
@@ -1233,6 +1220,33 @@ public abstract class OClassImpl implements OClass {
     return isSubClassOf(VERTEX_CLASS_NAME);
   }
 
+<<<<<<< HEAD
+=======
+  public void onPostIndexManagement() {
+    final OIndex autoShardingIndex = getAutoShardingIndex();
+    if (autoShardingIndex != null) {
+      if (!getDatabase().isRemote()) {
+        // OVERRIDE CLUSTER SELECTION
+        acquireSchemaWriteLock();
+        try {
+          this.clusterSelection =
+              new OAutoShardingClusterSelectionStrategy(this, autoShardingIndex);
+        } finally {
+          releaseSchemaWriteLock();
+        }
+      }
+    } else if (clusterSelection instanceof OAutoShardingClusterSelectionStrategy) {
+      // REMOVE AUTO SHARDING CLUSTER SELECTION
+      acquireSchemaWriteLock();
+      try {
+        this.clusterSelection = owner.getClusterSelectionFactory().newInstanceOfDefaultClass();
+      } finally {
+        releaseSchemaWriteLock();
+      }
+    }
+  }
+
+>>>>>>> develop
   @Override
   public void getIndexes(final Collection<OIndex> indexes) {
     acquireSchemaReadLock();
@@ -1291,37 +1305,23 @@ public abstract class OClassImpl implements OClass {
   public void fireDatabaseMigration(
       final ODatabaseDocument database, final String propertyName, final OType type) {
     final boolean strictSQL =
-        ((ODatabaseInternal) database).getStorage().getConfiguration().isStrictSql();
+        ((ODatabaseInternal) database).getStorageInfo().getConfiguration().isStrictSql();
 
-    OCommandResultListener updateListener =
-        new OCommandResultListener() {
-
-          @Override
-          public boolean result(Object iRecord) {
-            final ODocument record = ((OIdentifiable) iRecord).getRecord();
-            record.field(propertyName, record.field(propertyName), type);
-            database.save(record);
-            return true;
-          }
-
-          @Override
-          public void end() {}
-
-          @Override
-          public Object getResult() {
-            return null;
-          }
-        };
-    database.query(
-        new OSQLAsynchQuery<Object>(
+    try (OResultSet result =
+        database.query(
             "select from "
                 + getEscapedName(name, strictSQL)
                 + " where "
                 + getEscapedName(propertyName, strictSQL)
                 + ".type() <> \""
                 + type.name()
-                + "\"",
-            updateListener));
+                + "\"")) {
+      while (result.hasNext()) {
+        ODocument record = (ODocument) result.next().getElement().get();
+        record.field(propertyName, record.field(propertyName), type);
+        database.save(record);
+      }
+    }
   }
 
   public void firePropertyNameMigration(
@@ -1330,34 +1330,22 @@ public abstract class OClassImpl implements OClass {
       final String newPropertyName,
       final OType type) {
     final boolean strictSQL =
-        ((ODatabaseInternal) database).getStorage().getConfiguration().isStrictSql();
+        ((ODatabaseInternal) database).getStorageInfo().getConfiguration().isStrictSql();
 
-    database.query(
-        new OSQLAsynchQuery<Object>(
+    try (OResultSet result =
+        database.query(
             "select from "
                 + getEscapedName(name, strictSQL)
                 + " where "
                 + getEscapedName(propertyName, strictSQL)
-                + " is not null ",
-            new OCommandResultListener() {
-
-              @Override
-              public boolean result(Object iRecord) {
-                final ODocument record = ((OIdentifiable) iRecord).getRecord();
-                record.setFieldType(propertyName, type);
-                record.field(newPropertyName, record.field(propertyName), type);
-                database.save(record);
-                return true;
-              }
-
-              @Override
-              public void end() {}
-
-              @Override
-              public Object getResult() {
-                return null;
-              }
-            }));
+                + " is not null ")) {
+      while (result.hasNext()) {
+        ODocument record = (ODocument) result.next().getElement().get();
+        record.setFieldType(propertyName, type);
+        record.field(newPropertyName, record.field(propertyName), type);
+        database.save(record);
+      }
+    }
   }
 
   public void checkPersistentPropertyType(
@@ -1368,7 +1356,7 @@ public abstract class OClassImpl implements OClass {
     if (OType.ANY.equals(type)) {
       return;
     }
-    final boolean strictSQL = database.getStorage().getConfiguration().isStrictSql();
+    final boolean strictSQL = database.getStorageInfo().getConfiguration().isStrictSql();
 
     final StringBuilder builder = new StringBuilder(256);
     builder.append("select from ");
@@ -1514,11 +1502,10 @@ public abstract class OClassImpl implements OClass {
     newName = newName.toLowerCase(Locale.ENGLISH);
 
     final ODatabaseDocumentInternal database = getDatabase();
-    final OStorage storage = database.getStorage();
 
-    if (storage.getClusterIdByName(newName) != -1) return;
+    if (database.getClusterIdByName(newName) != -1) return;
 
-    final int clusterId = storage.getClusterIdByName(oldName);
+    final int clusterId = database.getClusterIdByName(oldName);
     if (clusterId == -1) return;
 
     if (!hasClusterId(clusterId)) return;
@@ -1526,17 +1513,15 @@ public abstract class OClassImpl implements OClass {
     database.command("alter cluster `" + oldName + "` NAME \"" + newName + "\"").close();
   }
 
-  protected void addPolymorphicClusterId(int clusterId) {
+  protected void onlyAddPolymorphicClusterId(int clusterId) {
     if (Arrays.binarySearch(polymorphicClusterIds, clusterId) >= 0) return;
 
     polymorphicClusterIds = OArrays.copyOf(polymorphicClusterIds, polymorphicClusterIds.length + 1);
     polymorphicClusterIds[polymorphicClusterIds.length - 1] = clusterId;
     Arrays.sort(polymorphicClusterIds);
 
-    addClusterIdToIndexes(clusterId);
-
     for (OClassImpl superClass : superClasses) {
-      superClass.addPolymorphicClusterId(clusterId);
+      superClass.onlyAddPolymorphicClusterId(clusterId);
     }
   }
 
@@ -1562,20 +1547,7 @@ public abstract class OClassImpl implements OClass {
     return clId;
   }
 
-  private void addClusterIdToIndexes(int iId) {
-    ODatabaseDocumentInternal database = ODatabaseRecordThreadLocal.instance().getIfDefined();
-    if (database != null
-        && database.getStorage().getUnderlying() instanceof OAbstractPaginatedStorage) {
-      final String clusterName = getDatabase().getClusterNameById(iId);
-      final List<String> indexesToAdd = new ArrayList<String>();
-
-      for (OIndex index : getIndexes()) indexesToAdd.add(index.getName());
-
-      final OIndexManagerAbstract indexManager =
-          getDatabase().getMetadata().getIndexManagerInternal();
-      for (String indexName : indexesToAdd) indexManager.addClusterToIndex(clusterName, indexName);
-    }
-  }
+  protected abstract void addClusterIdToIndexes(int iId);
 
   /**
    * Adds a base class to the current one. It adds also the base class cluster ids to the
@@ -1583,7 +1555,7 @@ public abstract class OClassImpl implements OClass {
    *
    * @param iBaseClass The base class to add.
    */
-  protected OClass addBaseClass(final OClassImpl iBaseClass) {
+  public OClass addBaseClass(final OClassImpl iBaseClass) {
     checkRecursion(iBaseClass);
 
     if (subclasses == null) subclasses = new ArrayList<OClass>();
@@ -1656,6 +1628,25 @@ public abstract class OClassImpl implements OClass {
       removePolymorphicClusterId(clusterId);
   }
 
+  protected void onlyRemovePolymorphicClusterId(final int clusterId) {
+    final int index = Arrays.binarySearch(polymorphicClusterIds, clusterId);
+    if (index < 0) return;
+
+    if (index < polymorphicClusterIds.length - 1)
+      System.arraycopy(
+          polymorphicClusterIds,
+          index + 1,
+          polymorphicClusterIds,
+          index,
+          polymorphicClusterIds.length - (index + 1));
+
+    polymorphicClusterIds = Arrays.copyOf(polymorphicClusterIds, polymorphicClusterIds.length - 1);
+
+    for (OClassImpl superClass : superClasses) {
+      superClass.onlyRemovePolymorphicClusterId(clusterId);
+    }
+  }
+
   protected void removePolymorphicClusterId(final int clusterId) {
     final int index = Arrays.binarySearch(polymorphicClusterIds, clusterId);
     if (index < 0) return;
@@ -1677,7 +1668,7 @@ public abstract class OClassImpl implements OClass {
   }
 
   private void removeClusterFromIndexes(final int iId) {
-    if (getDatabase().getStorage().getUnderlying() instanceof OAbstractPaginatedStorage) {
+    if (getDatabase().getStorage() instanceof OAbstractPaginatedStorage) {
       final String clusterName = getDatabase().getClusterNameById(iId);
       final List<String> indexesToRemove = new ArrayList<String>();
 

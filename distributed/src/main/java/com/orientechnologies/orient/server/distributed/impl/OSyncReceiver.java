@@ -16,7 +16,7 @@ import java.io.PipedOutputStream;
 import java.util.concurrent.CountDownLatch;
 
 public class OSyncReceiver implements Runnable {
-  private ODistributedAbstractPlugin distributed;
+  private ODistributedPlugin distributed;
   private final String databaseName;
   private final ODistributedDatabaseChunk firstChunk;
   private final String iNode;
@@ -28,7 +28,7 @@ public class OSyncReceiver implements Runnable {
   private volatile boolean finished = false;
 
   public OSyncReceiver(
-      ODistributedAbstractPlugin distributed,
+      ODistributedPlugin distributed,
       String databaseName,
       ODistributedDatabaseChunk firstChunk,
       String iNode,
@@ -63,7 +63,11 @@ public class OSyncReceiver implements Runnable {
   public void run() {
     try {
       Thread.currentThread()
-          .setName("OrientDB installDatabase node=" + distributed.nodeName + " db=" + databaseName);
+          .setName(
+              "OrientDB installDatabase node="
+                  + distributed.getLocalNodeName()
+                  + " db="
+                  + databaseName);
       ODistributedDatabaseChunk chunk = firstChunk;
 
       output = new PipedOutputStream();
@@ -94,7 +98,7 @@ public class OSyncReceiver implements Runnable {
             else if (result instanceof Exception) {
               ODistributedServerLog.error(
                   this,
-                  distributed.nodeName,
+                  distributed.getLocalNodeName(),
                   iNode,
                   ODistributedServerLog.DIRECTION.IN,
                   "error on installing database %s in %s (chunk #%d)",
@@ -111,7 +115,7 @@ public class OSyncReceiver implements Runnable {
 
         ODistributedServerLog.info(
             this,
-            distributed.nodeName,
+            distributed.getLocalNodeName(),
             null,
             ODistributedServerLog.DIRECTION.NONE,
             "Database copied correctly, size=%s",
@@ -125,7 +129,7 @@ public class OSyncReceiver implements Runnable {
         } catch (IOException e) {
           ODistributedServerLog.warn(
               this,
-              distributed.nodeName,
+              distributed.getLocalNodeName(),
               null,
               ODistributedServerLog.DIRECTION.NONE,
               "Error on closing sync piped stream ",
@@ -136,7 +140,7 @@ public class OSyncReceiver implements Runnable {
     } catch (Exception e) {
       ODistributedServerLog.error(
           this,
-          distributed.nodeName,
+          distributed.getLocalNodeName(),
           null,
           ODistributedServerLog.DIRECTION.NONE,
           "Error on transferring database '%s' ",

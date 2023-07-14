@@ -31,6 +31,16 @@ public class OUnwind extends SimpleNode {
     }
   }
 
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append("UNWIND ");
+    for (int i = 0; i < items.size(); i++) {
+      if (i > 0) {
+        builder.append(", ");
+      }
+      items.get(i).toGenericStatement(builder);
+    }
+  }
+
   public OUnwind copy() {
     OUnwind result = new OUnwind(-1);
     result.items = items.stream().map(x -> x.copy()).collect(Collectors.toList());
@@ -56,6 +66,10 @@ public class OUnwind extends SimpleNode {
 
   public List<OIdentifier> getItems() {
     return items;
+  }
+
+  public void addItem(OIdentifier iter) {
+    this.items.add(iter);
   }
 
   public OResult serialize() {

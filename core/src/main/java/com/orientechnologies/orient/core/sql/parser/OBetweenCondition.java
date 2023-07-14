@@ -150,6 +150,14 @@ public class OBetweenCondition extends OBooleanExpression {
     third.toString(params, builder);
   }
 
+  public void toGenericStatement(StringBuilder builder) {
+    first.toGenericStatement(builder);
+    builder.append(" BETWEEN ");
+    second.toGenericStatement(builder);
+    builder.append(" AND ");
+    third.toGenericStatement(builder);
+  }
+
   @Override
   public boolean supportsBasicCalculation() {
     return true;

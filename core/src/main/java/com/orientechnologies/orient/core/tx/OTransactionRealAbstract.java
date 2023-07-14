@@ -35,24 +35,13 @@ import com.orientechnologies.orient.core.record.ORecord;
 import com.orientechnologies.orient.core.record.ORecordInternal;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.record.impl.ODocumentInternal;
-import com.orientechnologies.orient.core.storage.OBasicTransaction;
 import com.orientechnologies.orient.core.tx.OTransactionIndexChanges.OPERATION;
 import com.orientechnologies.orient.core.tx.OTransactionIndexChangesPerKey.OTransactionIndexEntry;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Set;
 
 public abstract class OTransactionRealAbstract extends OTransactionAbstract
     implements OTransactionInternal {
@@ -75,7 +64,7 @@ public abstract class OTransactionRealAbstract extends OTransactionAbstract
 
   private Optional<List<byte[]>> serializedOperations = Optional.empty();
 
-  protected OTransactionRealAbstract(ODatabaseDocumentInternal database, int id) {
+  protected OTransactionRealAbstract(final ODatabaseDocumentInternal database, final int id) {
     super(database);
     this.id = id;
   }
@@ -89,24 +78,22 @@ public abstract class OTransactionRealAbstract extends OTransactionAbstract
 
   public void close() {
     super.close();
-
     for (final ORecordOperation recordOperation : getRecordOperations()) {
       final ORecord record = recordOperation.getRecord();
       if (record instanceof ODocument) {
         final ODocument document = (ODocument) record;
-
         if (document.isDirty()) {
           document.undo();
         }
-
         changedDocuments.remove(document);
       }
     }
 
     for (ODocument changedDocument : changedDocuments) {
-      if (!changedDocument.isEmbedded()) changedDocument.undo();
+      if (!changedDocument.isEmbedded()) {
+        changedDocument.undo();
+      }
     }
-
     changedDocuments.clear();
     updatedRids.clear();
     allEntries.clear();
@@ -116,7 +103,6 @@ public abstract class OTransactionRealAbstract extends OTransactionAbstract
     status = TXSTATUS.INVALID;
 
     database.setDefaultTransactionMode(getNoTxLocks());
-
     userData.clear();
   }
 
@@ -141,21 +127,22 @@ public abstract class OTransactionRealAbstract extends OTransactionAbstract
     return allEntries.values();
   }
 
-  public ORecordOperation getRecordEntry(ORID rid) {
+  public ORecordOperation getRecordEntry(ORID ridPar) {
+    ORID rid = ridPar;
     ORecordOperation entry;
     do {
       entry = allEntries.get(rid);
       if (entry == null) {
         rid = updatedRids.get(rid);
       }
-    } while (entry == null && rid != null);
+    } while (entry == null && rid != null && !rid.equals(ridPar));
     return entry;
   }
 
   public ORecord getRecord(final ORID rid) {
     final ORecordOperation e = getRecordEntry(rid);
     if (e != null)
-      if (e.type == ORecordOperation.DELETED) return OBasicTransaction.DELETED_RECORD;
+      if (e.type == ORecordOperation.DELETED) return OTransactionAbstract.DELETED_RECORD;
       else return e.getRecord();
     return null;
   }
@@ -176,7 +163,8 @@ public abstract class OTransactionRealAbstract extends OTransactionAbstract
         if (entry.type == ORecordOperation.CREATED)
           if (entry.getRecord() != null && entry.getRecord() instanceof ODocument) {
             if (iPolymorphic) {
-              if (iClass.isSuperClassOf(((ODocument) entry.getRecord()).getSchemaClass()))
+              if (iClass.isSuperClassOf(
+                  ODocumentInternal.getImmutableSchemaClass(((ODocument) entry.getRecord()))))
                 result.add(entry);
             } else if (iClass.getName().equals(((ODocument) entry.getRecord()).getClassName()))
               result.add(entry);
@@ -269,7 +257,7 @@ public abstract class OTransactionRealAbstract extends OTransactionAbstract
   }
 
   public OTransactionIndexChanges getIndexChangesInternal(final String indexName) {
-    if (getDatabase().getStorage().isRemote()) return null;
+    if (getDatabase().isRemote()) return null;
     return getIndexChanges(indexName);
   }
 
@@ -397,10 +385,11 @@ public abstract class OTransactionRealAbstract extends OTransactionAbstract
     }
   }
 
-  protected void checkTransaction() {
-    if (status == TXSTATUS.INVALID)
+  protected void checkTransactionValid() {
+    if (status == TXSTATUS.INVALID) {
       throw new OTransactionException(
           "Invalid state of the transaction. The transaction must be begun.");
+    }
   }
 
   protected ODocument serializeIndexChangeEntry(
@@ -430,7 +419,7 @@ public abstract class OTransactionRealAbstract extends OTransactionAbstract
       for (OTransactionIndexEntry e : entry.getEntriesAsList()) {
 
         final ODocument changeDoc = new ODocument().setAllowChainedAccess(false);
-        ODocumentInternal.addOwner((ODocument) changeDoc, indexDoc);
+        ODocumentInternal.addOwner(changeDoc, indexDoc);
 
         // SERIALIZE OPERATION
         changeDoc.field("o", e.getOperation().ordinal());
@@ -492,7 +481,6 @@ public abstract class OTransactionRealAbstract extends OTransactionAbstract
     for (Dependency dependency : fieldDependencies)
       switch (dependency) {
         case Unknown:
-          return true;
         case Yes:
           return true;
         case No:
@@ -625,8 +613,13 @@ public abstract class OTransactionRealAbstract extends OTransactionAbstract
       if (op.getValue().type == ORecordOperation.CREATED) {
         ORecordId oldNew =
             new ORecordId(op.getKey().getClusterId(), op.getKey().getClusterPosition());
+<<<<<<< HEAD
         updatedRids.remove(op.getValue().getRID());
         updateIdentityAfterCommit(op.getValue().getRID(), oldNew);
+=======
+        updateIdentityAfterCommit(op.getValue().getRID(), oldNew);
+        updatedRids.remove(op.getValue().getRID());
+>>>>>>> develop
       }
     }
   }

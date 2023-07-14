@@ -2,6 +2,7 @@
 /* JavaCCOptions:MULTI=true,NODE_USES_PARSER=false,VISITOR=true,TRACK_TOKENS=true,NODE_PREFIX=O,NODE_EXTENDS=,NODE_FACTORY=,SUPPORT_CLASS_VISIBILITY_PUBLIC=true */
 package com.orientechnologies.orient.core.sql.parser;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -79,6 +80,62 @@ public class OInsertBody extends SimpleNode {
     }
   }
 
+  public void toGenericStatement(StringBuilder builder) {
+
+    if (identifierList != null) {
+      builder.append("(");
+      boolean first = true;
+      for (OIdentifier item : identifierList) {
+        if (!first) {
+          builder.append(", ");
+        }
+        item.toGenericStatement(builder);
+        first = false;
+      }
+      builder.append(") VALUES ");
+      if (valueExpressions != null) {
+        boolean firstList = true;
+        for (List<OExpression> itemList : valueExpressions) {
+          if (firstList) {
+            builder.append("(");
+          } else {
+            builder.append("),(");
+          }
+          first = true;
+          for (OExpression item : itemList) {
+            if (!first) {
+              builder.append(", ");
+            }
+            item.toGenericStatement(builder);
+            first = false;
+          }
+          firstList = false;
+        }
+      }
+      builder.append(")");
+    }
+
+    if (setExpressions != null) {
+      builder.append("SET ");
+      boolean first = true;
+      for (OInsertSetExpression item : setExpressions) {
+        if (!first) {
+          builder.append(", ");
+        }
+        item.toGenericStatement(builder);
+        first = false;
+      }
+    }
+
+    if (content != null) {
+      builder.append("CONTENT ");
+      content.toGenericStatement(builder);
+    } else if (contentInputParam != null) {
+      builder.append("CONTENT ");
+      contentInputParam.toGenericStatement(builder);
+    }
+  }
+
   public OInsertBody copy() {
     OInsertBody result = new OInsertBody(-1);
     result.identifierList =
@@ -136,12 +193,33 @@ public class OInsertBody extends SimpleNode {
     return identifierList;
   }
 
+  public void addIdentifier(OIdentifier identifier) {
+    if (this.identifierList == null) {
+      this.identifierList = new ArrayList<>();
+    }
+    this.identifierList.add(identifier);
+  }
+
   public List<List<OExpression>> getValueExpressions() {
     return valueExpressions;
   }
 
+  public void addValueExpression(List<OExpression> exp) {
+    if (this.valueExpressions == null) {
+      this.valueExpressions = new ArrayList<>();
+    }
+    this.valueExpressions.add(exp);
+  }
+
   public List<OInsertSetExpression> getSetExpressions() {
     return setExpressions;
+  }
+
+  public void addInsertSetExpression(OInsertSetExpression exp) {
+    if (this.setExpressions == null) {
+      this.setExpressions = new ArrayList<>();
+    }
+    this.setExpressions.add(exp);
   }
 
   public OJson getContent() {

@@ -8,8 +8,6 @@ import com.orientechnologies.common.io.OIOUtils;
 import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.orient.core.Orient;
 import com.orientechnologies.orient.core.db.ODatabaseSession;
-import com.orientechnologies.orient.core.db.ODatabaseType;
-import com.orientechnologies.orient.core.db.OrientDBConfig;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.server.config.OServerConfiguration;
 import com.orientechnologies.orient.server.config.OServerHandlerConfiguration;
@@ -44,7 +42,7 @@ public class OServerDatabaseOperationsTest {
     OServerUserConfiguration rootUser = new OServerUserConfiguration();
     rootUser.name = "root";
     rootUser.password = "root";
-    rootUser.resources = "list";
+    rootUser.resources = "server.listDatabases";
     conf.users = new OServerUserConfiguration[] {rootUser};
     server = new OServer(false);
     server.setServerRootDirectory(SERVER_DIRECTORY);
@@ -69,12 +67,14 @@ public class OServerDatabaseOperationsTest {
 
   @Test
   public void testServerLoginDatabase() {
-    server.serverLogin("root", "root", "list");
+    assertNotNull(server.authenticateUser("root", "root", "server.listDatabases"));
   }
 
   @Test
   public void testCreateOpenDatabase() {
-    server.createDatabase("test", ODatabaseType.MEMORY, OrientDBConfig.defaultConfig());
+    server
+        .getContext()
+        .execute("create database test memory users (admin identified by 'admin' role admin)");
     assertTrue(server.existsDatabase("test"));
     ODatabaseSession session = server.openDatabase("test");
     assertNotNull(session);

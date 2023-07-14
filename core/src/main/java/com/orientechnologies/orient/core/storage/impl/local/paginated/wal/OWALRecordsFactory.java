@@ -112,7 +112,10 @@ public final class OWALRecordsFactory {
 
   public WriteableWALRecord fromStream(byte[] content) {
     int recordId = OShortSerializer.INSTANCE.deserializeNative(content, RECORD_ID_OFFSET);
+<<<<<<< HEAD
     int operationId = OIntegerSerializer.INSTANCE.deserializeNative(content, OPERATION_ID_OFFSET);
+=======
+>>>>>>> develop
 
     if (recordId < 0) {
       final int originalLen =
@@ -133,7 +136,10 @@ public final class OWALRecordsFactory {
     final WriteableWALRecord walRecord = walRecordById(recordId);
 
     walRecord.fromStream(content, METADATA_SIZE);
+<<<<<<< HEAD
     walRecord.setOperationIdLsn(null, operationId);
+=======
+>>>>>>> develop
 
     if (walRecord.getId() != recordId) {
       throw new IllegalStateException(
@@ -164,6 +170,9 @@ public final class OWALRecordsFactory {
       case ATOMIC_UNIT_END_RECORD:
         walRecord = new OAtomicUnitEndRecord();
         break;
+      case ATOMIC_UNIT_END_RECORD_WITH_PAGE_LSNS:
+        walRecord = new AtomicUnitEndRecordWithPageLSNs();
+        break;
       case FILE_CREATED_WAL_RECORD:
         walRecord = new OFileCreatedWALRecord();
         break;
@@ -176,13 +185,426 @@ public final class OWALRecordsFactory {
       case EMPTY_WAL_RECORD:
         walRecord = new EmptyWALRecord();
         break;
+<<<<<<< HEAD
+=======
+      case CLUSTER_POSITION_MAP_INIT_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CLUSTER_POSITION_MAP_ADD_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CLUSTER_POSITION_MAP_ALLOCATE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CLUSTER_POSITION_MAP_TRUNCATE_LAST_ENTRY_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CLUSTER_POSITION_MAP_UPDATE_ENTRY_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CLUSTER_POSITION_MAP_UPDATE_STATUS_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CLUSTER_PAGE_INIT_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CLUSTER_PAGE_APPEND_RECORD_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CLUSTER_PAGE_REPLACE_RECORD_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CLUSTER_PAGE_DELETE_RECORD_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CLUSTER_PAGE_SET_NEXT_PAGE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CLUSTER_PAGE_SET_PREV_PAGE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CLUSTER_PAGE_SET_RECORD_LONG_VALUE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case PAGINATED_CLUSTER_STATE_V0_SET_SIZE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case PAGINATED_CLUSTER_STATE_V0_SET_RECORDS_SIZE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case PAGINATED_CLUSTER_STATE_V0_SET_FREE_LIST_PAGE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case PAGINATED_CLUSTER_STATE_V1_SET_SIZE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case PAGINATED_CLUSTER_STATE_V1_SET_RECORDS_SIZE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case PAGINATED_CLUSTER_STATE_V1_SET_FREE_LIST_PAGE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case PAGINATED_CLUSTER_STATE_V1_SET_FILE_SIZE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case PAGINATED_CLUSTER_STATE_V2_SET_SIZE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case PAGINATED_CLUSTER_STATE_V2_SET_RECORDS_SIZE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case PAGINATED_CLUSTER_STATE_V2_SET_FREE_LIST_PAGE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case PAGINATED_CLUSTER_STATE_V2_SET_FILE_SIZE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_BUCKET_SINGLE_VALUE_V1_INIT_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_BUCKET_SINGLE_VALUE_V1_ADD_LEAF_ENTRY_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_BUCKET_SINGLE_VALUE_V1_ADD_NON_LEAF_ENTRY_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_BUCKET_SINGLE_VALUE_V1_REMOVE_LEAF_ENTRY_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_BUCKET_SINGLE_VALUE_V1_REMOVE_NON_LEAF_ENTRY_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_BUCKET_SINGLE_VALUE_V1_ADD_ALL_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_BUCKET_SINGLE_VALUE_V1_SHRINK_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_BUCKET_SINGLE_VALUE_V1_UPDATE_VALUE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_BUCKET_SINGLE_VALUE_V1_SET_LEFT_SIBLING_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_BUCKET_SINGLE_VALUE_V1_SET_RIGHT_SIBLING_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_NULL_BUCKET_SINGLE_VALUE_V1_INIT_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_NULL_BUCKET_SINGLE_VALUE_V1_SET_VALUE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_NULL_BUCKET_SINGLE_VALUE_V1_REMOVE_VALUE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_ENTRY_POINT_SINGLE_VALUE_V1_INIT_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_ENTRY_POINT_SINGLE_VALUE_V1_SET_TREE_SIZE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_ENTRY_POINT_SINGLE_VALUE_V1_SET_PAGES_SIZE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case WALRecordTypes.CELL_BTREE_BUCKET_SINGLE_VALUE_V1_SWITCH_BUCKET_TYPE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_BUCKET_SINGLE_VALUE_V3_INIT_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_BUCKET_SINGLE_VALUE_V3_ADD_LEAF_ENTRY_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_BUCKET_SINGLE_VALUE_V3_ADD_NON_LEAF_ENTRY_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_BUCKET_SINGLE_VALUE_V3_REMOVE_LEAF_ENTRY_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_BUCKET_SINGLE_VALUE_V3_ADD_ALL_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_BUCKET_SINGLE_VALUE_V3_SHRINK_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_BUCKET_SINGLE_VALUE_V3_UPDATE_VALUE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_BUCKET_SINGLE_VALUE_V3_REMOVE_NON_LEAF_ENTRY_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_BUCKET_SINGLE_VALUE_V3_SET_LEFT_SIBLING_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_BUCKET_SINGLE_VALUE_V3_SET_RIGHT_SIBLING_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_ENTRY_POINT_SINGLE_VALUE_V3_INIT_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_ENTRY_POINT_SINGLE_VALUE_V3_SET_PAGES_SIZE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_ENTRY_POINT_SINGLE_VALUE_V3_SET_TREE_SIZE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_ENTRY_POINT_SINGLE_VALUE_V3_SET_FREE_LIST_HEAD_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_BUCKET_SINGLE_VALUE_V3_SET_NEXT_FREE_LIST_PAGE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_NULL_BUCKET_SINGLE_VALUE_V3_INIT_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_NULL_BUCKET_SINGLE_VALUE_V3_SET_VALUE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_NULL_BUCKET_SINGLE_VALUE_V3_REMOVE_VALUE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case WALRecordTypes.CELL_BTREE_BUCKET_SINGLE_VALUE_V3_SWITCH_BUCKET_TYPE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case SBTREE_BUCKET_V1_INIT_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case SBTREE_BUCKET_V1_ADD_LEAF_ENTRY_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case WALRecordTypes.SBTREE_BUCKET_V1_ADD_NON_LEAF_ENTRY_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case SBTREE_BUCKET_V1_REMOVE_LEAF_ENTRY_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case SBTREE_BUCKET_V1_REMOVE_NON_LEAF_ENTRY_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case SBTREE_BUCKET_V1_ADD_ALL_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case SBTREE_BUCKET_V1_SHRINK_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case SBTREE_BUCKET_V1_UPDATE_VALUE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case SBTREE_BUCKET_V1_SWITCH_BUCKET_TYPE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case SBTREE_BUCKET_V1_SET_LEFT_SIBLING_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case SBTREE_BUCKET_V1_SET_RIGHT_SIBLING_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case SBTREE_NULL_BUCKET_V1_INIT_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case SBTREE_NULL_BUCKET_V1_SET_VALUE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case SBTREE_NULL_BUCKET_V1_REMOVE_VALUE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case SBTREE_BUCKET_V2_INIT_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case SBTREE_BUCKET_V2_ADD_ALL_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case SBTREE_BUCKET_V2_ADD_LEAF_ENTRY_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case WALRecordTypes.SBTREE_BUCKET_V2_ADD_NON_LEAF_ENTRY_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case SBTREE_BUCKET_V2_REMOVE_LEAF_ENTRY_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case SBTREE_BUCKET_V2_REMOVE_NON_LEAF_ENTRY_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case SBTREE_BUCKET_V2_SET_LEFT_SIBLING_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case SBTREE_BUCKET_V2_SET_RIGHT_SIBLING_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case SBTREE_BUCKET_V2_SHRINK_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case SBTREE_BUCKET_V2_SWITCH_BUCKET_TYPE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case SBTREE_BUCKET_V2_UPDATE_VALUE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case SBTREE_BUCKET_V1_SET_TREE_SIZE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case SBTREE_BUCKET_V2_SET_TREE_SIZE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case SBTREE_NULL_BUCKET_V2_INIT_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case SBTREE_NULL_BUCKET_V2_REMOVE_VALUE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case SBTREE_NULL_BUCKET_V2_SET_VALUE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_BUCKET_MULTI_VALUE_V2_INIT_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_BUCKET_MULTI_VALUE_V2_CREATE_MAIN_LEAF_ENTRY_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_BUCKET_MULTI_VALUE_V2_REMOVE_MAIN_LEAF_ENTRY_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_BUCKET_MULTI_VALUE_V2_APPEND_NEW_LEAF_ENTRY_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_BUCKET_MULTI_VALUE_V2_REMOVE_LEAF_ENTRY_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_BUCKET_MULTI_VALUE_V2_INCREMENT_ENTRIES_COUNT_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_BUCKET_MULTI_VALUE_V2_DECREMENT_ENTRIES_COUNT_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_BUCKET_MULTI_VALUE_V2_ADD_NON_LEAF_ENTRY_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_BUCKET_MULTI_VALUE_V2_REMOVE_NON_LEAF_ENTRY_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_BUCKET_MULTI_VALUE_V2_ADD_ALL_LEAF_ENTRIES_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_BUCKET_MULTI_VALUE_V2_ADD_ALL_NON_LEAF_ENTRIES_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_BUCKET_MULTI_VALUE_V2_SHRINK_LEAF_ENTRIES_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_BUCKET_MULTI_VALUE_V2_SHRINK_NON_LEAF_ENTRIES_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_BUCKET_MULTI_VALUE_V2_SET_LEFT_SIBLING_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_BUCKET_MULTI_VALUE_V2_SET_RIGHT_SIBLING_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_NULL_BUCKET_MULTI_VALUE_V2_SET_RIGHT_SIBLING_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_NULL_BUCKET_MULTI_VALUE_V2_ADD_VALUE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_NULL_BUCKET_MULTI_VALUE_V2_INCREMENT_SIZE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_NULL_BUCKET_MULTI_VALUE_V2_DECREMENT_SIZE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_NULL_BUCKET_MULTI_VALUE_V2_REMOVE_VALUE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_ENTRY_POINT_MULTI_VALUE_V2_INIT_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_ENTRY_POINT_MULTI_VALUE_V2_SET_TREE_SIZE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_ENTRY_POINT_MULTI_VALUE_V2_SET_PAGES_SIZE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_ENTRY_POINT_MULTI_VALUE_V2_SET_ENTRY_ID_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case CELL_BTREE_BUCKET_MULTI_VALUE_V2_SWITCH_BUCKET_TYPE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case LOCAL_HASH_TABLE_V2_BUCKET_INIT_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case LOCAL_HASH_TABLE_V2_BUCKET_UPDATE_ENTRY_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case LOCAL_HASH_TABLE_V2_BUCKET_DELETE_ENTRY_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case LOCAL_HASH_TABLE_V2_BUCKET_ADD_ENTRY_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case LOCAL_HASH_TABLE_V2_BUCKET_SET_DEPTH_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case LOCAL_HASH_TABLE_V2_DIRECTORY_PAGE_SET_MAX_LEFT_CHILDREN_DEPTH_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case LOCAL_HASH_TABLE_V2_DIRECTORY_PAGE_SET_MAX_RIGHT_CHILDREN_DEPTH_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case LOCAL_HASH_TABLE_V2_DIRECTORY_PAGE_SET_NODE_LOCAL_DEPTH_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case LOCAL_HASH_TABLE_V2_DIRECTORY_PAGE_SET_POINTER_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case LOCAL_HASH_TABLE_V2_DIRECTORY_FIRST_PAGE_SET_TREE_SIZE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case LOCAL_HASH_TABLE_V2_DIRECTORY_FIRST_PAGE_SET_TOMBSTONE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case LOCAL_HASH_TABLE_V2_METADATA_PAGE_INIT_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case LOCAL_HASH_TABLE_V2_METADATA_PAGE_SET_RECORDS_COUNT_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case LOCAL_HASH_TABLE_V2_NULL_BUCKET_INIT_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case LOCAL_HASH_TABLE_V2_NULL_BUCKET_SET_VALUE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case LOCAL_HASH_TABLE_V2_NULL_BUCKET_REMOVE_VALUE_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case LOCAL_HASH_TABLE_V2_DIRECTORY_FIRST_PAGE_SET_MAX_LEFT_CHILDREN_DEPTH_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case LOCAL_HASH_TABLE_V2_DIRECTORY_FIRST_PAGE_SET_MAX_RIGHT_CHILDREN_DEPTH_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case LOCAL_HASH_TABLE_V2_DIRECTORY_FIRST_PAGE_SET_NODE_LOCAL_DEPTH_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case LOCAL_HASH_TABLE_V2_DIRECTORY_FIRST_PAGE_SET_POINTER_PO:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+>>>>>>> develop
       case TX_METADATA:
         walRecord = new MetaDataRecord();
         break;
+      case FREE_SPACE_MAP_INIT:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
+      case FREE_SPACE_MAP_UPDATE:
+        throw new IllegalStateException(
+            "Cannot deserialize passed in wal record not exists anymore.");
       default:
         if (idToTypeMap.containsKey(recordId))
           try {
-            //noinspection unchecked
             walRecord =
                 (WriteableWALRecord)
                     idToTypeMap.get(recordId).getDeclaredConstructor().newInstance();

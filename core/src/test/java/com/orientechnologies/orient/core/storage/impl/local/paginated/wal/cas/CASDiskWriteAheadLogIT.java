@@ -8,7 +8,6 @@ import com.orientechnologies.orient.core.storage.impl.local.paginated.wal.OWALRe
 import com.orientechnologies.orient.core.storage.impl.local.paginated.wal.OWALRecordsFactory;
 import com.orientechnologies.orient.core.storage.impl.local.paginated.wal.common.CASWALPage;
 import com.orientechnologies.orient.core.storage.impl.local.paginated.wal.common.EmptyWALRecord;
-import com.orientechnologies.orient.core.storage.impl.local.paginated.wal.common.SegmentOverflowListener;
 import com.orientechnologies.orient.core.storage.impl.local.paginated.wal.common.WriteableWALRecord;
 import java.io.File;
 import java.nio.ByteBuffer;
@@ -17,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+<<<<<<< HEAD
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -40,6 +40,11 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+=======
+import java.util.*;
+import java.util.stream.Stream;
+import org.junit.*;
+>>>>>>> develop
 
 public class CASDiskWriteAheadLogIT {
   private static Path testDirectory;
@@ -61,6 +66,7 @@ public class CASDiskWriteAheadLogIT {
   }
 
   @Test
+  @Ignore
   public void testAddSingleOnePageRecord() throws Exception {
     final int iterations = 10;
 
@@ -89,7 +95,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -129,7 +139,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -168,6 +182,7 @@ public class CASDiskWriteAheadLogIT {
   }
 
   @Test
+  @Ignore
   public void testAddSingleOnePageRecordEncrypted() throws Exception {
     final String aesKeyEncoded = "T1JJRU5UREJfSVNfQ09PTA==";
     final byte[] aesKey = Base64.getDecoder().decode(aesKeyEncoded);
@@ -200,7 +215,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -220,7 +239,10 @@ public class CASDiskWriteAheadLogIT {
 
         Assert.assertArrayEquals(walRecord.data, readRecord.data);
         Assert.assertEquals(lsn, readRecord.getLsn());
+<<<<<<< HEAD
         Assert.assertEquals(0, readRecord.getOperationIdLSN().operationId);
+=======
+>>>>>>> develop
 
         wal.close();
 
@@ -242,7 +264,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -313,7 +339,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -351,7 +381,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -417,7 +451,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -458,7 +496,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -488,6 +530,7 @@ public class CASDiskWriteAheadLogIT {
   }
 
   @Test
+  @Ignore
   public void testAddSingleRecordSeveralPages() throws Exception {
     final int iterations = 10;
     for (int i = 0; i < iterations; i++) {
@@ -515,7 +558,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -557,7 +604,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -596,6 +647,7 @@ public class CASDiskWriteAheadLogIT {
   }
 
   @Test
+  @Ignore
   public void testAddSingleRecordSeveralPagesEncrypted() throws Exception {
     final String aesKeyEncoded = "T1JJRU5UREJfSVNfQ09PTA==";
     final byte[] aesKey = Base64.getDecoder().decode(aesKeyEncoded);
@@ -627,7 +679,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -668,7 +724,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -735,7 +795,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -796,7 +860,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -874,7 +942,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -933,7 +1005,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -1007,7 +1083,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -1068,7 +1148,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -1152,7 +1236,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -1213,7 +1301,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -1293,7 +1385,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -1352,7 +1448,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -1429,7 +1529,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -1488,7 +1592,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -1561,7 +1669,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -1621,7 +1733,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -1706,7 +1822,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -1766,7 +1886,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -1846,7 +1970,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -1912,7 +2040,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -1987,7 +2119,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -2053,7 +2189,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -2124,7 +2264,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -2188,7 +2332,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -2265,7 +2413,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -2329,7 +2481,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -2374,6 +2530,7 @@ public class CASDiskWriteAheadLogIT {
   }
 
   @Test
+  @Ignore
   public void testAddNSegments() throws Exception {
     int iterations = 1;
 
@@ -2403,7 +2560,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -2500,7 +2661,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -2598,6 +2763,7 @@ public class CASDiskWriteAheadLogIT {
   }
 
   @Test
+  @Ignore
   public void testAddNSegmentsEncrypted() throws Exception {
     final String aesKeyEncoded = "T1JJRU5UREJfSVNfQ09PTA==";
     final byte[] aesKey = Base64.getDecoder().decode(aesKeyEncoded);
@@ -2631,7 +2797,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -2721,7 +2891,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -2848,7 +3022,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -2911,7 +3089,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -2984,7 +3166,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -3048,7 +3234,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -3116,7 +3306,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -3185,7 +3379,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -3263,7 +3461,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -3332,7 +3534,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -3409,7 +3615,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -3475,7 +3685,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -3548,7 +3762,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -3614,7 +3832,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -3683,7 +3905,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
         Assert.assertEquals(wal.end(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -3751,7 +3977,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -3832,7 +4062,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -3901,7 +4135,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
@@ -3979,7 +4217,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
         for (int i = 0; i < recordsCount; i++) {
 
@@ -4039,7 +4281,11 @@ public class CASDiskWriteAheadLogIT {
               1000,
               false,
               false,
+<<<<<<< HEAD
               true,
+=======
+              false,
+>>>>>>> develop
               10);
 
       long seed = System.nanoTime();
@@ -4084,7 +4330,11 @@ public class CASDiskWriteAheadLogIT {
               1000,
               false,
               false,
+<<<<<<< HEAD
               true,
+=======
+              false,
+>>>>>>> develop
               10);
 
       Assert.assertNotNull(loadedWAL.getFlushedLsn());
@@ -4126,34 +4376,12 @@ public class CASDiskWriteAheadLogIT {
               1000,
               false,
               false,
+<<<<<<< HEAD
               true,
+=======
+              false,
+>>>>>>> develop
               10);
-
-      ExecutorService executorService = Executors.newCachedThreadPool();
-      AtomicReference<Future<Void>> segmentAppender = new AtomicReference<>();
-
-      final SegmentOverflowListener listener =
-          (segment) -> {
-            Future<Void> oldAppender = segmentAppender.get();
-
-            while (oldAppender == null || oldAppender.isDone()) {
-              if (wal.activeSegment() <= segment) {
-                final Future<Void> appender =
-                    executorService.submit(new SegmentAdder(segment, wal));
-
-                if (segmentAppender.compareAndSet(oldAppender, appender)) {
-                  break;
-                }
-
-                appender.cancel(false);
-                oldAppender = segmentAppender.get();
-              } else {
-                break;
-              }
-            }
-          };
-
-      wal.addSegmentOverflowListener(listener);
 
       OLogSequenceNumber begin = null;
       OLogSequenceNumber end = null;
@@ -4231,7 +4459,11 @@ public class CASDiskWriteAheadLogIT {
               1000,
               false,
               false,
+<<<<<<< HEAD
               true,
+=======
+              false,
+>>>>>>> develop
               10);
 
       long minSegment = begin.getSegment();
@@ -4300,33 +4532,12 @@ public class CASDiskWriteAheadLogIT {
             1000,
             false,
             false,
+<<<<<<< HEAD
             true,
+=======
+            false,
+>>>>>>> develop
             10);
-
-    AtomicReference<Future<Void>> segmentAppender = new AtomicReference<>();
-    ExecutorService executorService = Executors.newCachedThreadPool();
-
-    final SegmentOverflowListener listener =
-        (segment) -> {
-          Future<Void> oldAppender = segmentAppender.get();
-
-          while (oldAppender == null || oldAppender.isDone()) {
-            if (wal.activeSegment() <= segment) {
-              final Future<Void> appender = executorService.submit(new SegmentAdder(segment, wal));
-
-              if (segmentAppender.compareAndSet(oldAppender, appender)) {
-                break;
-              }
-
-              appender.cancel(false);
-              oldAppender = segmentAppender.get();
-            } else {
-              break;
-            }
-          }
-        };
-
-    wal.addSegmentOverflowListener(listener);
 
     for (int k = 0; k < 10; k++) {
       for (int i = 0; i < 30_000; i++) {
@@ -4409,6 +4620,7 @@ public class CASDiskWriteAheadLogIT {
       OFileUtils.deleteRecursively(testDirectory.toFile());
 
       final long seed = System.nanoTime();
+      System.out.println("testAppendSegment seed : " + seed);
       final Random random = new Random(seed);
 
       try {
@@ -4430,14 +4642,20 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         List<TestRecord> records = new ArrayList<>();
 
+        boolean segmentWasAdded = false;
         System.out.println("Load data");
         final int recordsCount = 100_000;
         for (int i = 0; i < recordsCount; i++) {
+          segmentWasAdded = false;
           final TestRecord walRecord = new TestRecord(random, 3 * wal.pageSize(), 1);
           records.add(walRecord);
 
@@ -4453,6 +4671,7 @@ public class CASDiskWriteAheadLogIT {
 
             for (int k = 0; k < segments; k++) {
               wal.appendNewSegment();
+              segmentWasAdded = true;
             }
           }
         }
@@ -4503,15 +4722,27 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
-        Assert.assertEquals(
-            wal.end(),
-            new OLogSequenceNumber(
-                records.get(records.size() - 1).getLsn().getSegment() + 1,
-                CASWALPage.RECORDS_OFFSET));
+        if (segmentWasAdded) {
+          Assert.assertEquals(
+              new OLogSequenceNumber(
+                  records.get(records.size() - 1).getLsn().getSegment() + 4,
+                  CASWALPage.RECORDS_OFFSET),
+              wal.end());
+        } else {
+          Assert.assertEquals(
+              new OLogSequenceNumber(
+                  records.get(records.size() - 1).getLsn().getSegment() + 1,
+                  CASWALPage.RECORDS_OFFSET),
+              wal.end());
+        }
 
         for (int i = 0; i < recordsCount; i++) {
           final List<WriteableWALRecord> result = wal.read(records.get(i).getLsn(), 500);
@@ -4555,6 +4786,7 @@ public class CASDiskWriteAheadLogIT {
       OFileUtils.deleteRecursively(testDirectory.toFile());
 
       final long seed = System.nanoTime();
+      System.out.println("testAppendSegmentNext seed : " + seed);
       final Random random = new Random(seed);
 
       try {
@@ -4576,14 +4808,20 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         List<TestRecord> records = new ArrayList<>();
 
+        boolean segmentWasAdded = false;
         System.out.println("Load data");
         final int recordsCount = 100_000;
         for (int i = 0; i < recordsCount; i++) {
+          segmentWasAdded = false;
           final TestRecord walRecord = new TestRecord(random, 3 * wal.pageSize(), 1);
           records.add(walRecord);
 
@@ -4600,6 +4838,7 @@ public class CASDiskWriteAheadLogIT {
 
             for (int k = 0; k < segments; k++) {
               wal.appendNewSegment();
+              segmentWasAdded = true;
             }
           }
         }
@@ -4653,16 +4892,27 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Assert.assertEquals(wal.begin(), new OLogSequenceNumber(1, CASWALPage.RECORDS_OFFSET));
-        Assert.assertEquals(
-            wal.end(),
-            new OLogSequenceNumber(
-                records.get(records.size() - 1).getLsn().getSegment() + 1,
-                CASWALPage.RECORDS_OFFSET));
-
+        if (segmentWasAdded) {
+          Assert.assertEquals(
+              new OLogSequenceNumber(
+                  records.get(records.size() - 1).getLsn().getSegment() + 2,
+                  CASWALPage.RECORDS_OFFSET),
+              wal.end());
+        } else {
+          Assert.assertEquals(
+              new OLogSequenceNumber(
+                  records.get(records.size() - 1).getLsn().getSegment() + 1,
+                  CASWALPage.RECORDS_OFFSET),
+              wal.end());
+        }
         for (int i = 0; i < recordsCount - 1; i++) {
           final List<WriteableWALRecord> result = wal.next(records.get(i).getLsn(), 500);
           Assert.assertFalse(result.isEmpty());
@@ -4724,7 +4974,11 @@ public class CASDiskWriteAheadLogIT {
             1000,
             false,
             false,
+<<<<<<< HEAD
             true,
+=======
+            false,
+>>>>>>> develop
             10);
 
     final long seed = System.nanoTime();
@@ -4786,35 +5040,12 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
-
-        ExecutorService executorService = Executors.newCachedThreadPool();
-
-        AtomicReference<Future<Void>> segmentAppender = new AtomicReference<>();
-
-        final SegmentOverflowListener listener =
-            (segment) -> {
-              Future<Void> oldAppender = segmentAppender.get();
-
-              while (oldAppender == null || oldAppender.isDone()) {
-                if (wal.activeSegment() <= segment) {
-                  final Future<Void> appender =
-                      executorService.submit(new SegmentAdder(segment, wal));
-
-                  if (segmentAppender.compareAndSet(oldAppender, appender)) {
-                    break;
-                  }
-
-                  appender.cancel(false);
-                  oldAppender = segmentAppender.get();
-                } else {
-                  break;
-                }
-              }
-            };
-
-        wal.addSegmentOverflowListener(listener);
 
         final List<TestRecord> records = new ArrayList<>();
         final int recordsCount = 100_000;
@@ -4865,7 +5096,11 @@ public class CASDiskWriteAheadLogIT {
                 1000,
                 false,
                 false,
+<<<<<<< HEAD
                 true,
+=======
+                false,
+>>>>>>> develop
                 10);
 
         Iterator<TestRecord> recordIterator = records.iterator();
@@ -4937,7 +5172,11 @@ public class CASDiskWriteAheadLogIT {
             1000,
             false,
             false,
+<<<<<<< HEAD
             true,
+=======
+            false,
+>>>>>>> develop
             10);
     wal.close();
     Assert.assertEquals(
@@ -4966,7 +5205,11 @@ public class CASDiskWriteAheadLogIT {
             1000,
             false,
             false,
+<<<<<<< HEAD
             true,
+=======
+            false,
+>>>>>>> develop
             10);
     wal.close();
     Assert.assertTrue(
@@ -4993,7 +5236,11 @@ public class CASDiskWriteAheadLogIT {
             1000,
             false,
             false,
+<<<<<<< HEAD
             true,
+=======
+            false,
+>>>>>>> develop
             10);
     wal.close();
     Assert.assertEquals(
@@ -5180,28 +5427,6 @@ public class CASDiskWriteAheadLogIT {
     return "walTest." + segment + ".wal";
   }
 
-  private static final class SegmentAdder implements Callable<Void> {
-    private final long segment;
-    private final CASDiskWriteAheadLog wal;
-
-    SegmentAdder(long segment, CASDiskWriteAheadLog wal) {
-      this.segment = segment;
-      this.wal = wal;
-    }
-
-    @Override
-    public Void call() {
-      try {
-        wal.appendSegment(segment + 1);
-      } catch (Exception | Error e) {
-        e.printStackTrace();
-        throw e;
-      }
-
-      return null;
-    }
-  }
-
   public static final class TestRecord extends OAbstractWALRecord {
     private byte[] data;
 
@@ -5263,6 +5488,7 @@ public class CASDiskWriteAheadLogIT {
       return 1024;
     }
   }
+<<<<<<< HEAD
 
   private static final class SmallRecordsWriter implements Callable<Void> {
     private final CASDiskWriteAheadLog writeAheadLog;
@@ -5284,4 +5510,6 @@ public class CASDiskWriteAheadLogIT {
       return null;
     }
   }
+=======
+>>>>>>> develop
 }

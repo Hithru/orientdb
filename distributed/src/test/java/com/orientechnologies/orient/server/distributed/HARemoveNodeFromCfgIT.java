@@ -18,7 +18,8 @@ package com.orientechnologies.orient.server.distributed;
 import com.orientechnologies.common.util.OCallable;
 import com.orientechnologies.orient.core.config.OGlobalConfiguration;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
-import com.orientechnologies.orient.server.hazelcast.OHazelcastPlugin;
+import com.orientechnologies.orient.server.distributed.ODistributedServerManager.DB_STATUS;
+import com.orientechnologies.orient.setup.ServerRun;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Assert;
 import org.junit.Test;
@@ -32,13 +33,11 @@ public class HARemoveNodeFromCfgIT extends AbstractServerClusterTxTest {
   public void test() throws Exception {
     OGlobalConfiguration.DISTRIBUTED_AUTO_REMOVE_OFFLINE_SERVERS.setValue(100);
     try {
-
       useTransactions = true;
       count = 10;
       init(SERVERS);
       prepare(false);
       execute();
-
     } finally {
       OGlobalConfiguration.DISTRIBUTED_AUTO_REMOVE_OFFLINE_SERVERS.setValue(100);
     }
@@ -52,7 +51,6 @@ public class HARemoveNodeFromCfgIT extends AbstractServerClusterTxTest {
             .getServerInstance()
             .getDistributedManager()
             .getLocalNodeName();
-
     Assert.assertTrue(
         serverInstance
             .get(0)
@@ -61,14 +59,13 @@ public class HARemoveNodeFromCfgIT extends AbstractServerClusterTxTest {
             .getDatabaseConfiguration(getDatabaseName())
             .getAllConfiguredServers()
             .contains(removedServer));
-
-    Assert.assertTrue(
+    Assert.assertEquals(
         serverInstance
             .get(0)
             .getServerInstance()
             .getDistributedManager()
-            .getConfigurationMap()
-            .containsKey("dbstatus." + removedServer + "." + getDatabaseName()));
+            .getDatabaseStatus(removedServer, getDatabaseName()),
+        DB_STATUS.ONLINE);
 
     banner("SIMULATE SOFT SHUTDOWN OF SERVER " + (SERVERS - 1));
 
@@ -103,18 +100,17 @@ public class HARemoveNodeFromCfgIT extends AbstractServerClusterTxTest {
             .get(0)
             .getServerInstance()
             .getDistributedManager()
-            .getConfigurationMap()
-            .get("dbstatus." + removedServer + "." + getDatabaseName()),
+            .getDatabaseStatus(removedServer, getDatabaseName()),
         ODistributedServerManager.DB_STATUS.NOT_AVAILABLE);
 
     serverInstance
         .get(SERVERS - 1)
         .startServer(getDistributedServerConfiguration(serverInstance.get(SERVERS - 1)));
-    if (serverInstance.get(SERVERS - 1).server.getPluginByClass(OHazelcastPlugin.class) != null)
+    if (serverInstance.get(SERVERS - 1).getServerInstance().getDistributedManager() != null)
       serverInstance
           .get(SERVERS - 1)
-          .server
-          .getPluginByClass(OHazelcastPlugin.class)
+          .getServerInstance()
+          .getDistributedManager()
           .waitUntilNodeOnline();
 
     lastNodeIsUp.set(true);

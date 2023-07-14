@@ -33,6 +33,11 @@ public class ORollbackStatement extends OSimpleExecStatement {
   }
 
   @Override
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append("ROLLBACK");
+  }
+
+  @Override
   public ORollbackStatement copy() {
     ORollbackStatement result = new ORollbackStatement(-1);
     return result;

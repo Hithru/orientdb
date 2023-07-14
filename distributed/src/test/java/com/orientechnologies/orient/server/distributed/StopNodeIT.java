@@ -18,7 +18,8 @@ package com.orientechnologies.orient.server.distributed;
 import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.common.util.OCallable;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
-import com.orientechnologies.orient.server.hazelcast.OHazelcastPlugin;
+import com.orientechnologies.orient.server.distributed.impl.ODistributedPlugin;
+import com.orientechnologies.orient.setup.ServerRun;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
@@ -69,7 +70,7 @@ public class StopNodeIT extends AbstractServerClusterTxTest {
     if (serverStarted == 0) {
       // INSTALL ON FIRST SERVER ONLY THE SERVER MONITOR TO CHECK IF HAS BEEN RESTARTED
       server
-          .server
+          .getServerInstance()
           .getDistributedManager()
           .registerLifecycleListener(
               new ODistributedLifecycleListener() {
@@ -129,12 +130,16 @@ public class StopNodeIT extends AbstractServerClusterTxTest {
 
                             banner("STOPPING SERVER " + (SERVERS - 1));
 
-                            ((OHazelcastPlugin)
+                            ((ODistributedPlugin)
                                     serverInstance
                                         .get(0)
                                         .getServerInstance()
                                         .getDistributedManager())
-                                .stopNode(server.server.getDistributedManager().getLocalNodeName());
+                                .stopNode(
+                                    server
+                                        .getServerInstance()
+                                        .getDistributedManager()
+                                        .getLocalNodeName());
 
                             return null;
                           }

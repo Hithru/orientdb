@@ -52,6 +52,17 @@ public class OHaSyncDatabaseStatement extends OSimpleExecStatement {
     }
   }
 
+  @Override
+  public void toGenericStatement(StringBuilder builder) {
+    builder.append("HA SYNC DATABASE");
+    if (force) {
+      builder.append(" -force");
+    }
+    if (full) {
+      builder.append(" -full");
+    }
+  }
+
   public boolean isForce() {
     return force;
   }

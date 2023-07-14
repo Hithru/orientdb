@@ -21,7 +21,6 @@ package com.orientechnologies.orient.core.command.script;
 
 import static com.orientechnologies.common.util.OClassLoaderHelper.lookupProviderWithOrientClassLoader;
 
-import com.orientechnologies.common.concur.resource.OPartitionedObjectPool;
 import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.common.parser.OStringParser;
 import com.orientechnologies.orient.core.command.OCommandContext;
@@ -35,6 +34,7 @@ import com.orientechnologies.orient.core.command.script.formatter.OSQLScriptForm
 import com.orientechnologies.orient.core.command.script.formatter.OScriptFormatter;
 import com.orientechnologies.orient.core.command.script.js.OJSScriptEngineFactory;
 import com.orientechnologies.orient.core.command.script.transformer.OScriptTransformerImpl;
+import com.orientechnologies.orient.core.config.OGlobalConfiguration;
 import com.orientechnologies.orient.core.db.ODatabase;
 import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
@@ -87,10 +87,19 @@ public class OScriptManager {
   public OScriptManager() {
     scriptEngineManager = new ScriptEngineManager();
 
+    final boolean useGraal = OGlobalConfiguration.SCRIPT_POLYGLOT_USE_GRAAL.getValueAsBoolean();
     executorsFactories.put(
-        "javascript", (lang) -> new OJavascriptScriptExecutor(lang, new OScriptTransformerImpl()));
+        "javascript",
+        (lang) ->
+            useGraal
+                ? new OPolyglotScriptExecutor(lang, new OScriptTransformerImpl())
+                : new OJsr223ScriptExecutor(lang, new OScriptTransformerImpl()));
     executorsFactories.put(
-        "ecmascript", (lang) -> new OJavascriptScriptExecutor(lang, new OScriptTransformerImpl()));
+        "ecmascript",
+        (lang) ->
+            useGraal
+                ? new OPolyglotScriptExecutor(lang, new OScriptTransformerImpl())
+                : new OJsr223ScriptExecutor(lang, new OScriptTransformerImpl()));
 
     for (ScriptEngineFactory f : scriptEngineManager.getEngineFactories()) {
       registerEngine(f.getLanguageName().toLowerCase(Locale.ENGLISH), f);
@@ -99,7 +108,13 @@ public class OScriptManager {
     }
 
     if (!existsEngine(DEF_LANGUAGE)) {
-      final ScriptEngine defEngine = scriptEngineManager.getEngineByName(DEF_LANGUAGE);
+      // if graal is disabled, try to load nashorn manually
+      ScriptEngine defEngine =
+          scriptEngineManager.getEngineByName(useGraal ? DEF_LANGUAGE : "nashorn");
+      if (defEngine == null) {
+        // no nashorn engine, use the default
+        defEngine = scriptEngineManager.getEngineByName(DEF_LANGUAGE);
+      }
       if (defEngine == null) {
         OLogManager.instance()
             .warnNoDb(this, "Cannot find default script language for %s", DEF_LANGUAGE);
@@ -218,10 +233,9 @@ public class OScriptManager {
    * @param databaseName Database name
    * @param language Script language
    * @return ScriptEngine instance with the function library already parsed
-   * @see #releaseDatabaseEngine(String, String, OPartitionedObjectPool.PoolEntry)
+   * @see #releaseDatabaseEngine(String, String, ScriptEngine)
    */
-  public OPartitionedObjectPool.PoolEntry<ScriptEngine> acquireDatabaseEngine(
-      final String databaseName, final String language) {
+  public ScriptEngine acquireDatabaseEngine(final String databaseName, final String language) {
     ODatabaseScriptManager dbManager = dbManagers.get(databaseName);
     if (dbManager == null) {
       // CREATE A NEW DATABASE SCRIPT MANAGER
@@ -247,9 +261,7 @@ public class OScriptManager {
    * @see #acquireDatabaseEngine(String, String)
    */
   public void releaseDatabaseEngine(
-      final String iLanguage,
-      final String iDatabaseName,
-      final OPartitionedObjectPool.PoolEntry<ScriptEngine> poolEntry) {
+      final String iLanguage, final String iDatabaseName, final ScriptEngine poolEntry) {
     final ODatabaseScriptManager dbManager = dbManagers.get(iDatabaseName);
     // We check if there is still a valid pool because it could be removed by the function reload
     if (dbManager != null) {
@@ -270,7 +282,7 @@ public class OScriptManager {
       final OCommandContext iContext,
       final Map<Object, Object> iArgs) {
 
-    binding.put("db", new OScriptDatabaseWrapper(db));
+    bindDatabase(binding, db);
 
     bindInjectors(engine, binding, db);
 
@@ -436,6 +448,19 @@ public class OScriptManager {
     if (!injections.contains(iInj)) injections.add(iInj);
   }
 
+  public Set<String> getAllowedPackages() {
+    final Set<String> result = new HashSet<>();
+    this.engines
+        .entrySet()
+        .forEach(
+            e -> {
+              if (e.getValue() instanceof OSecuredScriptFactory) {
+                result.addAll(((OSecuredScriptFactory) e.getValue()).getPackages());
+              }
+            });
+    return result;
+  }
+
   public void addAllowedPackages(Set<String> packages) {
 
     this.engines
@@ -446,6 +471,7 @@ public class OScriptManager {
                 ((OSecuredScriptFactory) e.getValue()).addAllowedPackages(packages);
               }
             });
+    closeAll();
   }
 
   public void removeAllowedPackages(Set<String> packages) {
@@ -457,6 +483,7 @@ public class OScriptManager {
                 ((OSecuredScriptFactory) e.getValue()).removeAllowedPackages(packages);
               }
             });
+    closeAll();
   }
 
   public void unregisterInjection(final OScriptInjection iInj) {
@@ -516,10 +543,12 @@ public class OScriptManager {
   public void close(final String iDatabaseName) {
     final ODatabaseScriptManager dbPool = dbManagers.remove(iDatabaseName);
     if (dbPool != null) dbPool.close();
+    commandManager.close(iDatabaseName);
   }
 
   public void closeAll() {
     dbManagers.entrySet().forEach(e -> e.getValue().close());
+    commandManager.closeAll();
   }
 
   public OCommandManager getCommandManager() {

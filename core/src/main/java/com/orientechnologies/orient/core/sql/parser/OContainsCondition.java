@@ -288,6 +288,19 @@ public class OContainsCondition extends OBooleanExpression {
   }
 
   @Override
+  public void toGenericStatement(StringBuilder builder) {
+    left.toGenericStatement(builder);
+    builder.append(" CONTAINS ");
+    if (right != null) {
+      right.toGenericStatement(builder);
+    } else if (condition != null) {
+      builder.append("(");
+      condition.toGenericStatement(builder);
+      builder.append(")");
+    }
+  }
+
+  @Override
   public boolean supportsBasicCalculation() {
     if (!left.supportsBasicCalculation()) {
       return false;
