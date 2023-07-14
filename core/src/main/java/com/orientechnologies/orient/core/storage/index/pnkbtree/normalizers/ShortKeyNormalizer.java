@@ -1,4 +1,4 @@
-package com.orientechnologies.orient.core.storage.index.nkbtree.normalizers;
+package com.orientechnologies.orient.core.storage.index.pnkbtree.normalizers;
 
 import com.orientechnologies.common.serialization.types.OShortSerializer;
 

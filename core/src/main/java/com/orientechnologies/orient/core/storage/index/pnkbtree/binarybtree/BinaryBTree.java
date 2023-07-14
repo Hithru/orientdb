@@ -1,4 +1,4 @@
-package com.orientechnologies.orient.core.storage.index.nkbtree.binarybtree;
+package com.orientechnologies.orient.core.storage.index.pnkbtree.binarybtree;
 
 import com.orientechnologies.common.comparator.OComparatorFactory;
 import com.orientechnologies.common.exception.OException;

@@ -1,11 +1,11 @@
-package com.orientechnologies.orient.core.storage.index.nkbtree.normalizers;
+package com.orientechnologies.orient.core.storage.index.pnkbtree.normalizers;
 
 import com.ibm.icu.text.Collator;
 import com.orientechnologies.orient.core.index.OAlwaysGreaterKey;
 import com.orientechnologies.orient.core.index.OAlwaysLessKey;
 import com.orientechnologies.orient.core.index.OCompositeKey;
 import com.orientechnologies.orient.core.metadata.schema.OType;
-import com.orientechnologies.orient.core.storage.index.nkbtree.binarybtree.BinaryBTree;
+import com.orientechnologies.orient.core.storage.index.pnkbtree.binarybtree.BinaryBTree;
 
 import java.util.ArrayList;
 import java.util.EnumMap;

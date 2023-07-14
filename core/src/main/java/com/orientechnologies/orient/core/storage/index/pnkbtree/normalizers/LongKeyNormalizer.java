@@ -1,12 +1,11 @@
-package com.orientechnologies.orient.core.storage.index.nkbtree.normalizers;
+package com.orientechnologies.orient.core.storage.index.pnkbtree.normalizers;
 
 import com.orientechnologies.common.serialization.types.OLongSerializer;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.Date;
 
-public final class DateKeyNormalizer implements KeyNormalizer {
+public final class LongKeyNormalizer implements KeyNormalizer {
   @Override
   public int normalizedSize(Object key) {
     return OLongSerializer.LONG_SIZE;
@@ -16,9 +15,9 @@ public final class DateKeyNormalizer implements KeyNormalizer {
   public int normalize(Object key, int offset, byte[] stream) {
     final ByteBuffer buffer = ByteBuffer.wrap(stream);
     buffer.order(ByteOrder.BIG_ENDIAN);
-
     buffer.position(offset);
-    buffer.putLong(((Date) key).getTime());
+
+    buffer.putLong(((long) key) + Long.MAX_VALUE + 1);
 
     return buffer.position();
   }

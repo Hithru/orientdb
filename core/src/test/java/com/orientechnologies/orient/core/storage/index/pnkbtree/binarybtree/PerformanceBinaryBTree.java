@@ -1,7 +1,6 @@
-package com.orientechnologies.orient.core.storage.index.nkbtree.binarybtree;
+package com.orientechnologies.orient.core.storage.index.pnkbtree.binarybtree;
 
 import com.ibm.icu.text.Collator;
-import com.orientechnologies.common.util.ORawPair;
 import com.orientechnologies.orient.core.config.OGlobalConfiguration;
 import com.orientechnologies.orient.core.db.*;
 import com.orientechnologies.orient.core.id.ORID;
@@ -10,13 +9,11 @@ import com.orientechnologies.orient.core.index.OCompositeKey;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.storage.impl.local.OAbstractPaginatedStorage;
 import com.orientechnologies.orient.core.storage.impl.local.paginated.atomicoperations.OAtomicOperationsManager;
-import com.orientechnologies.orient.core.storage.index.nkbtree.normalizers.KeyNormalizers;
-import org.junit.Assert;
+import com.orientechnologies.orient.core.storage.index.pnkbtree.normalizers.KeyNormalizers;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.io.File;
-import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Random;
